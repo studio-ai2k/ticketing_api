@@ -1,0 +1,8 @@
+e6c350beaa0d59f9372a45ac95bb8d77  budget_pa_x_e6c350be_BUILD60.html
+a5ecb40168ec2af16a5042c0828d1c59  shots/1_recette_manuelle.png
+678c6dc1d4e07b35f39542eb1d5305c6  shots/2a_reelles_note.png
+606a52417975bf323102085aa4e14aa1  shots/2b_reelles_note_empty.png
+e730b8663926fbf68858e70f25578f53  shots/3_devis_lien_states.png
+f1d0391c98ef220da9af5c99a5effa01  shots/4a_courbe_n0_empty.png
+9662690d5d52a75e063cd08c8d8b1858  shots/4b_courbe_n1_nobudget.png
+3ca66f3aeafac593f1a60b92973dc8e0  shots/4c_courbe_n2_curve.png
