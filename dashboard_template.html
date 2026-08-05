@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="format-detection" content="telephone=no, date=no, address=no">
+<title>Festiflow — Billetterie · {{EVENT_NAME}}</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{min-height:100%;background:#08080d;font-family:"Outfit",sans-serif;-webkit-font-smoothing:antialiased;color:#f0f0f5}
+html{scroll-padding-top:82px;scroll-behavior:smooth}
+
+.db-overlay { position:fixed; inset:0; background:#08080d url('{{LOGIN_BG_IMAGE}}') center center/cover no-repeat; z-index:9999; display:flex; align-items:center; justify-content:center; }
+.db-overlay::before { content:''; position:fixed; inset:0; background:rgba(4,4,10,0.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+.db-modal { position:relative; z-index:1; background:rgba(12,6,24,0.3); border:1px solid rgba(168,85,247,0.15); border-radius:20px; padding:32px 28px; width:320px; box-shadow:0 32px 80px rgba(0,0,0,0.2); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); text-align:center; }
+.db-modal-logo { width:72px; height:72px; border-radius:50%; object-fit:cover; margin:0 auto 16px; display:block; }
+.db-modal-title { font-family:'Outfit',sans-serif; font-size:18px; font-weight:700; color:#fff; margin-bottom:4px; }
+.db-modal-sub { font-size:12px; color:#a0a0b0; margin-bottom:24px; }
+.db-pw-field { width:100%; padding:13px 16px; background:linear-gradient(135deg,rgba(168,85,247,0.12),rgba(99,102,241,0.12)); border:1px solid rgba(168,85,247,0.3); border-radius:10px; margin-bottom:10px; cursor:text; position:relative; min-height:46px; display:flex; align-items:center; box-sizing:border-box; text-align:left; transition:border-color 0.2s,box-shadow 0.2s; }
+.db-pw-field:hover { border-color:rgba(168,85,247,0.6); box-shadow:0 0 16px rgba(168,85,247,0.2); }
+.db-pw-dots { color:#fff; font-size:18px; letter-spacing:4px; line-height:1; }
+.db-pw-placeholder { color:#4a4a6a; font-size:14px; font-family:'Outfit',sans-serif; }
+.db-pw-error { font-size:11px; color:#e17055; margin-bottom:8px; min-height:14px; text-align:left; }
+
+
+/* ═══ BILLETTERIE MODULE CSS (from original dashboard_template.html) ═══ */
+/* Design tokens — on body so nav + dashboard both inherit */
+body {
+    --bg: #08080d; --surface: #101017; --surface-2: #16161f;
+    --border: rgba(255,255,255,0.05); --border-hover: rgba(255,255,255,0.08);
+    --text: #f0f0f5; --text-muted: #a0a0b0; --text-dim: #5a5a6a;
+    --green: #34d399; --red: #f87171; --amber: #fbbf24;
+    --day-0: #a855f7; --day-1: #6366f1; --day-2: #f472b6; --day-3: #4f46e5;
+    --dice-blue: #5b8def; --sg-green: #34d399;
+    font-family: 'Outfit', sans-serif; font-size: 19px; line-height: 1.55;
+}
+.dashboard {
+    max-width: 980px; margin: 0 auto; padding: 28px 20px 60px;
+}
+/* ═══ NAV (BudgetFlow pattern) ═══ */
+.nav { position: -webkit-sticky; position: sticky; top: 0; z-index: 100; background: var(--surface); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,.06); padding: 0; margin-bottom: 0; }
+.nav-top { max-width: 980px; margin: 0 auto; display: flex; align-items: center; padding: 0 20px; }
+.nav-sw { display: flex; align-items: center; gap: 8px; padding: 8px 14px 8px 0; margin-right: 8px; border-right: 1px solid rgba(255,255,255,.05); flex-shrink: 0; cursor: pointer; transition: opacity .15s; position: relative; }
+.nav-sw:hover { opacity: .8; }
+.nav-sw-av { width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2); border: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: .5px; overflow: hidden; }
+.nav-sw-av img { width: 100%; height: 100%; object-fit: cover; }
+.session-sw { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.01; cursor: pointer; z-index: 2; font-size: 16px; }
+.nm { font-size: 12px; font-weight: 500; padding: 8px 12px; color: var(--text-dim); cursor: pointer; white-space: nowrap; transition: color .15s; border: none; background: none; font-family: inherit; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+.nm:hover { color: var(--text-muted); }
+.nm.on { color: #fff; font-weight: 600; }
+.nm.on svg { opacity: 1; }
+.nm svg { width: 13px; height: 13px; opacity: .7; flex-shrink: 0; }
+.dept-tabs-bg { background: rgba(0,0,0,.15); border-top: 1px solid rgba(255,255,255,.03); }
+.dept-tabs { max-width: 980px; margin: 0 auto; padding: 2px 20px; display: flex; overflow-x: auto; scrollbar-width: none; }
+.dept-tabs::-webkit-scrollbar { display: none; }
+.dt { padding: 8px 12px; font-size: 12px; font-weight: 500; color: var(--text-dim); white-space: nowrap; border: none; border-bottom: 2px solid transparent; background: none; font-family: inherit; cursor: pointer; transition: color .15s; }
+.dt:hover { color: var(--text-muted); }
+.dt.on { color: #fff; font-weight: 600; border-bottom-color: var(--day-0); }
+/* ═══ PAGES ═══ */
+.page { display: none; animation: pageIn .18s ease; }
+.page.on { display: block; }
+@keyframes pageIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+/* ═══ DÉTAILS PAGE ═══ */
+.det-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 12px; }
+.det-title { font-size: 0.62em; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); margin-bottom: 14px; }
+.det-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.03); }
+.det-row:last-child { border-bottom: none; }
+.det-k { font-size: 0.72em; color: var(--text-muted); }
+.det-v { font-size: 0.72em; color: #fff; font-weight: 500; text-align: right; }
+.det-v a { color: #a29bfe; text-decoration: none; }
+.det-v a:hover { text-decoration: underline; }
+.det-links { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.det-link { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; cursor: pointer; transition: border-color .15s; text-decoration: none; }
+.det-link:hover { border-color: rgba(255,255,255,.12); }
+.det-link-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; letter-spacing: .5px; flex-shrink: 0; }
+.det-link-name { font-size: 0.72em; font-weight: 600; color: #fff; }
+.det-link-url { font-size: 0.58em; color: var(--text-dim); margin-top: 2px; }
+.det-compare { border-left: 2px solid var(--indigo, #6366f1); padding-left: 14px; margin-bottom: 14px; }
+.det-compare-name { font-size: 0.78em; font-weight: 600; color: #fff; }
+.det-compare-meta { font-size: 0.65em; color: var(--text-muted); margin-top: 3px; }
+.det-compare-badge { display: inline-block; font-size: 0.58em; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: rgba(99,102,241,.1); color: #818cf8; margin-top: 6px; }
+.det-footer { font-size: 0.58em; color: var(--text-dim); text-align: right; padding: 4px 0; opacity: .6; }
+/* ═══ BADGES ═══ */
+.badge { font-size: 0.62em; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; padding: 4px 10px; border-radius: 5px; white-space: nowrap; }
+.badge-live { background: rgba(52,211,153,0.12); color: var(--green); display: flex; align-items: center; gap: 6px; }
+.badge-live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+.badge-termine { background: rgba(160,160,180,0.1); color: #a0a0b4; display: flex; align-items: center; gap: 6px; }
+.badge-termine::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #a0a0b4; }
+@keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.3 } }
+.badge-edition { background: rgba(255,255,255,0.06); color: var(--text); }
+.app-mark { font-family: 'JetBrains Mono', 'Outfit', sans-serif; font-size: 0.58em; font-weight: 600; color: var(--text-dim); letter-spacing: 1.5px; text-transform: uppercase; }
+/* ═══ INFO TOOLTIP ═══ */
+.info-tip { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: rgba(255,255,255,0.06); color: var(--text-muted); font-size: 0.55em; font-weight: 600; font-style: italic; font-family: Georgia, serif; cursor: help; margin-left: 6px; vertical-align: middle; flex-shrink: 0; letter-spacing: 0; text-transform: none; transition: background 0.2s, color 0.2s; }
+.info-tip:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+.info-tip .info-bubble { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: #1e1e2a; color: var(--text); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 14px; font-size: 1.6em; font-style: normal; font-family: 'Outfit', sans-serif; font-weight: 400; letter-spacing: 0; line-height: 1.45; width: 280px; white-space: normal; pointer-events: none; opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+.info-tip .info-bubble::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: #1e1e2a; }
+.info-tip:hover .info-bubble { opacity: 1; visibility: visible; pointer-events: auto; }
+@media (max-width:600px) { .info-tip .info-bubble { width: 220px; font-size: 1.4em; left: auto; right: -10px; transform: none; } .info-tip .info-bubble::after { left: auto; right: 16px; } }
+/* ═══ GRID ═══ */
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; }
+.section-gap { margin-bottom: 14px; }
+/* ═══ CARD ═══ */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; transition: border-color 0.3s, box-shadow 0.3s; }
+.card:hover { border-color: rgba(168,85,247,0.3); box-shadow: 0 0 16px rgba(168,85,247,0.12), 0 0 32px rgba(99,102,241,0.06); }
+.card-label { font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: #fff; margin-bottom: 20px; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+/* ═══ SHARED ═══ */
+.hero { font-size: 2em; font-weight: 700; color: #fff; line-height: 1.1; letter-spacing: -0.5px; }
+.hero-lg { font-size: 2.6em; letter-spacing: -1px; }
+.hero-unit { font-size: 0.32em; font-weight: 400; color: var(--text-dim); letter-spacing: 0; margin-left: 2px; }
+.yoy-tag { display: inline-block; margin-top: 6px; padding: 3px 9px; border-radius: 6px; font-size: 0.72em; font-weight: 600; }
+.yoy-tag.positive { background: rgba(52,211,153,0.1); color: var(--green); }
+.yoy-tag.negative { background: rgba(248,113,113,0.1); color: var(--red); }
+.yoy-tag.neutral { background: rgba(255,255,255,0.04); color: var(--text-dim); }
+.yoy-badge { font-size: 0.72em; font-weight: 600; padding: 3px 10px; border-radius: 6px; }
+.yoy-badge.positive { color: var(--green); background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.15); }
+.week-badge { font-size: 0.72em; font-weight: 600; color: var(--amber); background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.15); padding: 3px 10px; border-radius: 6px; letter-spacing: 0.5px; }
+.meta-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; }
+.meta-key { color: var(--text); }
+.meta-val { color: #fff; font-weight: 500; }
+.change-tag { font-size: 0.85em; font-weight: 600; margin-left: 4px; }
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+.main-row { display: flex; align-items: center; gap: 22px; margin-bottom: 20px; }
+/* ═══ RING ═══ */
+.ring { position: relative; width: 100px; height: 120px; flex-shrink: 0; }
+.ring svg { transform: rotate(-90deg); width: 100px; height: 100px; }
+.ring-track { fill: none; stroke: var(--surface-2); stroke-width: 7; }
+.ring-fill { fill: none; stroke-width: 7; stroke-linecap: round; }
+.ring-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
+.ring-pct { font-size: 1.15em; font-weight: 700; color: #fff; line-height: 1; }
+.ring-sub { font-size: 0.58em; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+/* ═══ DETAILS ═══ */
+.details-toggle { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 0.75em; color: var(--text-muted); cursor: pointer; padding: 8px 0 2px; user-select: none; transition: color 0.2s; width: 100%; }
+.details-toggle:hover { color: #fff; }
+.details-toggle .arrow { font-size: 0.7em; transition: transform 0.25s ease; }
+.details-toggle.open .arrow { transform: rotate(180deg); }
+.details-panel { max-height: 0; overflow: hidden; transition: max-height 0.4s ease, opacity 0.3s ease; opacity: 0; }
+.details-panel.open { max-height: 1200px; opacity: 1; }
+.details-inner { padding-top: 14px; }
+/* ═══ INSETS ═══ */
+.detail-inset { background: var(--surface-2); border-radius: 10px; padding: 12px 14px; margin-top: 10px; }
+.inset-label { font-size: 0.68em; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); font-weight: 600; margin-bottom: 8px; }
+.inset-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 0.82em; }
+.inset-row.sub { padding-left: 12px; font-size: 0.78em; opacity: 0.7; }
+.inset-row .k { color: var(--text); }
+.inset-row .v { color: #fff; font-weight: 500; }
+.inset-sep { height: 1px; background: var(--border); margin: 6px 0; }
+.day-detail-grid { padding: 4px 0; }
+.inset-divider { height: 1px; background: var(--border); margin: 6px 0; }
+/* ═══ SPLIT BAR ═══ */
+.split-bar { display: flex; height: 4px; border-radius: 2px; overflow: hidden; margin: 10px 0 14px; background: var(--surface-2); }
+.split-bar .seg { height: 100%; }
+.platform-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; font-size: 0.82em; }
+.platform-name { color: var(--text); display: flex; align-items: center; gap: 8px; }
+.plat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.platform-stats { text-align: right; color: #fff; }
+.platform-tickets { font-size: 0.88em; color: var(--text-dim); margin-left: 6px; }
+/* ═══ STACKED BAR ═══ */
+.stacked-bar { height: 12px; background: var(--surface-2); border-radius: 5px; overflow: hidden; margin: 12px 0 6px; display: flex; }
+.stacked-seg { height: 100%; }
+.stacked-seg + .stacked-seg { border-left: 1px solid var(--surface); }
+.pct-row { display: flex; justify-content: space-between; align-items: center; }
+.pct-total { font-size: 0.85em; font-weight: 600; color: #fff; }
+.warmup-toggle { display:inline-flex; align-items:center; gap:6px; margin-bottom:10px; cursor:pointer; user-select:none; }
+.warmup-toggle-track { width:28px; height:16px; border-radius:8px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); position:relative; transition:background 0.2s; flex-shrink:0; }
+.warmup-toggle-track.on { background:rgba(168,85,247,0.5); border-color:rgba(168,85,247,0.6); }
+.warmup-toggle-knob { width:10px; height:10px; border-radius:50%; background:#fff; position:absolute; top:2px; left:2px; transition:left 0.2s; }
+.warmup-toggle-track.on .warmup-toggle-knob { left:14px; }
+.warmup-toggle-label { font-size:0.65em; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; font-weight:600; }
+.pct-legend { display: flex; gap: 10px; font-size: 0.7em; color: var(--text-dim); }
+.pct-legend-item { display: flex; align-items: center; gap: 4px; }
+.pct-dot { width: 6px; height: 6px; border-radius: 2px; flex-shrink: 0; }
+/* ═══ DAY ROWS (Presence) ═══ */
+.day-row { display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.day-row:last-child { border-bottom: none; }
+.day-color-bar { width: 3px; height: 36px; border-radius: 2px; flex-shrink: 0; }
+.day-info { flex: 1; }
+.day-name-p { font-size: 0.78em; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.day-progress { height: 5px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.day-progress-fill { height: 100%; border-radius: 3px; }
+.day-stats { text-align: right; flex-shrink: 0; }
+.day-count { font-size: 0.95em; font-weight: 600; color: #fff; }
+.day-pct-sm { font-size: 0.7em; color: var(--text-dim); }
+.day-vs { font-size: 0.72em; font-weight: 600; margin-top: 2px; }
+/* ═══ PAR JOUR ═══ */
+.day-summary { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.day-summary:last-of-type { border-bottom: none; }
+.day-row-main { display: flex; align-items: stretch; gap: 14px; }
+.day-accent { width: 3px; border-radius: 2px; flex-shrink: 0; }
+.day-content { flex: 1; min-width: 0; }
+.day-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.day-name { font-size: 0.78em; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+.day-date { font-size: 0.72em; color: var(--text-dim); }
+.day-presence { display: flex; align-items: baseline; gap: 6px; margin-bottom: 6px; }
+.dj-count { font-size: 1.3em; font-weight: 700; color: #fff; }
+.dj-cap { font-size: 0.78em; color: var(--text-dim); }
+.day-bar { height: 7px; background: var(--surface-2); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+.day-bar-fill { height: 100%; border-radius: 3px; }
+.day-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.78em; }
+.dj-pct { font-weight: 600; }
+.tag-pill { display: inline-block; padding: 3px 10px; border-radius: 5px; font-size: 0.75em; font-weight: 600; }
+.tag-pill.green { background: rgba(52,211,153,0.1); color: var(--green); }
+.tag-pill.red { background: rgba(248,113,113,0.1); color: var(--red); }
+.detail-day { margin-bottom: 18px; }
+.detail-day:last-child { margin-bottom: 0; }
+.detail-day-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.detail-day-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.detail-day-name { font-size: 0.72em; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; }
+.pacing-chart { margin-bottom: 10px; }
+.pacing-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.pacing-title { font-size: 0.68em; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); font-weight: 600; }
+.chart-area { background: var(--surface-2); border-radius: 8px; padding: 10px; height: 120px; }
+.chart-area svg { width: 100%; height: 100%; }
+.chart-x-labels { display: flex; justify-content: space-between; font-size: 0.55em; color: var(--text-dim); padding: 4px 10px 0; }
+/* ═══ WEEKLY CHART ═══ */
+.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.chart-title { font-size: 0.68em; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); font-weight: 600; }
+.chart-legend { display: flex; gap: 10px; font-size: 0.68em; color: var(--text-dim); }
+.chart-legend-item { display: flex; align-items: center; gap: 4px; }
+.legend-bar { width: 10px; height: 6px; border-radius: 1px; }
+.legend-line { width: 12px; height: 2px; border-radius: 1px; }
+.chart-hover-info { height: 22px; margin-bottom: 4px; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 0.7em; }
+.hover-val { font-weight: 600; color: var(--amber); }
+.hover-prev { color: var(--text-dim); }
+.hover-week { color: var(--text-muted); }
+.hover-placeholder { color: var(--text-dim); font-size: 0.9em; opacity: 0.5; }
+.chart-container { position: relative; height: 120px; }
+.bars-row { display: flex; align-items: flex-end; gap: 6px; height: 100%; position: relative; }
+.week-col { flex: 1; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: opacity 0.15s; }
+.week-col:hover { opacity: 0.85; }
+.week-col.current .bar-cur { background: var(--amber) !important; box-shadow: 0 0 10px rgba(251,191,36,0.2); }
+.bar-area { width: 100%; height: 90px; display: flex; align-items: flex-end; justify-content: center; position: relative; }
+.bar-cur { width: 100%; border-radius: 3px 3px 0 0; background: var(--amber); min-height: 3px; transition: height 0.3s ease; }
+.line-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; }
+.line-overlay polyline { fill: none; stroke: rgba(255,255,255,0.3); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.line-overlay circle { fill: rgba(255,255,255,0.5); }
+.week-labels { display: flex; gap: 6px; margin-top: 4px; }
+.week-lbl { flex: 1; text-align: center; font-size: 0.65em; color: var(--text-dim); }
+.week-lbl.current { color: var(--amber); font-weight: 600; }
+/* ═══ TICKET TABLE ═══ */
+.section-title { font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: #fff; margin-bottom: 16px; }
+.table-header { display: flex; justify-content: space-between; padding: 0 8px 10px; font-size: 0.6em; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-dim); font-weight: 600; border-bottom: 1px solid var(--border); }
+.table-header span:last-child { text-align: right; }
+.pleg { display: flex; gap: 12px; font-size: 0.6em; color: var(--text-dim); margin-bottom: 14px; }
+.pleg-item { display: flex; align-items: center; gap: 5px; }
+.pleg-dot { width: 6px; height: 6px; border-radius: 50%; }
+.group-header { display: grid; grid-template-columns: 2fr 80px 56px 60px; gap: 8px; padding: 12px 8px; cursor: pointer; border-radius: 6px; transition: background 0.15s; align-items: center; }
+.group-header:hover { background: rgba(255,255,255,0.01); }
+.group-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.group-arrow { display: inline-flex; align-items: center; color: var(--text-dim); transition: transform 0.25s; flex-shrink: 0; }
+.group-header.open .group-arrow { transform: rotate(90deg); }
+.group-name { font-size: 0.85em; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.group-total { font-size: 0.85em; font-weight: 600; color: #fff; text-align: right; }
+.group-pct { font-size: 0.75em; color: var(--text-dim); text-align: right; }
+.group-price { font-size: 0.78em; color: #fff; text-align: right; }
+.group-vs { font-size: 0.75em; font-weight: 600; text-align: right; }
+.group-vs.pos { color: var(--green); }
+.group-vs.neg { color: var(--red); }
+.group-vs.neutral { color: var(--text-dim); }
+.group-body { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
+.group-body.open { max-height: 800px; }
+.pr-row { display: grid; grid-template-columns: 2fr 80px 56px 60px; gap: 8px; padding: 9px 8px; font-size: 0.82em; border-bottom: 1px solid rgba(255,255,255,0.02); align-items: center; }
+.pr-row:last-child { border-bottom: none; }
+.pr-col-header { display: grid; grid-template-columns: 2fr 80px 56px 60px; gap: 8px; padding: 8px 8px 6px; font-size: 0.68em; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-dim); font-weight: 600; border-bottom: 1px solid var(--border); }
+.pr-col-header span:not(:first-child) { text-align: right; }
+.pr-vs { text-align: right; font-size: 0.9em; font-weight: 600; }
+.pr-vs.pos { color: var(--green); }
+.pr-vs.neg { color: var(--red); }
+.pr-vs.neutral { color: var(--text-dim); }
+.pr-name { color: #fff; }
+.pr-days { display: flex; gap: 3px; margin-top: 2px; }
+.pr-day-dot { width: 5px; height: 5px; border-radius: 2px; }
+.pr-plat-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--surface-2); }
+.pr-plat-seg { height: 100%; }
+.pr-num { text-align: right; color: #fff; }
+.pr-pct { text-align: right; color: var(--text-dim); font-size: 0.9em; }
+.pr-price { text-align: right; color: #fff; }
+/* ═══ SUIVI DES VENTES ═══ */
+.toggle-group { display: flex; gap: 4px; }
+.toggle-btn { padding: 6px 16px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-size: 0.75em; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+.toggle-btn:hover { border-color: var(--text-muted); color: #fff; }
+.toggle-btn.active { background: rgba(255,255,255,0.06); color: #fff; border-color: rgba(255,255,255,0.1); }
+.dtl-col-labels { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; margin-bottom: 8px; padding: 0 4px; }
+.dtl-col-label { font-size: 0.78em; text-transform: uppercase; letter-spacing: 1.5px; color: #fff; font-weight: 600; }
+.dtl-col-label.center { text-align: center; }
+.dtl-col-label.right { text-align: right; }
+.dtl-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; padding: 9px 4px; border-bottom: 1px solid rgba(255,255,255,0.03); align-items: center; }
+.dtl-row:last-child { border-bottom: none; }
+.dtl-row.today { background: rgba(251,191,36,0.04); border-radius: 8px; border: 1px solid rgba(251,191,36,0.08); }
+.dtl-left { min-width: 0; }
+.dtl-right { text-align: right; min-width: 0; }
+.dtl-center { text-align: center; min-width: 50px; }
+.dtl-date { font-size: 0.8em; font-weight: 500; color: #fff; }
+.dtl-sales { font-size: 0.92em; font-weight: 600; color: #fff; }
+.dtl-detail { font-size: 0.72em; color: var(--text-muted); }
+.dtl-accum { font-size: 0.72em; color: var(--text-muted); }
+.dtl-diff { font-size: 0.85em; font-weight: 700; }
+.dtl-diff.pos { color: var(--green); }
+.dtl-diff.neg { color: var(--red); }
+.dtl-pct { font-size: 0.72em; color: var(--text); }
+.dtl-cutoff { display: flex; align-items: center; gap: 10px; padding: 14px 0; }
+.dtl-cutoff-line { flex: 1; height: 1px; background: rgba(251,191,36,0.15); }
+.dtl-cutoff-label { font-size: 0.65em; text-transform: uppercase; letter-spacing: 2px; color: var(--amber); font-weight: 600; white-space: nowrap; }
+.dtl-row.future .dtl-right .dtl-sales { color: var(--text-muted); }
+.dtl-row.future .dtl-right .dtl-date { color: var(--text-muted); }
+.dtl-row.future .dtl-left .dtl-sales { color: rgba(255,255,255,0.75); }
+.dtl-row.future .dtl-left .dtl-date { color: rgba(255,255,255,0.65); }
+.dtl-row.future .dtl-left .dtl-detail { color: rgba(255,255,255,0.4); }
+.dtl-row.future .dtl-left .dtl-accum { color: rgba(255,255,255,0.4); }
+.show-more-btn { display: block; width: 100%; padding: 12px; margin-top: 8px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.75em; font-family: inherit; cursor: pointer; text-align: center; transition: all 0.2s; }
+.show-more-btn:hover { border-color: var(--text-muted); color: #fff; }
+.hidden { display: none !important; }
+/* ═══ PROJECTION ═══ */
+.proj-grid { display: grid; grid-template-columns: {{PROJ_GRID_COLS}}; gap: 14px; margin-bottom: 18px; }
+.q-card { background: var(--surface-2); border-radius: 14px; padding: 20px; border: 1px solid var(--border); min-width: 0; }
+.q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.q-day-name { font-size: 0.82em; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.q-pct { font-size: 0.78em; font-weight: 600; color: #fff !important; }
+.q-numbers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.q-stat-label { font-size: 0.62em; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 3px; }
+.q-stat-value { font-size: 1.3em; font-weight: 700; color: #fff; }
+.q-stat-value.projection { color: var(--green); }
+.q-stat-cap { font-size: 0.72em; color: var(--text-muted); }
+.q-bar { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; margin-bottom: 14px; }
+.q-bar-fill { height: 100%; border-radius: 3px; }
+.q-current { display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px; }
+.q-current-num { font-size: 1.5em; font-weight: 700; color: #fff; }
+.q-current-cap { font-size: 0.8em; color: var(--text-dim); }
+.q-scenarios { border-top: 1px solid var(--border); padding-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+.q-scenario-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.q-scenario-name { display: flex; align-items: center; gap: 5px; font-size: 0.72em; color: var(--text); font-weight: 500; flex-wrap: wrap; min-width: 0; }
+.q-scenario-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.q-scenario-sub { color: var(--text-dim); font-weight: 400; }
+.q-scenario-nums { text-align: right; white-space: nowrap; }
+.q-scenario-proj { font-size: 0.88em; font-weight: 700; color: #fff; display: block; }
+.q-scenario-result { font-size: 0.68em; font-weight: 500; display: block; }
+.scenario-toggle { display: flex; gap: 2px; background: rgba(255,255,255,0.04); border-radius: 6px; padding: 2px; margin-bottom: 12px; }
+.scenario-btn { flex: 1; padding: 6px 6px; font-size: 0.6em; font-weight: 600; text-align: center; border-radius: 5px; cursor: pointer; color: var(--text-dim); transition: all 0.2s; border: none; background: none; font-family: inherit; letter-spacing: 0.3px; line-height: 1.3; }
+.scenario-btn.active { background: rgba(255,255,255,0.08); color: #fff; }
+.scenario-btn:hover:not(.active) { color: var(--text-muted); }
+.q-scenario-content { display: none; }
+.q-scenario-content.active { display: block; }
+.chart-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.chart-tab { padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-size: 0.75em; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+.chart-tab:hover { border-color: var(--text-muted); color: #fff; }
+/* Dynamic day tab active styles — generated per day */
+{{DAY_TAB_ACTIVE_CSS}}
+.chart-tab.active-logic { background: rgba(255,255,255,0.06); border-color: var(--text-muted); color: #fff; }
+.chart-subtitle { font-size: 0.75em; color: var(--text); margin-bottom: 12px; }
+.chart-canvas-wrap { background: var(--surface-2); border-radius: 12px; padding: 18px; height: 400px; position: relative; }
+.chart-legend-custom { display: flex; gap: 16px; justify-content: center; padding-top: 12px; font-size: 0.72em; color: var(--text); }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-swatch { width: 16px; height: 3px; border-radius: 2px; }
+.legend-swatch.dashed { border-top: 2px dashed; background: none; height: 0; }
+.legend-swatch.dotted { border-top: 2.5px dotted; background: none; height: 0; }
+.legend-swatch.band { height: 10px; border-radius: 2px; }
+.scenario-toggle { display: flex; gap: 6px; margin-top: 10px; }
+.scenario-btn { flex: 1; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-muted); font-size: 0.72em; font-family: inherit; cursor: pointer; transition: all 0.2s; }
+.scenario-btn.active { background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.3); color: #818cf8; font-weight: 600; }
+.proj-method { background: var(--surface-2); border-radius: 12px; padding: 18px 20px; margin-top: 14px; font-size: 0.78em; line-height: 1.7; color: var(--text); }
+.proj-method strong { color: #fff; }
+/* ═══ SECTION DIVIDERS ═══ */
+.section-divider { display: flex; align-items: center; gap: 12px; margin: 28px 0 16px; padding: 0 4px; }
+.section-divider-line { flex: 1; height: 1px; background: var(--border); }
+.section-divider-text { font-size: 0.65em; text-transform: uppercase; letter-spacing: 3px; color: var(--text-dim); font-weight: 600; white-space: nowrap; }
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 720px) {
+    .nav-link { padding: 10px 10px; font-size: 0.62em; letter-spacing: 1px; }
+    .kpi-grid { grid-template-columns: 1fr; }
+    .proj-grid { grid-template-columns: 1fr; }
+    .q-card { padding: 14px; }
+    .pr-row { grid-template-columns: 2fr 70px 56px; gap: 6px; font-size: 0.75em; }
+    .pr-row .pr-pct { display: none; }
+    .pr-col-header { grid-template-columns: 2fr 70px 56px; }
+    .pr-col-header .mob-hide { display: none; }
+    .group-header { grid-template-columns: 2fr 70px 56px; }
+    .group-pct, .group-vs { display: none; }
+    .hero { font-size: 1.7em; }
+    .hero-lg { font-size: 2.2em; }
+    .card { padding: 18px; }
+    .group-right { font-size: 0.68em; }
+    .nav-top { padding: 0 12px; }
+    .nav-sw { padding: 6px 10px 6px 0; margin-right: 6px; }
+    .nav-sw-av { width: 30px; height: 30px; }
+    .det-links { grid-template-columns: 1fr; }
+}
+@media (max-width: 420px) {
+    .hero.hero-lg { font-size: 2.4em; }
+    .dept-tabs { mask-image: linear-gradient(to right,#000 85%,transparent); -webkit-mask-image: linear-gradient(to right,#000 85%,transparent); }
+}
+/* ── Custom scrollbar ── */
+#suivi-future-days, #suivi-future-weeks, #suivi-hidden-weeks, #suivi-hidden-days {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+#suivi-future-days::-webkit-scrollbar, #suivi-future-weeks::-webkit-scrollbar, #suivi-hidden-weeks::-webkit-scrollbar, #suivi-hidden-days::-webkit-scrollbar {
+    width: 5px;
+}
+#suivi-future-days::-webkit-scrollbar-track, #suivi-future-weeks::-webkit-scrollbar-track, #suivi-hidden-weeks::-webkit-scrollbar-track, #suivi-hidden-days::-webkit-scrollbar-track {
+    background: transparent;
+}
+#suivi-future-days::-webkit-scrollbar-thumb, #suivi-future-weeks::-webkit-scrollbar-thumb, #suivi-hidden-weeks::-webkit-scrollbar-thumb, #suivi-hidden-days::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.15);
+    border-radius: 4px;
+}
+#suivi-future-days::-webkit-scrollbar-thumb:hover, #suivi-future-weeks::-webkit-scrollbar-thumb:hover, #suivi-hidden-weeks::-webkit-scrollbar-thumb:hover, #suivi-hidden-days::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.3);
+}
+/* ── Print ── */
+@media print {
+    body { background: #fff !important; color: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .db-overlay, .nav, #page-details { display: none !important; }
+    .dashboard { max-width: 100%; padding: 0; }
+    .card { break-inside: avoid; border: 1px solid #ddd; background: #fff !important; }
+    .details-panel { display: block !important; max-height: none !important; opacity: 1 !important; }
+    .details-toggle, .show-more-btn, .toggle-group { display: none !important; }
+    .hero, .card-label, .meta-key, .meta-val, .section-title { color: #000 !important; }
+    .yoy-tag, .yoy-badge, .change-tag, .week-badge { border: 1px solid #999; }
+    .divider { border-color: #ddd !important; }
+    canvas { max-height: 250px !important; }
+    #suivi-future-days, #suivi-future-weeks { display: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="db-overlay" id="db-overlay">
+  <div class="db-modal">
+    <img src="LOGO_ROND_JAUNE.png" class="db-modal-logo">
+    <div class="db-modal-title">{{EVENT_NAME}}</div>
+    <div class="db-modal-sub">Tableau de bord interne</div>
+    <div class="db-pw-field" id="db-pw-field">
+      <input type="password" id="db-pw-input" style="position:absolute;opacity:0;width:1px;height:1px;" onkeydown="if(event.key==='Enter')dbSubmit()" oninput="dbUpdateDots(this.value)">
+      <span class="db-pw-placeholder" id="db-pw-display">Mot de passe</span>
+    </div>
+    <div class="db-pw-error" id="db-pw-error"></div>
+    <button onclick="dbSubmit()" onmouseover="this.style.borderColor='rgba(168,85,247,0.6)';this.style.boxShadow='0 0 16px rgba(168,85,247,0.2)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.boxShadow='none'" style="-webkit-appearance:none;appearance:none;width:100%;padding:14px;background:rgba(12,6,24,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;letter-spacing:0.5px;transition:border-color 0.2s,box-shadow 0.2s;display:block;-webkit-tap-highlight-color:transparent;">Continuer →</button>
+  </div>
+</div>
+<script>
+(function(){
+  var stored = sessionStorage.getItem('db_auth_{{EVENT_ID}}');
+  if(stored === 'ok') document.getElementById('db-overlay').style.display = 'none';
+  document.getElementById('db-pw-field').addEventListener('click', function(){ document.getElementById('db-pw-input').focus(); });
+})();
+function dbUpdateDots(val){
+  var d = document.getElementById('db-pw-display');
+  d.className = val.length ? 'db-pw-dots' : 'db-pw-placeholder';
+  d.textContent = val.length ? '●'.repeat(val.length) : 'Mot de passe';
+}
+var _dbSubmitting = false;
+function dbSubmit(){
+  if(_dbSubmitting) return;
+  _dbSubmitting = true;
+  setTimeout(function(){ _dbSubmitting = false; }, 600);
+  var val = document.getElementById('db-pw-input').value.trim();
+  if(!val) return;
+  if(val === '{{LOGIN_PASSWORD}}'){
+    sessionStorage.setItem('db_auth_{{EVENT_ID}}','ok');
+    document.getElementById('db-overlay').style.display = 'none';
+  } else {
+    document.getElementById('db-pw-error').textContent = 'Mot de passe incorrect';
+    document.getElementById('db-pw-input').value = '';
+    dbUpdateDots('');
+  }
+}
+</script>
+
+<nav class="nav" id="main-nav">
+  <div class="nav-top">
+    <div class="nav-sw">
+      <div class="nav-sw-av"><img src="{{POSTER_URL}}" alt="" onerror="this.style.display='none';this.parentNode.textContent='{{EVENT_SHORT_INITIALS}}'"></div>
+      <div>
+        <div style="display:flex;align-items:center;gap:5px"><span style="font-size:13px;font-weight:600;color:#fff">{{EVENT_SHORT_NAME}}</span><span style="width:5px;height:5px;border-radius:50%;background:var(--{{SALE_STATUS_DOT}});display:inline-block"></span></div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:3px">{{EVENT_CODE}} · {{J_MINUS_LABEL}}</div>
+      </div>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2.5" style="margin-left:2px"><path d="M6 9l6 6 6-6"/></svg>
+      <select class="session-sw" onchange="if(this.value){window.location.href=this.value}">
+        <option value="" disabled>Changer session</option>
+        {{SESSION_SWITCHER_OPTIONS}}
+      </select>
+    </div>
+    <button class="nm on" id="btn-billetterie" onclick="goPage('billetterie',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Billetterie</button>
+    <button class="nm" id="btn-details" onclick="goPage('details',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Détails</button>
+    <a class="nm" href="upload.html?event={{EVENT_ID}}&back={{OUTPUT_FILENAME}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Mettre à jour</a>
+  </div>
+  <div class="dept-tabs-bg" id="section-tabs">
+    <div class="dept-tabs">
+      <button class="dt on" onclick="scrollToSection('sec-overview',this)">Vue d'ensemble</button>
+      <button class="dt" onclick="scrollToSection('sec-repartition',this)">Répartition</button>
+      <button class="dt" onclick="scrollToSection('sec-suivi',this)">Suivi des ventes</button>
+      <button class="dt" onclick="scrollToSection('sec-projection',this)">Projections</button>
+    </div>
+  </div>
+</nav>
+
+<div class="dashboard">
+<div class="page on" id="page-billetterie">
+
+<div id="sec-overview" class="kpi-grid">
+
+<!-- ─── CARD: Revenus ─── -->
+<div class="card">
+    <div class="card-header"><div class="card-label">Revenus<span class="info-tip">i<span class="info-bubble">Revenu = valeur faciale (prix affiché au client). Les commissions prélevées par les plateformes (DICE, Shotgun) ne sont pas déduites.</span></span></div><div class="week-badge">{{WEEKS_REMAINING_BADGE}}</div></div>
+    <div class="main-row">
+        <div class="ring"><svg viewBox="0 0 100 100"><circle class="ring-track" cx="50" cy="50" r="42"/><circle class="ring-fill" cx="50" cy="50" r="42" style="stroke:var(--green);stroke-dasharray:264;stroke-dashoffset:{{RING_OFFSET}};"/></svg><div class="ring-label"><div class="ring-pct">{{SELL_THROUGH_PCT}}%</div><div class="ring-sub">sold out</div></div></div>
+        <div><div class="hero">{{REVENUE_TOTAL}}</div>{{#HAS_COMPARISON}}<div class="yoy-tag {{REVENUE_YOY_CLASS}}">{{REVENUE_YOY}} vs {{COMPARE_YEAR}} à J-{{DAYS_REMAINING}}<span class="info-tip" style="width:14px;height:14px;font-size:0.75em;margin-left:5px;background:rgba(255,255,255,0.08)">i<span class="info-bubble">Comparaison à nombre de jours égal avant l'événement. « J-{{DAYS_REMAINING}} » = les ventes cumulées au même point du calendrier pour chaque édition.</span></span></div>{{/HAS_COMPARISON}}</div>
+    </div>
+    {{PLATFORM_SPLIT_BAR}}
+    {{PLATFORM_ROWS}}
+    <div class="divider"></div>
+    <div class="details-toggle" onclick="toggleDetails(this)"><span>Détails</span><span class="arrow">▼</span></div>
+    <div class="details-panel"><div class="details-inner">
+        <div class="chart-header"><span class="chart-title">Revenus cumulés</span><div class="chart-legend"><div class="chart-legend-item"><div class="legend-swatch" style="background:var(--amber)"></div>{{CURRENT_YEAR}}</div>{{#HAS_COMPARISON}}<div class="chart-legend-item"><div class="legend-swatch dashed" style="border-color:rgba(239,68,68,0.5)"></div>{{COMPARE_YEAR}}</div>{{/HAS_COMPARISON}}</div></div>
+        <div style="background:var(--surface-2);border-radius:12px;padding:14px;position:relative"><canvas id="chartRevenue" style="height:160px;width:100%"></canvas></div>
+        <div style="height:16px"></div>
+        <div style="font-size:0.72em;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;margin-bottom:6px">Projection</div>
+        <div class="meta-row"><span class="meta-key">Revenu projeté</span><span class="meta-val" style="color:#fff;font-weight:600">{{REVENUE_PROJECTION}}</span></div>
+        <div style="height:4px"></div>
+        <div class="meta-row"><span class="meta-key">Si sold out</span><span class="meta-val">{{REVENUE_IF_SOLDOUT}}</span></div>
+        <div style="height:14px"></div>
+        <div style="font-size:0.72em;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;margin-bottom:6px">Métriques</div>
+        <div class="meta-row"><span class="meta-key">Prix moyen du billet<span class="info-tip">i<span class="info-bubble">Moyenne pondérée de la valeur faciale par billet payant, toutes catégories et plateformes confondues.</span></span></span><span class="meta-val">{{AVG_PRICE}} {{#HAS_COMPARISON}}<span class="change-tag" style="color:var(--green)">{{AVG_PRICE_DELTA}} vs {{COMPARE_YEAR}}</span>{{/HAS_COMPARISON}}</span></div>
+        {{#HAS_COMPARISON}}
+        <div style="height:4px"></div>
+        <div class="meta-row"><span class="meta-key">Revenu {{COMPARE_YEAR}} à J-{{DAYS_REMAINING}}</span><span class="meta-val">{{COMPARE_REVENUE}} <span class="change-tag" style="color:var(--green)">{{REVENUE_VS_COMPARE}} d'avance</span></span></div>
+        {{/HAS_COMPARISON}}
+    </div></div>
+</div>
+
+<!-- ─── CARD: Vélocité Actuelle ─── -->
+<div class="card">
+    <div class="card-header"><div class="card-label">Vélocité Actuelle</div></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+        <div class="hero hero-lg" style="color:var(--amber)">{{DAYS_REMAINING}}<span class="hero-unit">jours restants</span></div>
+        <div style="font-size:0.72em;color:var(--text-dim);text-align:right;line-height:1.4"><strong style="color:var(--text-muted);font-weight:500">{{EVENT_DATES_COMPACT}}</strong><br>{{CURRENT_YEAR}}</div>
+    </div>
+    <div class="divider"></div>
+    {{VELOCITY_ROWS}}
+    <div class="divider"></div>
+    <div class="details-toggle" onclick="toggleDetails(this)"><span>Détails</span><span class="arrow">▼</span></div>
+    <div class="details-panel"><div class="details-inner">
+        <div class="chart-header"><span class="chart-title">Vélocité 7j glissante</span><div class="chart-legend"><div class="chart-legend-item"><div class="legend-swatch" style="background:var(--amber)"></div>{{CURRENT_YEAR}}</div>{{#HAS_COMPARISON}}<div class="chart-legend-item"><div class="legend-swatch dashed" style="border-color:rgba(239,68,68,0.5)"></div>{{COMPARE_YEAR}}</div>{{/HAS_COMPARISON}}</div></div>
+        <div style="background:var(--surface-2);border-radius:12px;padding:14px;position:relative"><canvas id="chartVelocity" style="height:160px;width:100%"></canvas></div>
+        <div style="height:16px"></div>
+        <div class="chart-header"><span class="chart-title">Vélocité 14j glissante</span><div class="chart-legend"><div class="chart-legend-item"><div class="legend-swatch" style="background:var(--amber)"></div>{{CURRENT_YEAR}}</div>{{#HAS_COMPARISON}}<div class="chart-legend-item"><div class="legend-swatch dashed" style="border-color:rgba(239,68,68,0.5)"></div>{{COMPARE_YEAR}}</div>{{/HAS_COMPARISON}}</div></div>
+        <div style="background:var(--surface-2);border-radius:12px;padding:14px;position:relative"><canvas id="chartVelocity14" style="height:160px;width:100%"></canvas></div>
+    </div></div>
+</div>
+
+<!-- ─── CARD: Présence Totale ─── -->
+<div class="card">
+    <div class="card-header"><div class="card-label">Présence Totale<span class="info-tip">i<span class="info-bubble">Nombre d'entrées estimées. Les pass multi-jours sont comptés une fois par jour (ex. un pass 2 jours = 2 entrées). Les invitations et jeux concours sont inclus.</span></span></div>{{#HAS_COMPARISON}}<div class="yoy-badge {{PRESENCE_YOY_CLASS}}">{{PRESENCE_YOY}} vs {{COMPARE_YEAR}} à J-{{DAYS_REMAINING}}</div>{{/HAS_COMPARISON}}</div>
+    {{#HAS_WARMUP}}<div class="warmup-toggle" onclick="toggleWarmup()" id="warmup-toggle"><div class="warmup-toggle-track" id="warmup-track"><div class="warmup-toggle-knob"></div></div><span class="warmup-toggle-label" id="warmup-label">Inclure {{WARMUP_DAY_NAME}}</span></div>{{/HAS_WARMUP}}
+    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:2px"><div class="hero" style="font-size:2.4em" id="presence-total-display">{{PRESENCE_TOTAL}}</div><span style="font-size:0.82em;color:var(--text-dim)" id="capacity-total-display">/ {{CAPACITY_TOTAL_FMT}}</span></div>
+    <!-- Stacked bar: N segments for N days -->
+    <div class="stacked-bar" id="stacked-bar-full" style="display:none">{{STACKED_BAR_SEGMENTS}}</div>
+    <div class="stacked-bar" id="stacked-bar-nw">{{STACKED_BAR_SEGMENTS_NW}}</div>
+    <div class="pct-row" id="pct-row-full" style="display:none"><span class="pct-total">{{PRESENCE_PCT_TOTAL}}%</span><div class="pct-legend">{{PCT_LEGEND_ITEMS}}</div></div>
+    <div class="pct-row" id="pct-row-nw"><span class="pct-total">{{PRESENCE_PCT_NW}}%</span><div class="pct-legend">{{PCT_LEGEND_ITEMS_NW}}</div></div>
+    <div class="divider"></div>
+    <div class="meta-row"><span class="meta-key">Billets payants</span><span class="meta-val">{{TICKETS_PAID}}</span></div>
+    <div style="height:6px"></div>
+    <div class="meta-row"><span class="meta-key">Invitations</span><span class="meta-val">{{TICKETS_INVITATIONS}}</span></div>
+    <div style="height:6px"></div>
+    <div class="meta-row"><span class="meta-key">Jeu concours</span><span class="meta-val">{{TICKETS_JC}}</span></div>
+    <div style="height:6px"></div>
+    <div class="meta-row"><span class="meta-key">Groupes (gratuit)</span><span class="meta-val">{{TICKETS_GROUP_FREE}}</span></div>
+    <div style="height:6px"></div>
+    <div class="meta-row"><span class="meta-key">Total billets</span><span class="meta-val" style="color:#fff;font-weight:600">{{TICKETS_TOTAL}}</span></div>
+    <div class="divider"></div>
+    <div class="details-toggle" onclick="toggleDetails(this)"><span>Détails</span><span class="arrow">▼</span></div>
+    <div class="details-panel"><div class="details-inner">
+        <div class="detail-inset"><div class="inset-label">Billets → Présence</div>
+            {{TICKETS_TO_PRESENCE_ROWS}}
+            <div class="inset-divider"></div>
+            <div class="inset-row"><span class="k">Présence totale</span><span class="v" style="color:#fff;font-weight:600">{{PRESENCE_TOTAL}}</span></div>
+        </div>
+        {{#HAS_COMPARISON}}
+        <div class="detail-inset"><div class="inset-label">vs {{COMPARE_YEAR}} (même J-{{DAYS_REMAINING}})</div>
+            <div class="inset-row"><span class="k">Présence totale</span><span class="v">{{COMPARE_PRESENCE_TOTAL}} <span class="change-tag" style="color:var(--green)">{{PRESENCE_YOY}}</span></span></div>
+            <div class="inset-divider"></div>
+            {{COMPARE_PRESENCE_DAY_ROWS}}
+        </div>
+        {{/HAS_COMPARISON}}
+    </div></div>
+</div>
+
+<!-- ─── CARD: Par Jour (hidden for 1-day events) ─── -->
+{{#SHOW_PAR_JOUR}}
+<div class="card">
+    <div class="card-label">Par Jour</div>
+    {{DAY_SUMMARY_BLOCKS}}
+    <div class="divider"></div>
+    <div class="details-toggle" onclick="toggleDetails(this)"><span>Détails</span><span class="arrow">▼</span></div>
+    <div class="details-panel"><div class="details-inner">
+        {{DAY_PACING_CHARTS}}
+    </div></div>
+</div>
+{{/SHOW_PAR_JOUR}}
+
+</div><!-- /kpi-grid -->
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- BILLETTERIE SECTION                                     -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ─── Répartition des billets ─── -->
+<div id="sec-repartition" class="section-gap"><div class="card">
+    <div class="section-title">Répartition des billets</div>
+    <div class="pr-col-header"><span></span><span>Total</span><span class="mob-hide">%</span><span>Prix Ø</span></div>
+    {{TICKET_GROUPS}}
+</div></div>
+
+<!-- ─── Suivi des ventes ─── -->
+<div id="sec-suivi" class="section-gap"><div class="card">
+    <div class="card-header"><div class="section-title" style="margin-bottom:0">Suivi des ventes<span class="info-tip" style="font-size:0.5em">i<span class="info-bubble">Les totaux quotidiens peuvent légèrement différer des dashboards Shotgun. Shotgun répartit les ventes par phase tarifaire, tandis que ce dashboard utilise la date d'achat individuelle de chaque billet. Les totaux cumulés restent identiques.</span></span></div><div class="toggle-group"><button class="toggle-btn active" onclick="switchSuivi('jour')">Jour</button><button class="toggle-btn" onclick="switchSuivi('semaine')">Semaine</button></div></div>
+    <div id="suivi-jour">
+        <div class="dtl-col-labels"><div class="dtl-col-label">{{COMPARE_YEAR}} (même jour)</div><div class="dtl-col-label center">Diff</div><div class="dtl-col-label right">{{CURRENT_YEAR}} (actuel)</div></div>
+        {{SUIVI_DAILY_ROWS}}
+        <button class="show-more-btn" id="suivi-day-toggle" {{SUIVI_BTN_HIDE}} onclick="var h=document.getElementById('suivi-future-days');if(h){if(h.style.display==='none'){h.style.display='block';this.textContent='Masquer les jours restants'}else{h.style.display='none';this.textContent='Voir les {{SUIVI_REMAINING_DAYS_LABEL}}'}}">Voir les {{SUIVI_REMAINING_DAYS_LABEL}}</button>
+    </div>
+    <div id="suivi-semaine" class="hidden">
+        <div class="dtl-col-labels"><div class="dtl-col-label">{{COMPARE_YEAR}}</div><div class="dtl-col-label center">Diff</div><div class="dtl-col-label right">{{CURRENT_YEAR}}</div></div>
+        {{SUIVI_WEEKLY_ROWS}}
+        <button class="show-more-btn" id="suivi-week-toggle" {{SUIVI_WEEK_BTN_HIDE}} onclick="var h=document.getElementById('suivi-future-weeks');if(h){if(h.style.display==='none'){h.style.display='block';this.textContent='Masquer les semaines restantes'}else{h.style.display='none';this.textContent='Voir les {{SUIVI_REMAINING_WEEKS_LABEL}}'}}">Voir les {{SUIVI_REMAINING_WEEKS_LABEL}}</button>
+    </div>
+</div></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PROJECTION FINALE                                       -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="sec-projection" class="section-gap"><div class="card">
+    <div class="section-title">Projection Finale</div>
+    <div class="proj-grid">
+        {{PROJECTION_QUADRANT_CARDS}}
+    </div>
+    <div class="chart-tabs">
+        {{PROJECTION_DAY_TABS}}
+        <button class="chart-tab" onclick="showProjTab('logique',this)">Logique</button>
+    </div>
+    {{PROJECTION_DAY_CHART_PANELS}}
+    <div id="proj-logique" class="hidden"><div class="proj-method">{{PROJECTION_METHODOLOGY_HTML}}</div></div>
+</div></div>
+
+<div style="text-align:center;padding:30px 0 10px;font-size:0.6em;color:var(--text-dim)">🎟 Dernier billet vendu · {{LAST_TICKET_TIME}} &nbsp;·&nbsp; 📤 Données uploadées · {{DATA_TIME}} &nbsp;·&nbsp; Festiflow Dashboard v6</div>
+
+</div>
+
+<div class="page" id="page-details">
+
+<div class="det-card">
+    <div class="det-title">Événement</div>
+    <div class="det-row"><span class="det-k">Nom</span><span class="det-v">{{EVENT_NAME}}</span></div>
+    <div class="det-row"><span class="det-k">Marque</span><span class="det-v">{{BRAND}}</span></div>
+    <div class="det-row"><span class="det-k">Lieu</span><span class="det-v">{{VENUE}}, {{CITY}}</span></div>
+    <div class="det-row"><span class="det-k">Dates</span><span class="det-v">{{EVENT_DATES_SHORT}}</span></div>
+    <div class="det-row"><span class="det-k">Capacité</span><span class="det-v">{{CAPACITY_TOTAL_FMT}} <span class="badge badge-edition" style="font-size:10px;padding:2px 7px">{{CAPACITY_PER_DAY_LABEL}}</span></span></div>
+    <div class="det-row"><span class="det-k">Statut</span><span class="det-v"><span class="badge {{#IS_TERMINE}}badge-termine{{/IS_TERMINE}}{{#IS_LIVE}}badge-live{{/IS_LIVE}}" style="font-size:10px">{{SALE_STATUS}}</span></span></div>
+    <div class="det-row"><span class="det-k">Édition</span><span class="det-v">{{EDITION_BADGE}}</span></div>
+    <div class="det-row"><span class="det-k">En vente depuis</span><span class="det-v">{{DAYS_ON_SALE}} jours · {{SALE_START_DATE}}</span></div>
+</div>
+
+<div class="det-card">
+    <div class="det-title">Plateformes</div>
+    <div class="det-links">
+        {{#DICE_DASHBOARD_URL}}<a class="det-link" href="{{DICE_DASHBOARD_URL}}" target="_blank"><div class="det-link-icon" style="background:rgba(99,102,241,.1);color:#818cf8">DICE</div><div><div class="det-link-name">DICE Dashboard</div><div class="det-link-url">dice.fm/partner → {{DICE_MIO_ID}}</div></div></a>{{/DICE_DASHBOARD_URL}}
+        {{#SHOTGUN_DASHBOARD_URL}}<a class="det-link" href="{{SHOTGUN_DASHBOARD_URL}}" target="_blank"><div class="det-link-icon" style="background:rgba(251,191,36,.1);color:#fbbf24">SG</div><div><div class="det-link-name">Shotgun Dashboard</div><div class="det-link-url">shotgun.live → {{SHOTGUN_EVENT_ID}}</div></div></a>{{/SHOTGUN_DASHBOARD_URL}}
+        {{#DICE_PUBLIC_URL}}<a class="det-link" href="{{DICE_PUBLIC_URL}}" target="_blank"><div class="det-link-icon" style="background:rgba(168,85,247,.08);color:#c4b5fd">www</div><div><div class="det-link-name">Page publique DICE</div><div class="det-link-url">{{DICE_PUBLIC_URL_SHORT}}</div></div></a>{{/DICE_PUBLIC_URL}}
+        {{#SHOTGUN_PUBLIC_URL}}<a class="det-link" href="{{SHOTGUN_PUBLIC_URL}}" target="_blank"><div class="det-link-icon" style="background:rgba(168,85,247,.08);color:#c4b5fd">www</div><div><div class="det-link-name">Page publique Shotgun</div><div class="det-link-url">{{SHOTGUN_PUBLIC_URL_SHORT}}</div></div></a>{{/SHOTGUN_PUBLIC_URL}}
+    </div>
+</div>
+
+{{#HAS_COMPARISON}}
+<div class="det-card">
+    <div class="det-title">Comparaison</div>
+    <div class="det-compare">
+        <div class="det-compare-name">{{COMPARE_EVENT_NAME}}</div>
+        <div class="det-compare-meta">{{COMPARE_DATES}} · {{COMPARE_CAPACITY_FMT}} places · {{COMPARE_VENUE}}</div>
+        <div class="det-compare-badge">{{COMPARISON_MODE_LABEL}}</div>
+    </div>
+    <div class="det-row"><span class="det-k">Mode</span><span class="det-v">{{COMPARISON_MODE_DESCRIPTION}}</span></div>
+    <div class="det-row"><span class="det-k">Première vente</span><span class="det-v">{{COMPARE_FIRST_SALE}}</span></div>
+    <div class="det-row"><span class="det-k">Période de vente</span><span class="det-v">{{COMPARE_SELLING_PERIOD}}</span></div>
+    <div class="det-row"><span class="det-k">Total billets</span><span class="det-v">{{COMPARE_TOTAL_TICKETS}}</span></div>
+    <div class="det-row"><span class="det-k">Revenu total</span><span class="det-v">{{COMPARE_TOTAL_REVENUE}}</span></div>
+</div>
+{{/HAS_COMPARISON}}
+
+<div class="det-card">
+    <div class="det-title">Jours de l'événement</div>
+    {{DETAILS_DAYS_HTML}}
+</div>
+
+<div class="det-footer">🎟 Dernier billet vendu · {{LAST_TICKET_TIME}} &nbsp;·&nbsp; 📤 Données uploadées · {{DATA_TIME}} &nbsp;·&nbsp; Festiflow Dashboard v6</div>
+
+</div>
+
+</div>
+
+<script>
+/* ═══ NAV: Page toggle (BudgetFlow pattern) ═══ */
+function goPage(page, btn) {
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('on'); });
+    document.querySelectorAll('.nav-top .nm').forEach(function(b) { b.classList.remove('on'); });
+    var target = document.getElementById('page-' + page);
+    if (target) target.classList.add('on');
+    if (btn) btn.classList.add('on');
+    var tabs = document.getElementById('section-tabs');
+    if (tabs) tabs.style.display = (page === 'billetterie') ? '' : 'none';
+    window.scrollTo({ top: 0 });
+}
+
+/* ═══ NAV: Section scroll + active tab tracking ═══ */
+function scrollToSection(id, btn) {
+    var el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    document.querySelectorAll('.dept-tabs .dt').forEach(function(b) { b.classList.remove('on'); });
+    if (btn) btn.classList.add('on');
+}
+
+(function() {
+    var sections = ['sec-overview', 'sec-repartition', 'sec-suivi', 'sec-projection'];
+    var tabs = document.querySelectorAll('.dept-tabs .dt');
+    if (!tabs.length) return;
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                var idx = sections.indexOf(entry.target.id);
+                if (idx >= 0) {
+                    tabs.forEach(function(t) { t.classList.remove('on'); });
+                    tabs[idx].classList.add('on');
+                }
+            }
+        });
+    }, { rootMargin: '-90px 0px -60% 0px', threshold: 0 });
+    sections.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) observer.observe(el);
+    });
+})();
+
+/* ═══ Existing functions ═══ */
+function toggleDetails(el){el.classList.toggle("open");el.nextElementSibling.classList.toggle("open")}
+function toggleGroup(el){el.classList.toggle("open");el.nextElementSibling.classList.toggle("open")}
+function switchSuivi(v){document.getElementById("suivi-jour").classList.toggle("hidden",v!=="jour");document.getElementById("suivi-semaine").classList.toggle("hidden",v!=="semaine");document.querySelectorAll(".toggle-btn").forEach((b,i)=>b.classList.toggle("active",(v==="jour"&&i===0)||(v==="semaine"&&i===1)))}
+
+var projDayIds = [{{PROJ_DAY_IDS_JS}}]; // e.g. ['day0','day1'] or ['day0']
+var allProjIds = projDayIds.concat(['logique']);
+var dayTabClasses = {{{DAY_TAB_CLASSES_JS}}}; // e.g. {day0:'active',day1:'active-day1'}
+
+function showProjTab(t,btn){
+    allProjIds.forEach(function(x){document.getElementById('proj-'+x).classList.toggle('hidden',x!==t)});
+    document.querySelectorAll('.chart-tab').forEach(function(b){b.className='chart-tab'});
+    var cls = dayTabClasses[t] || {logique:'active-logic'}[t] || 'active';
+    btn.classList.add(cls);
+    // Lazy-init S1 chart on first view
+    var s1Key = t+'S1';
+    if(window._projBuilders && window._projBuilders[s1Key] && !window['_built_'+s1Key]){
+        window._projBuilders[s1Key]();
+        window['_built_'+s1Key]=true;
+    }
+}
+
+function switchScenario(btn,dayIdx,sc){
+    // Toggle buttons
+    btn.parentElement.querySelectorAll('.scenario-btn').forEach(function(b){b.classList.remove('active')});
+    btn.classList.add('active');
+    // Toggle card content
+    var sa=document.getElementById('day'+dayIdx+'-sa');
+    var sb=document.getElementById('day'+dayIdx+'-sb');
+    if(sa)sa.classList.toggle('active',sc==='a');
+    if(sb)sb.classList.toggle('active',sc==='b');
+    // Toggle chart panels
+    var ca=document.getElementById('day'+dayIdx+'-chart-a');
+    var cb=document.getElementById('day'+dayIdx+'-chart-b');
+    if(ca)ca.style.display=(sc==='a')?'':'none';
+    if(cb){cb.style.display=(sc==='b')?'':'none';
+        // Lazy-build S2 chart on first view
+        var key='day'+dayIdx+'S2';
+        if(sc==='b'&&window._projBuilders&&window._projBuilders[key]){window._projBuilders[key]();delete window._projBuilders[key]}
+    }
+}
+
+Chart.defaults.color='rgba(255,255,255,0.3)';
+Chart.defaults.borderColor='rgba(255,255,255,0.04)';
+Chart.defaults.font.family="'Outfit',system-ui";
+
+// ─── Velocity trend chart — lazy init on details open ───
+{{VELOCITY_CHART_JS}}
+{{VELOCITY_14D_CHART_JS}}
+{{REVENUE_CHART_JS}}
+
+// ─── Projection charts ───
+{{PROJECTION_CHARTS_JS}}
+
+// ─── Projection charts ───
+
+// ─── Warmup toggle ───
+var _warmupOn = false;
+var _presenceFull = {{PRESENCE_TOTAL_RAW}};
+var _capacityFull = {{CAPACITY_TOTAL_RAW}};
+var _presenceNoWarmup = {{PRESENCE_NO_WARMUP}};
+var _capacityNoWarmup = {{CAPACITY_NO_WARMUP}};
+var _hasWarmup = {{HAS_WARMUP}};
+
+function fmt(n){ return n.toLocaleString('fr-FR'); }
+
+function toggleWarmup(){
+  if(!_hasWarmup) return;
+  _warmupOn = !_warmupOn;
+  var track = document.getElementById('warmup-track');
+  var display = document.getElementById('presence-total-display');
+  var cap = document.getElementById('capacity-total-display');
+  var barFull = document.getElementById('stacked-bar-full');
+  var barNw = document.getElementById('stacked-bar-nw');
+  var pctFull = document.getElementById('pct-row-full');
+  var pctNw = document.getElementById('pct-row-nw');
+  if(!track || !display) return;
+  if(_warmupOn){
+    track.classList.add('on');
+    display.textContent = fmt(_presenceFull);
+    if(cap) cap.textContent = '/ ' + fmt(_capacityFull);
+    if(barFull) barFull.style.display = 'flex';
+    if(barNw) barNw.style.display = 'none';
+    if(pctFull) pctFull.style.display = 'flex';
+    if(pctNw) pctNw.style.display = 'none';
+  } else {
+    track.classList.remove('on');
+    display.textContent = fmt(_presenceNoWarmup);
+    if(cap) cap.textContent = '/ ' + fmt(_capacityNoWarmup);
+    if(barFull) barFull.style.display = 'none';
+    if(barNw) barNw.style.display = 'flex';
+    if(pctFull) pctFull.style.display = 'none';
+    if(pctNw) pctNw.style.display = 'flex';
+  }
+}
+
+// Init: default off (no warmup)
+document.addEventListener('DOMContentLoaded', function(){
+  if(!_hasWarmup) return;
+  var d = document.getElementById('presence-total-display');
+  var c = document.getElementById('capacity-total-display');
+  if(d) d.textContent = fmt(_presenceNoWarmup);
+  if(c) c.textContent = '/ ' + fmt(_capacityNoWarmup);
+});
+</script>
+</body>
+</html>
