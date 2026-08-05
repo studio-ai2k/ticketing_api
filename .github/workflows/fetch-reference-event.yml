@@ -1,0 +1,71 @@
+name: Fetch one reference event
+
+# Backfills a single past event into csv_database/, folding in any merge_into
+# children (e.g. a presale). Manual only - past events do not change.
+on:
+  workflow_dispatch:
+    inputs:
+      event:
+        description: 'event_id from event_config.csv'
+        required: true
+        default: 'paris_xxl_2025'
+
+permissions:
+  contents: write
+
+jobs:
+  backfill:
+    name: Backfill reference event
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Fetch
+        env:
+          SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
+          SHOTGUN_TOKEN_SONORA: ${{ secrets.SHOTGUN_TOKEN_SONORA }}
+          SHOTGUN_ORGANIZER_ID_SONORA: ${{ secrets.SHOTGUN_ORGANIZER_ID_SONORA }}
+          DICE_TOKEN: ${{ secrets.DICE_TOKEN }}
+          EVENT: ${{ inputs.event }}
+        run: python scripts/fetch_reference_event.py "$EVENT"
+
+      - name: Summarise
+        if: always()
+        run: |
+          CSV="csv_database/${{ inputs.event }}/${{ inputs.event }}_merged.csv"
+          [ -f "$CSV" ] || exit 0
+          {
+            echo "### ${{ inputs.event }}"
+            echo ""
+            python - "$CSV" <<'PY'
+          import csv, sys
+          from collections import Counter
+          rows = list(csv.DictReader(open(sys.argv[1], encoding='utf-8')))
+          c = Counter(r['platform'] for r in rows)
+          dates = [r['order_date'] for r in rows if r['order_date']]
+          gross = sum(float(r['gross_price']) for r in rows if r['is_paid'] == '1')
+          print(f"- tickets: {len(rows)}  (Shotgun {c.get('Shotgun',0)} / DICE {c.get('DICE',0)})")
+          print(f"- date range: {min(dates)} -> {max(dates)}")
+          print(f"- gross (paid): EUR {gross:,.2f}")
+          PY
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add csv_database
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Add reference CSV for ${{ inputs.event }}"
+            git push
+          fi

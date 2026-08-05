@@ -76,7 +76,9 @@ SHOTGUN_ACCOUNTS = {
         # event_name='MADAME LOYAL x SONORA : BORDEAUX' under organizer 171835
         # and nothing under Sonora. Do not "correct" it back by brand.
         'events': ['epk_2026', 'rennes_2026', 'geneve_2026', 'bordeaux_2026',
-                   'epk_2023', 'geneve_2025', 'rennes_2025'],
+                   'paris_xxl_2026',
+                   'epk_2023', 'geneve_2025', 'rennes_2025',
+                   'paris_xxl_2025', 'paris_xxl_2025_presale'],
     },
     'sonora': {
         'token_env': 'SHOTGUN_TOKEN_SONORA',
