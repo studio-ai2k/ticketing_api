@@ -1,0 +1,54 @@
+name: Test fetch (Rennes 2026)
+
+# Manual-only: the API fetch needs network access to Shotgun/DICE plus the
+# repository secrets, neither of which exist outside a runner.
+on:
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    name: Fetch Rennes 2026 tickets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Fetch Shotgun + DICE and write merged CSV
+        env:
+          SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
+          SHOTGUN_TOKEN_SONORA: ${{ secrets.SHOTGUN_TOKEN_SONORA }}
+          SHOTGUN_ORGANIZER_ID_SONORA: ${{ secrets.SHOTGUN_ORGANIZER_ID_SONORA }}
+          DICE_TOKEN: ${{ secrets.DICE_TOKEN }}
+        run: python fetch_csv.py --event rennes_2026
+
+      - name: Add CSV preview to the job summary
+        if: always()
+        run: |
+          CSV=api_output/rennes_2026_merged.csv
+          if [ ! -f "$CSV" ]; then
+            echo "No CSV was produced - see the fetch step log." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          {
+            echo "### rennes_2026_merged.csv"
+            echo ""
+            echo "Rows (excluding header): $(( $(wc -l < "$CSV") - 1 ))"
+            echo ""
+            echo '```csv'
+            head -n 6 "$CSV"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload merged CSV
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rennes-2026-merged-csv
+          path: api_output/rennes_2026_merged.csv
+          if-no-files-found: error

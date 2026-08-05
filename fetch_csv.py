@@ -525,6 +525,9 @@ def process_shotgun_ticket(raw, event_days):
         if product_name.isupper():
             product_name = product_name.title()
 
+    # is_paid rule mirrors run.py's Shotgun path (line 977): net price drives it
+    is_paid = 1 if price > 0 else 0
+
     return {
         'order_date': order_dt.date(),
         'order_datetime': order_dt.replace(microsecond=0),
@@ -536,7 +539,7 @@ def process_shotgun_ticket(raw, event_days):
         'price': price,
         'gross_price': gross_price,
         'quantity': 1,
-        'is_paid': compute_is_paid(access_level, price),
+        'is_paid': is_paid,
     }, None
 
 
@@ -638,7 +641,8 @@ def process_dice_ticket(node, event_days):
         'price': price,
         'gross_price': gross_price,
         'quantity': 1,
-        'is_paid': compute_is_paid(access_level, price),
+        # is_paid rule mirrors run.py's DICE path (line 858): access level drives it
+        'is_paid': 0 if access_level in ('invitation', 'jeu_concours') else 1,
     }, None
 
 
@@ -699,13 +703,6 @@ def fetch_dice(event_config, token):
 # ============================================================================
 # MERGE + WRITE
 # ============================================================================
-
-def compute_is_paid(access_level, price):
-    """is_paid = 0 for free access levels or zero-priced tickets, else 1."""
-    if access_level in ('invitation', 'jeu_concours'):
-        return 0
-    return 1 if price > 0 else 0
-
 
 def merge_tickets(dice_tickets, shotgun_tickets):
     """Merge both platforms into one list sorted by purchase date."""
