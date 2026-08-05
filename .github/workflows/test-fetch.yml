@@ -52,3 +52,40 @@ jobs:
           name: rennes-2026-merged-csv
           path: api_output/rennes_2026_merged.csv
           if-no-files-found: error
+
+      - name: Generate HTML dashboard
+        run: |
+          python scripts/build_dashboard.py \
+            --event rennes_2026 \
+            --csv api_output/rennes_2026_merged.csv \
+            --out api_output/rennes_2026.html
+
+      - name: Report product_name breakdown
+        if: always()
+        run: |
+          CSV=api_output/rennes_2026_merged.csv
+          [ -f "$CSV" ] || exit 0
+          {
+            echo "### product_name values"
+            echo ""
+            echo '| product_name | platform | tickets |'
+            echo '|---|---|---|'
+            python - "$CSV" <<'PY'
+          import csv, sys
+          from collections import Counter
+          rows = list(csv.DictReader(open(sys.argv[1], encoding='utf-8')))
+          counts = Counter((r['product_name'], r['platform']) for r in rows)
+          for (name, platform), n in sorted(counts.items()):
+              print(f'| {name} | {platform} | {n} |')
+          print()
+          print(f'Distinct product_name values: {len({n for n, _ in counts})}')
+          PY
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload HTML dashboard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rennes-2026-dashboard-html
+          path: api_output/rennes_2026.html
+          if-no-files-found: error

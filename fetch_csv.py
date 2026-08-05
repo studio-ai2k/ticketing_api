@@ -114,6 +114,27 @@ query FetchOrders($eventId: ID!, $first: Int!, $after: String) {
 """
 
 
+# Tokens that must stay upper-case after .title() lowercases them ("VIP" -> "Vip").
+PRODUCT_NAME_UPPER_TOKENS = [
+    'VIP', 'VVIP', 'PMR', 'XXL', 'EPK', 'ML', 'DJ', 'B2B', 'CE', 'NYE',
+]
+_UPPER_TOKEN_RE = re.compile(
+    r'\b(' + '|'.join(PRODUCT_NAME_UPPER_TOKENS) + r')\b', re.IGNORECASE
+)
+
+
+def normalize_product_name(raw):
+    """
+    Title-case a product name so the same product from both platforms collapses
+    to one line in the répartition table ("Pass 2 jours" / "PASS 2 JOURS" ->
+    "Pass 2 Jours"), then restore acronyms that .title() would mangle.
+    """
+    if not raw:
+        return ''
+    name = raw.strip().title()
+    return _UPPER_TOKEN_RE.sub(lambda m: m.group(1).upper(), name)
+
+
 def log(msg):
     print(msg, flush=True)
 
@@ -516,8 +537,12 @@ def process_shotgun_ticket(raw, event_days):
     channel = str(raw.get('deal_channel') or '').strip().lower()
 
     price = cents_to_units(raw.get('deal_price'))
+    # What the buyer actually paid: face value + both service fees.
     gross_price = round(
-        cents_to_units(raw.get('deal_price')) + cents_to_units(raw.get('deal_user_service_fee')), 6
+        cents_to_units(raw.get('deal_price'))
+        + cents_to_units(raw.get('deal_service_fee'))
+        + cents_to_units(raw.get('deal_user_service_fee')),
+        6,
     )
 
     combined = f"{sub_category} {deal_title}".strip()
@@ -529,8 +554,7 @@ def process_shotgun_ticket(raw, event_days):
     # Display name comes from the sub-category (cleaner than the combined string)
     if sub_category:
         product_name = sub_category
-        if product_name.isupper():
-            product_name = product_name.title()
+    product_name = normalize_product_name(product_name)
 
     # is_paid rule mirrors run.py's Shotgun path (line 977): net price drives it
     is_paid = 1 if price > 0 else 0
@@ -628,8 +652,7 @@ def process_dice_ticket(node, order_dt, event_days):
     )
     if name:
         product_name = name
-        if product_name.isupper():
-            product_name = product_name.title()
+    product_name = normalize_product_name(product_name)
 
     return {
         'order_date': order_dt.date(),
