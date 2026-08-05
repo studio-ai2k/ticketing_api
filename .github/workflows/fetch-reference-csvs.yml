@@ -1,0 +1,80 @@
+name: Fetch reference CSVs (one-time)
+
+# Past events do not change, so this is a one-time backfill of the historical
+# baselines the dashboards compare against. Manual trigger only.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  backfill:
+    name: Backfill csv_database
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Fetch each reference event
+        env:
+          SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
+          SHOTGUN_TOKEN_SONORA: ${{ secrets.SHOTGUN_TOKEN_SONORA }}
+          SHOTGUN_ORGANIZER_ID_SONORA: ${{ secrets.SHOTGUN_ORGANIZER_ID_SONORA }}
+          DICE_TOKEN: ${{ secrets.DICE_TOKEN }}
+        run: |
+          set -u
+          failed=""
+          for event in epk_2023 bordeaux_2025 halloween_2025 geneve_2025; do
+            echo "::group::$event"
+            out="csv_database/$event/${event}_merged.csv"
+            mkdir -p "csv_database/$event"
+            if python fetch_csv.py --event "$event" --out "$out"; then
+              echo "$event OK"
+            else
+              echo "::warning::$event failed - continuing"
+              failed="$failed $event"
+              rm -f "$out"
+            fi
+            echo "::endgroup::"
+          done
+          echo "FAILED_EVENTS=$failed" >> "$GITHUB_ENV"
+
+      - name: Summarise
+        if: always()
+        run: |
+          {
+            echo "### Reference CSVs"
+            echo ""
+            echo "| event | rows | shotgun | dice |"
+            echo "|---|---|---|---|"
+            python - <<'PY'
+          import csv, glob, os
+          from collections import Counter
+          for path in sorted(glob.glob('csv_database/*/*_merged.csv')):
+              event = os.path.basename(os.path.dirname(path))
+              rows = list(csv.DictReader(open(path, encoding='utf-8')))
+              c = Counter(r['platform'] for r in rows)
+              print(f"| {event} | {len(rows)} | {c.get('Shotgun', 0)} | {c.get('DICE', 0)} |")
+          PY
+            echo ""
+            echo "Failed:${FAILED_EVENTS:-  none}"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit reference CSVs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add csv_database
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Backfill reference CSVs for historical comparison"
+            git push
+          fi

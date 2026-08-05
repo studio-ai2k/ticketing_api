@@ -60,7 +60,8 @@ SHOTGUN_ACCOUNTS = {
         'token_env': 'SHOTGUN_TOKEN_EPISODE',
         'organizer_id': '171835',
         'organizer_id_env': None,
-        'events': ['epk_2026', 'rennes_2026', 'geneve_2026', 'epk_2023'],
+        'events': ['epk_2026', 'rennes_2026', 'geneve_2026',
+                   'epk_2023', 'geneve_2025', 'rennes_2025'],
     },
     'sonora': {
         'token_env': 'SHOTGUN_TOKEN_SONORA',

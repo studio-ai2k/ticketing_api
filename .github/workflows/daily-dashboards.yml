@@ -1,0 +1,117 @@
+name: Daily dashboards
+
+# 06:00 UTC = 08:00 Paris. Manual trigger kept for on-demand refreshes.
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  dashboards:
+    name: Fetch + build all active dashboards
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build every active event
+        env:
+          SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
+          SHOTGUN_TOKEN_SONORA: ${{ secrets.SHOTGUN_TOKEN_SONORA }}
+          SHOTGUN_ORGANIZER_ID_SONORA: ${{ secrets.SHOTGUN_ORGANIZER_ID_SONORA }}
+          DICE_TOKEN: ${{ secrets.DICE_TOKEN }}
+        run: |
+          set -u
+          mkdir -p api_output
+
+          # Active events come from the config, not a hardcoded list, so adding
+          # an event to event_config.csv is enough to get it a dashboard.
+          python - > /tmp/active_events.tsv <<'PY'
+          import csv
+          seen = set()
+          for row in csv.DictReader(open('event_config.csv', encoding='utf-8-sig')):
+              eid = (row.get('event_id') or '').strip()
+              if not eid or eid in seen:
+                  continue
+              if (row.get('status') or '').strip() != 'active':
+                  continue
+              if not (row.get('event_name') or '').strip():
+                  continue
+              out = (row.get('output_filename') or '').strip()
+              if not out:
+                  continue
+              seen.add(eid)
+              print(f"{eid}\t{out}")
+          PY
+          cat /tmp/active_events.tsv
+
+          ok=""
+          failed=""
+          while IFS=$'\t' read -r event outfile; do
+            [ -n "$event" ] || continue
+            echo "::group::$event -> $outfile"
+            if python fetch_csv.py --event "$event" --out "api_output/${event}_merged.csv" \
+               && python scripts/build_dashboard.py --event "$event" \
+                    --csv "api_output/${event}_merged.csv" --out "api_output/${event}.html" \
+               && python scripts/postprocess_html.py "api_output/${event}.html"; then
+              cp "api_output/${event}.html" "$outfile"
+              ok="$ok $event"
+            else
+              echo "::warning::$event failed - continuing with the others"
+              failed="$failed $event"
+            fi
+            echo "::endgroup::"
+          done < /tmp/active_events.tsv
+
+          echo "OK_EVENTS=$ok" >> "$GITHUB_ENV"
+          echo "FAILED_EVENTS=$failed" >> "$GITHUB_ENV"
+
+      - name: Summarise
+        if: always()
+        run: |
+          {
+            echo "### Dashboards"
+            echo ""
+            echo "| event | tickets | shotgun | dice | gross (paid) |"
+            echo "|---|---|---|---|---|"
+            python - <<'PY'
+          import csv, glob, os
+          from collections import Counter
+          for path in sorted(glob.glob('api_output/*_merged.csv')):
+              event = os.path.basename(path).replace('_merged.csv', '')
+              rows = list(csv.DictReader(open(path, encoding='utf-8')))
+              c = Counter(r['platform'] for r in rows)
+              gross = sum(float(r['gross_price']) for r in rows if r['is_paid'] == '1')
+              print(f"| {event} | {len(rows)} | {c.get('Shotgun', 0)} | {c.get('DICE', 0)} | EUR {gross:,.2f} |")
+          PY
+            echo ""
+            echo "Succeeded:${OK_EVENTS:-  none}"
+            echo ""
+            echo "Failed:${FAILED_EVENTS:-  none}"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit dashboards if changed
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Stage only the dashboards this run produces - never the template.
+          if [ -f /tmp/active_events.tsv ]; then
+            cut -f2 /tmp/active_events.tsv | xargs -r git add --
+          fi
+          if git diff --cached --quiet; then
+            echo "No dashboard changed - nothing to commit"
+          else
+            git commit -m "Auto-update dashboards · $(date -u +%Y-%m-%d)"
+            git push
+          fi
