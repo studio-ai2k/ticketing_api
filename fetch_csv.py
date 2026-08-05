@@ -77,27 +77,34 @@ CSV_FIELDNAMES = [
     'product_name', 'platform', 'price', 'gross_price', 'quantity', 'is_paid',
 ]
 
-DICE_TICKETS_QUERY = """
-query FetchTickets($eventId: ID!, $first: Int!, $after: String) {
-  node(id: $eventId) {
-    ... on Event {
-      name
-      startDatetime
-      endDatetime
-      tickets(first: $first, after: $after) {
-        totalCount
-        pageInfo { endCursor hasNextPage }
-        edges {
-          node {
+# Tickets are read through their orders, not through Event.tickets.
+#
+# Ticket.claimedAt is the only date on a ticket, and it records when the fan
+# activated the ticket - null until close to the event, so it is empty for every
+# ticket of a future event (all 2215 Rennes 2026 tickets came back null).
+# Order.purchasedAt is the actual sale timestamp.
+#
+# viewer.orders was previously ruled out because an unfiltered query scans every
+# order the promoter has ever taken. The where filter scopes it to one event,
+# which removes that problem: measured at ~0.5s per page of 50 orders.
+#
+# Every field below is schema-verified via live introspection. Do not add others.
+DICE_ORDERS_QUERY = """
+query FetchOrders($eventId: ID!, $first: Int!, $after: String) {
+  viewer {
+    orders(first: $first, after: $after, where: {eventId: {eq: $eventId}}) {
+      totalCount
+      pageInfo { endCursor hasNextPage }
+      edges {
+        node {
+          id
+          purchasedAt
+          quantity
+          tickets {
             id
-            code
             fullPrice
-            commission
-            diceCommission
             total
-            fees { category dice promoter }
             ticketType { name }
-            claimedAt
           }
         }
       }
@@ -608,14 +615,8 @@ def parse_dice_datetime(value):
     return None
 
 
-def process_dice_ticket(node, event_days):
-    """Map one DICE ticket node to a merged-CSV row, or None if it is skipped."""
-    # claimedAt is the only date available on a ticket. viewer.orders would give
-    # the true purchase date but scans every order of the promoter and times out.
-    order_dt = parse_dice_datetime(node.get('claimedAt'))
-    if not order_dt:
-        return None, 'date'
-
+def process_dice_ticket(node, order_dt, event_days):
+    """Map one DICE ticket node to a merged-CSV row, using its order's purchase date."""
     ticket_type_obj = node.get('ticketType') or {}
     name = (ticket_type_obj.get('name') or '').strip()
 
@@ -647,13 +648,14 @@ def process_dice_ticket(node, event_days):
 
 
 def fetch_dice(event_config, token):
-    """Fetch + classify all DICE tickets for the event."""
+    """Fetch + classify all DICE tickets for the event, one row per ticket."""
     numeric_id = event_config['dice_mio_id']
     event_id = dice_relay_id(numeric_id)
     log(f"\n🎲 DICE: event {numeric_id} (relay id {event_id})")
 
     tickets = []
     skipped = defaultdict(int)
+    total_orders = 0
     total_raw = 0
     cursor = None
     page = 0
@@ -661,29 +663,44 @@ def fetch_dice(event_config, token):
 
     while True:
         page += 1
-        data = dice_graphql(token, DICE_TICKETS_QUERY, {
+        data = dice_graphql(token, DICE_ORDERS_QUERY, {
             'eventId': event_id,
             'first': DICE_PAGE_SIZE,
             'after': cursor,
         })
-        node = data.get('node') or {}
-        if page == 1:
-            log(f"   event name: {node.get('name')}")
-        connection = node.get('tickets') or {}
+        connection = ((data.get('viewer') or {}).get('orders') or {})
         if reported_total is None:
             reported_total = connection.get('totalCount')
-            log(f"   totalCount: {reported_total}")
+            log(f"   orders totalCount: {reported_total}")
 
         edges = connection.get('edges') or []
-        log(f"   page {page}: {len(edges)} tickets")
+        page_tickets = 0
         for edge in edges:
-            ticket_node = (edge or {}).get('node') or {}
-            total_raw += 1
-            row, reason = process_dice_ticket(ticket_node, event_config['event_days'])
-            if row is None:
-                skipped[reason] += 1
+            order_node = (edge or {}).get('node') or {}
+            total_orders += 1
+
+            order_dt = parse_dice_datetime(order_node.get('purchasedAt'))
+            order_tickets = order_node.get('tickets') or []
+            if not order_tickets:
+                skipped['empty_order'] += 1
                 continue
-            tickets.append(row)
+            if not order_dt:
+                total_raw += len(order_tickets)
+                skipped['date'] += len(order_tickets)
+                continue
+
+            for ticket_node in order_tickets:
+                total_raw += 1
+                row, reason = process_dice_ticket(
+                    ticket_node or {}, order_dt, event_config['event_days']
+                )
+                if row is None:
+                    skipped[reason] += 1
+                    continue
+                tickets.append(row)
+                page_tickets += 1
+
+        log(f"   page {page}: {len(edges)} orders -> {page_tickets} tickets")
 
         page_info = connection.get('pageInfo') or {}
         if not page_info.get('hasNextPage'):
@@ -694,8 +711,10 @@ def fetch_dice(event_config, token):
             break
         cursor = next_cursor
 
+    log(f"   orders processed: {total_orders}")
     log(f"   raw tickets: {total_raw}")
-    log(f"   skipped (no claimedAt): {skipped['date']}")
+    log(f"   skipped (order has no tickets): {skipped['empty_order']}")
+    log(f"   skipped (no purchasedAt on order): {skipped['date']}")
     log(f"   ✅ DICE tickets kept: {len(tickets)}")
     return tickets
 
