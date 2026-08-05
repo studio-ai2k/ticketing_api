@@ -145,5 +145,14 @@ jobs:
             echo "No dashboard changed - nothing to commit"
           else
             git commit -m "Auto-update dashboards · $(date -u +%Y-%m-%d)"
-            git push
+            # A build takes ~10 minutes, so main can move underneath us. Rebase
+            # onto whatever landed meanwhile and retry rather than losing the run.
+            pushed=""
+            for attempt in 1 2 3; do
+              if git push; then pushed=1; break; fi
+              echo "push rejected (attempt $attempt) - rebasing onto origin/main"
+              git pull --rebase --autostash origin main || break
+              sleep 3
+            done
+            [ -n "$pushed" ] || { echo "::error::could not push dashboards after 3 attempts"; exit 1; }
           fi
