@@ -66,8 +66,52 @@ def main():
     print(f"endpoint: {DICE_API}")
     print(f"event   : {EVENT_NUMERIC_ID} -> {dice_relay_id(EVENT_NUMERIC_ID)}")
 
-    for name in ('Viewer', 'OrderWhereInput', 'TicketWhereInput', 'Ticket', 'Order', 'Event'):
+    for name in ('Viewer', 'OrderWhereInput', 'TicketWhereInput', 'Ticket', 'Order', 'Event',
+                 'OperatorsIdInput', 'OperatorsDateInput'):
         describe(token, name)
+
+    # Can viewer.orders be scoped to one event? The handoff banned viewer.orders
+    # because an unfiltered scan hung for 15+ minutes; a where filter changes that.
+    print("\n=== event-scoped viewer.orders (one page of 50) ===")
+    import time
+    started = time.time()
+    try:
+        data = dice_graphql(token, """
+          query ScopedOrders($eventId: ID!) {
+            viewer {
+              orders(first: 50, where: {eventId: {eq: $eventId}}) {
+                totalCount
+                pageInfo { endCursor hasNextPage }
+                edges {
+                  node {
+                    id
+                    purchasedAt
+                    quantity
+                    tickets { id fullPrice total ticketType { name } }
+                  }
+                }
+              }
+            }
+          }
+        """, {'eventId': dice_relay_id(EVENT_NUMERIC_ID)})
+    except Exception as exc:
+        print(f"FAILED after {time.time() - started:.1f}s: {exc}")
+        return
+    elapsed = time.time() - started
+    conn = ((data.get('viewer') or {}).get('orders') or {})
+    edges = conn.get('edges') or []
+    print(f"elapsed        : {elapsed:.1f}s")
+    print(f"orders total   : {conn.get('totalCount')}")
+    print(f"orders in page : {len(edges)}")
+    tickets = sum(len((e.get('node') or {}).get('tickets') or []) for e in edges)
+    print(f"tickets in page: {tickets}")
+    for edge in edges[:5]:
+        node = edge.get('node') or {}
+        first_ticket = ((node.get('tickets') or [{}])[0])
+        print(f"  purchasedAt={node.get('purchasedAt')!r} qty={node.get('quantity')} "
+              f"tickets={len(node.get('tickets') or [])} "
+              f"first={(first_ticket.get('ticketType') or {}).get('name')!r} "
+              f"fullPrice={first_ticket.get('fullPrice')} total={first_ticket.get('total')}")
 
     # How many tickets actually carry a claimedAt? Sample the first page.
     print("\n=== claimedAt sample (first 20 tickets) ===")
