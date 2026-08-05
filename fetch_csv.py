@@ -50,6 +50,17 @@ DICE_API = 'https://partners-endpoint.dice.fm/graphql'
 SHOTGUN_PAGE_PACING_S = 0.8
 SHOTGUN_VALID_STATUSES = ('valid', 'resold')
 
+# Shotgun's API surfaces tickets imported from other platforms alongside its
+# own sales. On a co-hosted event that also has a DICE feed, those imports are
+# the same physical tickets we already fetch from DICE - counting both inflated
+# Bordeaux Jun 2026 to 36,313 against a real total of ~26,738.
+#
+# So when an event has BOTH a shotgun_event_id and a dice_mio_id, keep only
+# Shotgun's own channels and let the DICE feed supply the rest. Shotgun-only
+# events keep every channel: there is no second source to double up with.
+SHOTGUN_ORGANIC_CHANNELS = ('online', 'onsite', 'invitation')
+SHOTGUN_KNOWN_IMPORT_CHANNELS = ('distributor', 'offline', 'reseller', 'duplicata')
+
 DICE_PAGE_SIZE = 100
 
 HTTP_TIMEOUT_S = 60
@@ -530,11 +541,17 @@ def cents_to_units(value):
         return 0.0
 
 
-def process_shotgun_ticket(raw, event_days):
+def process_shotgun_ticket(raw, event_days, organic_only=False):
     """Map one raw Shotgun ticket to a merged-CSV row, or None if it is skipped."""
     status = str(raw.get('ticket_status') or '').strip().lower()
     if status not in SHOTGUN_VALID_STATUSES:
         return None, 'status'
+
+    channel = str(raw.get('deal_channel') or '').strip().lower()
+    if organic_only and channel not in SHOTGUN_ORGANIC_CHANNELS:
+        # Reported as 'channel:<value>' so the caller can show which channels
+        # were dropped and flag any it does not recognise.
+        return None, f'channel:{channel or "(none)"}'
 
     order_dt = parse_shotgun_datetime(raw.get('ordered_at'))
     if not order_dt:
@@ -587,12 +604,21 @@ def fetch_shotgun(event_config, token, organizer_id, account_name='?'):
     shotgun_event_id = event_config['shotgun_event_id']
     log(f"\n🔫 Shotgun: event {shotgun_event_id} (organizer {organizer_id})")
 
+    # Dual-platform event -> drop Shotgun's imported-from-elsewhere channels,
+    # because the DICE feed already supplies those same tickets.
+    organic_only = bool(event_config.get('dice_mio_id'))
+    if organic_only:
+        log(f"   dual-platform (dice {event_config['dice_mio_id']}): keeping only "
+            f"channels {', '.join(SHOTGUN_ORGANIC_CHANNELS)}")
+    else:
+        log("   Shotgun-only event: keeping every deal_channel")
+
     tickets = []
     skipped = defaultdict(int)
     total_raw = 0
     for raw in fetch_shotgun_pages(token, organizer_id, shotgun_event_id):
         total_raw += 1
-        row, reason = process_shotgun_ticket(raw, event_config['event_days'])
+        row, reason = process_shotgun_ticket(raw, event_config['event_days'], organic_only)
         if row is None:
             skipped[reason] += 1
             continue
@@ -601,6 +627,23 @@ def fetch_shotgun(event_config, token, organizer_id, account_name='?'):
     log(f"   raw tickets: {total_raw}")
     log(f"   skipped (status not valid/resold): {skipped['status']}")
     log(f"   skipped (unparseable ordered_at): {skipped['date']}")
+
+    channel_skips = {k.split(':', 1)[1]: v for k, v in skipped.items() if k.startswith('channel:')}
+    if channel_skips:
+        total_dropped = sum(channel_skips.values())
+        log(f"   skipped (non-organic channel): {total_dropped}")
+        for channel, count in sorted(channel_skips.items(), key=lambda kv: -kv[1]):
+            note = '' if channel in SHOTGUN_KNOWN_IMPORT_CHANNELS else '   <-- UNRECOGNISED'
+            log(f"      {channel:<16} {count:>7}{note}")
+        unknown = [c for c in channel_skips if c not in SHOTGUN_KNOWN_IMPORT_CHANNELS]
+        if unknown:
+            log("")
+            log("   " + "!" * 66)
+            log("   !! WARNING: dropped ticket(s) on unrecognised deal_channel(s): "
+                + ', '.join(sorted(unknown)))
+            log("   !! If any of these are Shotgun's own sales they are being lost.")
+            log("   !! Check with: python scripts/probe_shotgun_channels.py <event_id>")
+            log("   " + "!" * 66)
     log(f"   ✅ Shotgun tickets kept: {len(tickets)}")
 
     if not tickets:
