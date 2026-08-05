@@ -87,12 +87,44 @@ jobs:
             python - <<'PY'
           import csv, glob, os
           from collections import Counter
+
+          # Which events are configured to have a Shotgun / DICE channel at all
+          configured = {}
+          for row in csv.DictReader(open('event_config.csv', encoding='utf-8-sig')):
+              eid = (row.get('event_id') or '').strip()
+              if eid and (row.get('event_name') or '').strip():
+                  configured[eid] = (
+                      (row.get('shotgun_event_id') or '').strip(),
+                      (row.get('dice_mio_id') or '').strip(),
+                  )
+
+          silent = []
           for path in sorted(glob.glob('api_output/*_merged.csv')):
               event = os.path.basename(path).replace('_merged.csv', '')
               rows = list(csv.DictReader(open(path, encoding='utf-8')))
               c = Counter(r['platform'] for r in rows)
               gross = sum(float(r['gross_price']) for r in rows if r['is_paid'] == '1')
-              print(f"| {event} | {len(rows)} | {c.get('Shotgun', 0)} | {c.get('DICE', 0)} | EUR {gross:,.2f} |")
+              sg_id, dice_id = configured.get(event, ('', ''))
+              flag = ''
+              if sg_id and c.get('Shotgun', 0) == 0:
+                  flag = ' ⚠️'
+                  silent.append((event, 'Shotgun', sg_id))
+              if dice_id and c.get('DICE', 0) == 0:
+                  flag = ' ⚠️'
+                  silent.append((event, 'DICE', dice_id))
+              print(f"| {event} | {len(rows)} | {c.get('Shotgun', 0)} | {c.get('DICE', 0)} | EUR {gross:,.2f} |{flag}")
+
+          if silent:
+              print()
+              print('> [!WARNING]')
+              print('> **A configured platform returned 0 tickets.** A valid Shotgun token')
+              print('> against the wrong organizer_id returns an empty set rather than an')
+              print('> error, so this usually means a bad account mapping, not "no sales".')
+              print('>')
+              for event, platform, ident in silent:
+                  print(f'> - `{event}`: {platform} id `{ident}` configured, 0 tickets returned')
+              print('>')
+              print('> Diagnose with: `python scripts/probe_shotgun_account.py <shotgun_event_id>`')
           PY
             echo ""
             echo "Succeeded:${OK_EVENTS:-  none}"

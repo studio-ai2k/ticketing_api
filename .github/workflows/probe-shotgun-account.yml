@@ -1,0 +1,40 @@
+name: Probe Shotgun account mapping
+
+# Read-only. Tries every (token, organizer_id) pair against the given events to
+# find which account actually owns them.
+on:
+  workflow_dispatch:
+    inputs:
+      events:
+        description: 'Space-separated Shotgun event ids'
+        required: false
+        default: '505434 535882'
+
+jobs:
+  probe:
+    name: Probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Probe both accounts
+        env:
+          SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
+          SHOTGUN_TOKEN_SONORA: ${{ secrets.SHOTGUN_TOKEN_SONORA }}
+          EVENTS: ${{ inputs.events }}
+        run: |
+          {
+            echo '### Shotgun account probe'
+            echo ''
+            echo '```'
+            python scripts/probe_shotgun_account.py $EVENTS
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"

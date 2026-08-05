@@ -575,7 +575,7 @@ def process_shotgun_ticket(raw, event_days):
     }, None
 
 
-def fetch_shotgun(event_config, token, organizer_id):
+def fetch_shotgun(event_config, token, organizer_id, account_name='?'):
     """Fetch + classify all Shotgun tickets for the event."""
     shotgun_event_id = event_config['shotgun_event_id']
     log(f"\n🔫 Shotgun: event {shotgun_event_id} (organizer {organizer_id})")
@@ -595,6 +595,22 @@ def fetch_shotgun(event_config, token, organizer_id):
     log(f"   skipped (status not valid/resold): {skipped['status']}")
     log(f"   skipped (unparseable ordered_at): {skipped['date']}")
     log(f"   ✅ Shotgun tickets kept: {len(tickets)}")
+
+    if not tickets:
+        # A valid token against the wrong organizer_id returns an empty set
+        # rather than an error, so zero here usually means a bad account
+        # mapping - not "no sales". Never let that pass quietly.
+        log("")
+        log("   " + "!" * 66)
+        log(f"   !! WARNING: event {shotgun_event_id} is configured for Shotgun but")
+        log(f"   !! returned 0 tickets under the '{account_name}' account "
+            f"(organizer {organizer_id}).")
+        log("   !! Check the account mapping before trusting this dashboard:")
+        log("   !!   python scripts/probe_shotgun_account.py "
+            f"{shotgun_event_id}")
+        log("   " + "!" * 66)
+        log("")
+
     return tickets
 
 
@@ -844,7 +860,7 @@ def main(argv=None):
         missing.append(SHOTGUN_ACCOUNTS[account]['token_env'])
     else:
         log(f"\nShotgun account: {account}")
-        shotgun_tickets = fetch_shotgun(event_config, shotgun_token, organizer_id)
+        shotgun_tickets = fetch_shotgun(event_config, shotgun_token, organizer_id, account)
 
     if args.skip_dice or not event_config['dice_mio_id']:
         log("\n🎲 DICE: skipped")
