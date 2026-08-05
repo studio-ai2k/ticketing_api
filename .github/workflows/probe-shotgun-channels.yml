@@ -1,0 +1,42 @@
+name: Probe Shotgun deal_channel breakdown
+
+# Read-only. Counts Shotgun tickets by deal_channel to identify DICE-imported
+# tickets that would otherwise be double-counted alongside the direct DICE feed.
+on:
+  workflow_dispatch:
+    inputs:
+      events:
+        description: 'Space-separated event_ids from event_config.csv'
+        required: false
+        default: 'bordeaux_2026 rennes_2026'
+
+jobs:
+  probe:
+    name: Channel breakdown
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Break down by deal_channel
+        env:
+          SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
+          SHOTGUN_TOKEN_SONORA: ${{ secrets.SHOTGUN_TOKEN_SONORA }}
+          SHOTGUN_ORGANIZER_ID_SONORA: ${{ secrets.SHOTGUN_ORGANIZER_ID_SONORA }}
+          EVENTS: ${{ inputs.events }}
+        run: |
+          python scripts/probe_shotgun_channels.py $EVENTS 2>&1 | tee /tmp/channels.txt
+          {
+            echo '### deal_channel breakdown'
+            echo ''
+            echo '```'
+            grep -v '^   page ' /tmp/channels.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
