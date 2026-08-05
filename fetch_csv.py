@@ -48,7 +48,11 @@ DICE_API = 'https://partners-endpoint.dice.fm/graphql'
 
 # Shotgun serves 100 tickets/page and allows 100 requests/minute -> pace at 0.8s
 SHOTGUN_PAGE_PACING_S = 0.8
-SHOTGUN_VALID_STATUSES = ('valid', 'resold')
+# 'resold' is Shotgun's resale marketplace: when a ticket changes hands the
+# original row is marked resold and the buyer gets a fresh 'valid' row, so
+# counting both counts one physical ticket twice. Bordeaux Jun 2026 carried
+# 4,217 such rows. Count 'valid' only.
+SHOTGUN_VALID_STATUSES = ('valid',)
 
 # Shotgun's API surfaces tickets imported from other platforms alongside its
 # own sales. On a co-hosted event that also has a DICE feed, those imports are
@@ -627,7 +631,7 @@ def fetch_shotgun(event_config, token, organizer_id, account_name='?'):
         tickets.append(row)
 
     log(f"   raw tickets: {total_raw}")
-    log(f"   skipped (status not valid/resold): {skipped['status']}")
+    log(f"   skipped (status not valid, incl. resold duplicates): {skipped['status']}")
     log(f"   skipped (unparseable ordered_at): {skipped['date']}")
 
     channel_skips = {k.split(':', 1)[1]: v for k, v in skipped.items() if k.startswith('channel:')}
