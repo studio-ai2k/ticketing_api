@@ -1,0 +1,21 @@
+order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,platform,price,gross_price,quantity,is_paid
+2025-06-05,2025-06-05 19:12:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 19:01:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 19:02:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 19:02:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 19:04:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 19:02:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 19:02:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 19:02:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 19:59:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 20:06:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 21:21:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 19:07:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 19:07:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 19:15:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 19:01:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 19:01:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 19:03:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 19:06:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 23:17:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1
+2025-06-05,2025-06-05 23:17:00,samedi,early_entry,['samedi'],PASS SAMEDI - entrée avant 21h,DICE,41.514,44.0,1,1

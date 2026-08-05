@@ -1,0 +1,264 @@
+# Claude Code Handoff — API Fetch Proof Run
+
+## Mission
+Build `fetch_csv.py` that pulls live ticket data from Shotgun and DICE APIs and writes a merged CSV in the exact format `run.py` already consumes. Test with Rennes 2026. Do NOT modify any production files.
+
+## Repo
+`https://github.com/madameloyal/festiflow` — branch `main`
+
+## Hard Constraints
+- **DO NOT** modify: `run.py`, `main.py`, `upload.html`, `dashboard_template.html`, `event_config.csv`, any `*.html` in root, anything in `festiflow-v5/csv_database/`
+- **DO NOT** write to any path that Railway reads from
+- All new files go in `festiflow-v5/api_output/` (create this directory)
+- Pure Python stdlib only — zero pip dependencies
+- The fetch script must produce a CSV that `run.py` can consume without modification
+
+## Output Format — The Merged CSV
+`run.py` reads a CSV with exactly these 11 columns. Your fetch script must produce this exact format:
+
+```csv
+order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,platform,price,gross_price,quantity,is_paid
+2025-06-05,2025-06-05 19:12:00,samedi,early_entry,['samedi'],Pass Samedi - Entrée Avant 21h,DICE,41.514,44.0,1,1
+2026-01-06,2026-01-06 18:00:18,3-jours,regular,['jeudi','vendredi','samedi'],General Access - Pass 3 Jours,Shotgun,95.0,97.87,1,1
+```
+
+### Column specs:
+| Column | Type | Source | Notes |
+|---|---|---|---|
+| `order_date` | `YYYY-MM-DD` | Shotgun: `ordered_at[:10]` / DICE: `claimedAt[:10]` | |
+| `order_datetime` | `YYYY-MM-DD HH:MM:SS` | Shotgun: `ordered_at` / DICE: `claimedAt` | Strip timezone, format to seconds |
+| `ticket_type` | string | Classified from ticket name | One of: day name (`samedi`, `vendredi`, `jeudi`), `2-jours`, `3-jours`, `single_day` |
+| `access_level` | string | Classified from ticket name + price | One of: `regular`, `vip`, `invitation`, `early_entry`, `backstage`, `jeu_concours`, `group_discount` |
+| `attendance_days` | string | Classified from ticket name | Format: `['samedi']` or `['vendredi','samedi']` — Python list repr as string |
+| `product_name` | string | Shotgun: `deal_sub_category` / DICE: `ticketType.name` | Title case if all-upper |
+| `platform` | string | Hardcoded | `Shotgun` or `DICE` (capital S, capital D) |
+| `price` | float | Shotgun: `deal_price / 100` / DICE: `fullPrice / 100` | Net price in currency units (not cents) |
+| `gross_price` | float | Shotgun: `(deal_price + deal_user_service_fee) / 100` / DICE: `total / 100` | What buyer paid |
+| `quantity` | int | Always `1` | One row per ticket |
+| `is_paid` | int | `0` if invitation/jeu_concours or price=0, else `1` | |
+
+## Ticket Classification
+Copy the `classify_ticket()` and `resolve_attendance()` functions from `festiflow-v5/run.py` (lines 563-745). These are the single source of truth for ticket_type, access_level, and attendance_days. Do not rewrite them — copy verbatim.
+
+Key behaviors:
+- `PHASE 1 - PASS SAMEDI` → ticket_type=`samedi`, access_level=`regular`
+- `VIP - PASS 2 JOURS` → ticket_type=`2-jours`, access_level=`vip`
+- `INVITATION PASS SAMEDI` → ticket_type=`samedi`, access_level=`invitation`, is_paid=0
+- `ENTRÉE AVANT 21H - PASS VENDREDI` → ticket_type=`vendredi`, access_level=`early_entry`
+- Price = 0 and no invitation keyword → force access_level=`invitation`, is_paid=0
+
+For Shotgun: classify using `"{deal_sub_category} {deal_title}"`. Use `deal_sub_category` as `product_name`.
+For DICE: classify using `ticketType.name`. Use `ticketType.name` as `product_name`.
+For Shotgun: if `deal_channel == 'invitation'`, pass `tags='invitation'` to classify_ticket.
+
+## Two Shotgun Accounts
+
+Events are split across two Shotgun organizer accounts:
+
+| Account | Organizer ID | Token secret | Events |
+|---|---|---|---|
+| Episode | `171835` | `SHOTGUN_TOKEN_EPISODE` | epk_2026, rennes_2026, geneve_2026 |
+| Sonora | `207784` | `SHOTGUN_TOKEN_SONORA` | bordeaux_2026, bordeaux_oct_2026 |
+
+Add a `shotgun_account` column to the fetch logic. Read from `event_config.csv`:
+- If `shotgun_event_id` is in the Episode event list → use Episode token + org ID
+- If `shotgun_event_id` is in the Sonora event list → use Sonora token + org ID
+
+For V1 simplicity: add a hardcoded mapping in the fetch script:
+```python
+SHOTGUN_ACCOUNTS = {
+    'episode': {
+        'token_env': 'SHOTGUN_TOKEN_EPISODE',
+        'organizer_id': '171835',
+        'events': ['epk_2026', 'rennes_2026', 'geneve_2026', 'epk_2023']
+    },
+    'sonora': {
+        'token_env': 'SHOTGUN_TOKEN_SONORA',
+        'organizer_id': '207784',
+        'events': ['bordeaux_2026', 'bordeaux_oct_2026', 'bordeaux_2025', 'halloween_2025']
+    }
+}
+```
+
+## Shotgun REST API
+
+**Endpoint:** `GET https://api.shotgun.live/tickets`
+
+**Auth:** `?token=xxx&organizer_id=171835&event_id=535882`
+
+**Pagination:** 100 tickets per page. Response has `pagination.next` URL. Follow until `next` is null.
+
+**Rate limit:** 100 requests/minute. Pace at 0.8s between requests.
+
+**Ticket filtering:** Only process tickets where `ticket_status` is `valid` or `resold`. Skip `refunded`, `canceled`.
+
+**Field mapping:**
+```
+ordered_at          → order_date ([:10]) and order_datetime
+deal_sub_category   → classify input + product_name
+deal_title          → classify input (combined with sub_category)
+deal_channel        → if 'invitation' → pass tags='invitation' to classifier
+deal_price          → price (divide by 100, it's in cents)
+deal_user_service_fee → added to deal_price for gross_price
+deal_vat_rate       → not needed for CSV, but available
+ticket_status       → filter: only 'valid' and 'resold'
+```
+
+**Sample response** (one ticket): see `festiflow-v5/api_output/shotgun_schema.json` if it exists, or reference this:
+```json
+{
+  "deal_price": 9500,
+  "deal_service_fee": 950,
+  "deal_user_service_fee": 287,
+  "deal_sub_category": "GENERAL ACCESS - PASS 3 JOURS (JEUDI + VENDREDI + SAMEDI)",
+  "deal_title": "PHASE 1",
+  "deal_channel": "online",
+  "ticket_status": "valid",
+  "ordered_at": "2026-01-06 18:00:18.038852"
+}
+```
+This ticket → `price=95.0`, `gross_price=97.87`, `ticket_type=3-jours`, `access_level=regular`, `platform=Shotgun`
+
+## DICE GraphQL API
+
+**Endpoint:** `POST https://partners-endpoint.dice.fm/graphql`
+
+**Auth:** `Authorization: Bearer {DICE_TOKEN}`
+
+### CRITICAL: Relay ID Encoding
+DICE GraphQL uses Base64-encoded Relay IDs. The `event_config.csv` stores numeric IDs (e.g. `600413`). You MUST encode them:
+```python
+import base64
+relay_id = base64.b64encode(f'Event:{numeric_id}'.encode()).decode()
+# 600413 → 'RXZlbnQ6NjAwNDEz'
+```
+
+### Tickets Query (get ticket data + fees):
+```graphql
+query FetchTickets($eventId: ID!, $first: Int!, $after: String) {
+  node(id: $eventId) {
+    ... on Event {
+      name
+      startDatetime
+      endDatetime
+      tickets(first: $first, after: $after) {
+        totalCount
+        pageInfo { endCursor hasNextPage }
+        edges {
+          node {
+            id
+            code
+            fullPrice
+            commission
+            diceCommission
+            total
+            fees { category dice promoter }
+            ticketType { name }
+            claimedAt
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**DO NOT add any other fields to these queries.** These are schema-verified via live introspection. Adding fields that don't exist (like `amount` on TicketFee, or `type` on PriceTier) will crash the query.
+
+### Schema-verified types (from introspection):
+- **TicketFee:** `category` (enum), `dice` (Int, cents), `promoter` (Int, cents) — NOT `amount`
+- **PriceTier:** `id`, `name`, `price`, `faceValue`, `allocation`, `doorSalesPrice`, `time` — NO `type` field
+- **TicketType:** `id`, `name`, `description`, `price`, `faceValue` — all valid
+
+### DICE Field Mapping:
+```
+claimedAt           → order_date and order_datetime (no purchasedAt on tickets)
+ticketType.name     → classify input + product_name
+fullPrice           → price (divide by 100, cents)
+total               → gross_price (divide by 100, cents)
+```
+
+### DICE: Do NOT use viewer.orders
+An earlier version tried to fetch `viewer.orders` for purchase dates. This scans ALL orders across ALL events for the promoter — it hangs for 15+ minutes and times out. Use `claimedAt` from the ticket instead. It's not the exact purchase date but it's close enough and available directly on the ticket.
+
+## Event Config for Rennes 2026 (test event)
+
+From `event_config.csv`:
+```
+event_id: rennes_2026
+shotgun_event_id: 557151 (Episode account)
+dice_mio_id: 600413
+compare_to: rennes_2025
+comparison_mode: j_minus
+days:
+  1: Vendredi, 2026-11-06, capacity 10000
+  2: Samedi, 2026-11-07, capacity 10000
+```
+
+## Event Day Configuration for Classification
+
+The classifier needs event_days to resolve attendance. For Rennes 2026:
+```python
+event_days = [
+    {'day_name': 'vendredi', 'day_date': datetime.date(2026, 11, 6), 'day_number': 1},
+    {'day_name': 'samedi', 'day_date': datetime.date(2026, 11, 7), 'day_number': 2},
+]
+```
+
+Read these from `event_config.csv` dynamically.
+
+## Phases
+
+### Phase 1 — Fetch and Write CSV
+1. Read `event_config.csv` for rennes_2026 config
+2. Fetch Shotgun: `GET https://api.shotgun.live/tickets?token={SHOTGUN_TOKEN_EPISODE}&organizer_id=171835&event_id=557151`
+3. Fetch DICE: GraphQL query with Relay ID `RXZlbnQ6NjAwNDEz`
+4. Classify all tickets using `classify_ticket()` from run.py
+5. Write to `festiflow-v5/api_output/rennes_2026_merged.csv`
+6. Print summary: total tickets, Shotgun count, DICE count, paid/free split, gross revenue
+
+### Phase 2 — Validate Against Production
+1. Copy the API-generated CSV to a temp directory as the "current year" data
+2. Copy `festiflow-v5/csv_database/rennes_2025/rennes_2025_merged.csv` as historical data
+3. Run: `python festiflow-v5/run.py` with env vars pointing to these directories + rennes_2026 config
+4. Capture output HTML as `festiflow-v5/api_output/rennes_test.html`
+5. Compare key metrics against the current live `rennes.html`:
+   - Total tickets sold (paid)
+   - Total CA (revenue)
+   - Per-day breakdown
+   - Number of ticket types in répartition table
+6. Report discrepancies. Small differences are OK (API might have newer data than last CSV upload). Large differences (>5%) flag a mapping issue.
+
+### Phase 3 — GitHub Actions Workflow (only after Phase 2 passes)
+Create `.github/workflows/daily-fetch.yml`:
+- Trigger: `schedule: cron '0 6 * * *'` (06:00 UTC = 08:00 Paris) + `workflow_dispatch` for manual runs
+- For each active event in `event_config.csv`: run fetch → write CSV → run `run.py` → commit HTML
+- Secrets injected as env vars: `SHOTGUN_TOKEN_EPISODE`, `SHOTGUN_TOKEN_SONORA`, `SHOTGUN_ORGANIZER_ID_SONORA`, `DICE_TOKEN`
+- Commit message: `Auto-update: {event_id} ({date})`
+- Only commit if HTML actually changed (diff check)
+
+## Secrets Available (already set as Repository secrets)
+- `SHOTGUN_TOKEN_EPISODE` — Episode account JWT
+- `SHOTGUN_TOKEN_SONORA` — Sonora account JWT
+- `SHOTGUN_ORGANIZER_ID_SONORA` — `207784`
+- `DICE_TOKEN` — Greg Germain promoter-level DICE MIO token
+
+Episode organizer ID is `171835` (hardcode as default).
+
+## Success Criteria
+Phase 1: CSV written with >0 tickets from both platforms, 11 columns, correct classification
+Phase 2: Metrics within 5% of current live dashboard (or exact match if same data)
+Phase 3: Action runs, commits HTML, GitHub Pages deploys
+
+## What to Report Back
+After Phase 2, produce a comparison table:
+```
+                    Live Dashboard    API Dashboard    Delta
+Tickets (paid):     XXXX              XXXX             X%
+Revenue:            €XX,XXX           €XX,XXX          X%
+Vendredi:           XXXX              XXXX             X%
+Samedi:             XXXX              XXXX             X%
+Ticket types:       XX                XX               —
+```
+
+If any column is missing or misclassified, report which tickets diverged and why.
