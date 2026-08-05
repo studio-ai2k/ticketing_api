@@ -43,7 +43,7 @@ jobs:
             echo '```csv'
             head -n 6 "$CSV"
             echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Upload merged CSV
         if: always()

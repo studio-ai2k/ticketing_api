@@ -1,0 +1,26 @@
+name: Diagnose DICE date fields
+
+# Manual-only, read-only. Prints live DICE schema details so we can pick a
+# replacement for claimedAt (null on every Rennes 2026 ticket).
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    name: Introspect DICE schema
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Introspect
+        env:
+          DICE_TOKEN: ${{ secrets.DICE_TOKEN }}
+        run: python scripts/dice_diagnose.py
