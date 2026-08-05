@@ -60,14 +60,21 @@ SHOTGUN_ACCOUNTS = {
         'token_env': 'SHOTGUN_TOKEN_EPISODE',
         'organizer_id': '171835',
         'organizer_id_env': None,
-        'events': ['epk_2026', 'rennes_2026', 'geneve_2026',
+        # bordeaux_2026 (505434) lives on Episode despite the ML x Sonora
+        # branding - confirmed by probe_shotgun_account.py, which got
+        # event_name='MADAME LOYAL x SONORA : BORDEAUX' under organizer 171835
+        # and nothing under Sonora. Do not "correct" it back by brand.
+        'events': ['epk_2026', 'rennes_2026', 'geneve_2026', 'bordeaux_2026',
                    'epk_2023', 'geneve_2025', 'rennes_2025'],
     },
     'sonora': {
         'token_env': 'SHOTGUN_TOKEN_SONORA',
         'organizer_id': '207784',
         'organizer_id_env': 'SHOTGUN_ORGANIZER_ID_SONORA',
-        'events': ['bordeaux_2026', 'bordeaux_oct_2026', 'bordeaux_2025', 'halloween_2025'],
+        # bordeaux_oct_2026 (565846) verified on this account - it returned
+        # 7,985 tickets. bordeaux_2025/halloween_2025 are unverified but only
+        # matter if their reference CSVs are ever refetched.
+        'events': ['bordeaux_oct_2026', 'bordeaux_2025', 'halloween_2025'],
     },
 }
 
