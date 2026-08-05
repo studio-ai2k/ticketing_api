@@ -79,6 +79,17 @@ jobs:
               print(f'| {name} | {platform} | {n} |')
           print()
           print(f'Distinct product_name values: {len({n for n, _ in counts})}')
+          print()
+          paid = [r for r in rows if r['is_paid'] == '1']
+          gross = sum(float(r['gross_price']) for r in paid)
+          net = sum(float(r['price']) for r in paid)
+          print('| metric | value |')
+          print('|---|---|')
+          print(f'| Tickets (total) | {len(rows)} |')
+          for p in sorted({r['platform'] for r in rows}):
+              print(f'| Tickets ({p}) | {sum(1 for r in rows if r["platform"] == p)} |')
+          print(f'| Gross revenue (paid) | EUR {gross:,.2f} |')
+          print(f'| Net revenue (paid) | EUR {net:,.2f} |')
           PY
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
