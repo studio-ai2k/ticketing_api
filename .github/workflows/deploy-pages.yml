@@ -13,6 +13,14 @@ on:
   push:
     branches: [main]
     paths: ['*.html']
+  # The dashboards are committed by the daily job using GITHUB_TOKEN, and a
+  # push made with that token deliberately does not start new workflow runs -
+  # so the push trigger above never fires for the commits that actually matter.
+  # Chain off the run instead. (First observed on 12182c4: six rebuilt
+  # dashboards landed on main and no deploy was queued.)
+  workflow_run:
+    workflows: ['Daily dashboards']
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -51,6 +59,13 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@v4
         with:
-          # Milliseconds. Default is 600000 (10 min) - the value that has been
-          # aborting every deploy.
+          # Milliseconds; default 600000. NOTE: this did not take effect - run
+          # 31112613042 still aborted with "Timeout reached, aborting!" after
+          # 10m05s with this set to 30 minutes. Left in place because it costs
+          # nothing, but the deploy is not waiting any longer because of it.
+          #
+          # The underlying problem is upstream: the Pages deployment sits in
+          # deployment_in_progress and never reports success, under both the
+          # legacy branch source and this one. Payload is not the cause - the
+          # published tree is 14 MB across 42 files.
           timeout: 1800000
