@@ -76,10 +76,11 @@ jobs:
     strategy:
       # One event failing must not cancel the others.
       fail-fast: false
-      # All jobs share one Shotgun token against a ~100 req/min limit. Three at
-      # a time trades some 429 backoff (http_json retries with 2/4/8/16s) for
-      # parallelising the DICE fetches and dashboard rendering.
-      max-parallel: 3
+      # Sequential. Three at a time was faster, but runners stopped being
+      # assigned on 2026-08-06 and jobs were cancelled after 15m in the queue;
+      # one at a time asks for the least and is the version that finishes.
+      # Raise again once scheduling is reliably healthy.
+      max-parallel: 1
       matrix:
         event: ${{ fromJson(needs.plan.outputs.events) }}
 
@@ -87,8 +88,10 @@ jobs:
       TZ: Europe/Paris
       # Shotgun's ~100 req/min quota is shared across concurrent jobs, so each
       # fetcher paces at roughly 0.8s x max-parallel to stay under it together.
-      # Keep this in step with max-parallel above.
-      SHOTGUN_PAGE_PACING_S: '2.4'
+      # Keep this in step with max-parallel above - at max-parallel 1 there is
+      # no sharing, and leaving it at 2.4 would triple every fetch for nothing
+      # (Paris XXL alone is ~220 pages).
+      SHOTGUN_PAGE_PACING_S: '0.8'
 
     steps:
       - name: Checkout
