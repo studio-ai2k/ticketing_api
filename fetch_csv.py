@@ -24,6 +24,7 @@ Pure Python stdlib. Writes nothing outside the output directory.
 """
 
 import argparse
+import ast
 import base64
 import csv
 import json
@@ -109,6 +110,21 @@ CSV_FIELDNAMES = [
     'order_date', 'order_datetime', 'ticket_type', 'access_level', 'attendance_days',
     'product_name', 'platform', 'price', 'gross_price', 'quantity', 'is_paid',
 ]
+
+# Some events sell on a DICE account this token cannot reach. Genève 2026 is
+# one: probe_dice_event.py against 588085 got node -> null and 0 orders, while
+# Rennes and Paris XXL resolved fully on the same token, so it is an account
+# boundary rather than a bad id. Those sales are exported from the DICE
+# back-office by hand, run through the same classify_ticket, and committed here
+# in the 11-column merged format, then concatenated onto the API results.
+#
+# This is a stopgap. The moment the event gets a dice_mio_id in the config the
+# API becomes the source of truth and the file is ignored - see the guard in
+# main(), which refuses to use both for one event rather than double-counting.
+# A refreshed export is just a new commit of the same path plus a rebuild.
+MANUAL_DICE_CSVS = {
+    'geneve_2026': 'csv_database/geneve_2026_dice_manual/geneve_2026_dice_manual.csv',
+}
 
 # Tickets are read through their orders, not through Event.tickets.
 #
@@ -634,16 +650,19 @@ def process_shotgun_ticket(raw, event_days, organic_only=False):
     }, None
 
 
-def fetch_shotgun(event_config, token, organizer_id, account_name='?'):
+def fetch_shotgun(event_config, token, organizer_id, account_name='?', organic_only=None):
     """Fetch + classify all Shotgun tickets for the event."""
     shotgun_event_id = event_config['shotgun_event_id']
     log(f"\n🔫 Shotgun: event {shotgun_event_id} (organizer {organizer_id})")
 
     # Dual-platform event -> drop Shotgun's imported-from-elsewhere channels,
-    # because the DICE feed already supplies those same tickets.
-    organic_only = bool(event_config.get('dice_mio_id'))
+    # because the DICE feed already supplies those same tickets. What makes an
+    # event dual-platform is having a second source at all, so a manual DICE
+    # export counts the same as a dice_mio_id; the caller decides.
+    if organic_only is None:
+        organic_only = bool(event_config.get('dice_mio_id'))
     if organic_only:
-        log(f"   dual-platform (dice {event_config['dice_mio_id']}): keeping only "
+        log(f"   dual-platform: keeping only "
             f"channels {', '.join(SHOTGUN_ORGANIC_CHANNELS)}")
     else:
         log("   Shotgun-only event: keeping every deal_channel")
@@ -848,6 +867,91 @@ def fetch_dice(event_config, token):
 # MERGE + WRITE
 # ============================================================================
 
+def parse_attendance_days(raw):
+    """'['vendredi']' -> ['vendredi']; '' -> None (classify_ticket's own shape)."""
+    text = (raw or '').strip()
+    if not text:
+        return None
+    try:
+        value = ast.literal_eval(text)
+    except (ValueError, SyntaxError):
+        return None
+    if isinstance(value, (list, tuple)):
+        return [str(v) for v in value]
+    return None
+
+
+def load_manual_dice_tickets(path):
+    """
+    Read a hand-exported merged CSV back into the same in-memory rows the API
+    path produces, so the two can simply be concatenated.
+
+    The file is already the 11-column merged format, produced with this module's
+    classify_ticket - so the columns are trusted as-is. Only two things are
+    reconstructed: the Python types the CSV flattened to text (dates, the
+    attendance_days list, numbers), and product_name, which is normalised here
+    because the API path normalises and an un-normalised copy would split one
+    product into two rows in the dashboard breakdown.
+    """
+    path = Path(path)
+    if not path.exists():
+        raise RuntimeError(
+            f"manual DICE CSV not found: {path}\n"
+            f"Either commit the export at that path or drop the event from "
+            f"MANUAL_DICE_CSVS."
+        )
+
+    log(f"\n📄 Manual DICE export: {path}")
+    tickets = []
+    skipped = defaultdict(int)
+    with open(path, newline='', encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f)
+        missing_cols = [c for c in CSV_FIELDNAMES if c not in (reader.fieldnames or [])]
+        if missing_cols:
+            raise RuntimeError(
+                f"{path} is missing column(s): {', '.join(missing_cols)}\n"
+                f"Expected the 11-column merged format: {', '.join(CSV_FIELDNAMES)}"
+            )
+        for row in reader:
+            order_dt = parse_dice_datetime(row.get('order_datetime'))
+            if order_dt is None:
+                skipped['date'] += 1
+                continue
+            try:
+                price = float(row.get('price') or 0)
+                gross_price = float(row.get('gross_price') or 0)
+                quantity = int(float(row.get('quantity') or 1))
+                is_paid = int(float(row.get('is_paid') or 0))
+            except ValueError:
+                skipped['number'] += 1
+                continue
+            tickets.append({
+                'order_date': order_dt.date(),
+                'order_datetime': order_dt.replace(microsecond=0),
+                'ticket_type': (row.get('ticket_type') or '').strip(),
+                'access_level': (row.get('access_level') or '').strip(),
+                'attendance_days': parse_attendance_days(row.get('attendance_days')),
+                'product_name': normalize_product_name(row.get('product_name') or ''),
+                'platform': (row.get('platform') or 'DICE').strip() or 'DICE',
+                'price': price,
+                'gross_price': gross_price,
+                'quantity': quantity,
+                'is_paid': is_paid,
+            })
+
+    if skipped['date']:
+        log(f"   skipped (unparseable order_datetime): {skipped['date']}")
+    if skipped['number']:
+        log(f"   skipped (unparseable price/quantity): {skipped['number']}")
+    if not tickets:
+        raise RuntimeError(
+            f"{path} yielded 0 usable rows - refusing to build a dashboard that "
+            f"silently drops this event's DICE sales."
+        )
+    log(f"   ✅ manual DICE tickets kept: {len(tickets)}")
+    return tickets
+
+
 def merge_tickets(dice_tickets, shotgun_tickets):
     """Merge both platforms into one list sorted by purchase date."""
     all_tickets = dice_tickets + shotgun_tickets
@@ -935,6 +1039,17 @@ def main(argv=None):
     account, shotgun_token, organizer_id = resolve_shotgun_account(args.event)
     dice_token = os.environ.get('DICE_TOKEN', '').strip()
 
+    # A manual export only stands in for an API feed we do not have. Once the
+    # event has a dice_mio_id the API wins and the file is left alone, so the
+    # two can never both be counted.
+    manual_dice_path = MANUAL_DICE_CSVS.get(args.event)
+    if manual_dice_path and event_config['dice_mio_id']:
+        log(f"\n📄 Manual DICE export for {args.event} superseded by "
+            f"dice_mio_id {event_config['dice_mio_id']} - ignoring "
+            f"{manual_dice_path}")
+        manual_dice_path = None
+    log(f"Manual DICE: {manual_dice_path or '(none)'}")
+
     shotgun_tickets = []
     dice_tickets = []
     missing = []
@@ -945,7 +1060,12 @@ def main(argv=None):
         missing.append(SHOTGUN_ACCOUNTS[account]['token_env'])
     else:
         log(f"\nShotgun account: {account}")
-        shotgun_tickets = fetch_shotgun(event_config, shotgun_token, organizer_id, account)
+        # A manual DICE export makes this event dual-platform just as a
+        # dice_mio_id would, so the same import-channel filter has to apply.
+        organic_only = bool(event_config['dice_mio_id']) or bool(manual_dice_path)
+        shotgun_tickets = fetch_shotgun(
+            event_config, shotgun_token, organizer_id, account, organic_only=organic_only
+        )
 
     if args.skip_dice or not event_config['dice_mio_id']:
         log("\n🎲 DICE: skipped")
@@ -959,6 +1079,9 @@ def main(argv=None):
             "Missing required secret(s) in the environment: " + ', '.join(missing) +
             "\nSet them as env vars (GitHub Actions: repository secrets) and re-run."
         )
+
+    if manual_dice_path and not args.skip_dice:
+        dice_tickets = dice_tickets + load_manual_dice_tickets(manual_dice_path)
 
     tickets = merge_tickets(dice_tickets, shotgun_tickets)
     save_merged_csv(tickets, output_path)
