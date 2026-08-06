@@ -203,10 +203,12 @@ NAV_SHELL_JS = """<script>
 </script>
 """
 
-# Verbatim from navshell_package/module_dropdown.html. Every entry but
-# Billetterie is inert on purpose - the other modules either do not exist yet
-# ("bientôt") or have no cross-link mapping ("non configuré"). They become <a>
-# tags with real hrefs once those exist.
+# From navshell_package/module_dropdown.html, with one deliberate deviation:
+# the package badges Événements "bientôt" and Budgetflow "non configuré", and
+# both were dropped on request - those two show icon and label only. They stay
+# disabled either way; only Demande d'Achat and Partenaires keep a pill.
+# Everything else is verbatim, and they all become <a> tags with real hrefs
+# once the pages and cross-link mapping exist.
 #
 # It is a second .sw-wrap / [data-sw-trigger], so the same switcher.js IIFE
 # drives it; .sw-menu.right anchors it to the right edge instead of the left.
@@ -219,12 +221,10 @@ MODULE_DROPDOWN = """<div class="sw-wrap" style="position:relative" aria-label="
     <a class="sw-item disabled" role="menuitem" href="#">
       <svg class="sw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       <span class="sw-label">Événements</span>
-      <span class="pill soon">bientôt</span>
     </a>
     <a class="sw-item disabled" role="menuitem" href="#">
       <svg class="sw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
       <span class="sw-label">Budgetflow</span>
-      <span class="pill unset">non configuré</span>
     </a>
     <span class="sw-item active" role="menuitem" aria-current="true">
       <svg class="sw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 11v2"/><path d="M13 17v2"/></svg>
