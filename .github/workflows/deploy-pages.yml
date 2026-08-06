@@ -1,0 +1,56 @@
+name: Deploy to Pages
+
+# Replaces the legacy branch-source Pages build, whose deploy step polls for
+# ten minutes and then gives up:
+#
+#   Current status: deployment_in_progress   (x10 minutes)
+#   ##[error]Timeout reached, aborting!
+#
+# Run 31109919687 hit that with no competing push, so it is the deploy itself
+# that is slow, not a race. deploy-pages@v4 takes an explicit timeout, so the
+# same deployment gets 30 minutes instead of 10.
+on:
+  push:
+    branches: [main]
+    paths: ['*.html']
+  workflow_dispatch:
+
+permissions:
+  # checkout needs contents; the Pages deployment needs the other two.
+  contents: read
+  pages: write
+  id-token: write
+
+# Never cancel a deployment in flight - that is what left the site serving a
+# stale build for hours. Queue behind it instead.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+        with:
+          # Switches the Pages source from branch to GitHub Actions. Harmless
+          # once it is already set; if the token may not change repository
+          # settings this step fails loudly rather than letting the deploy
+          # fail later for an unrelated-looking reason.
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          # Milliseconds. Default is 600000 (10 min) - the value that has been
+          # aborting every deploy.
+          timeout: 1800000
