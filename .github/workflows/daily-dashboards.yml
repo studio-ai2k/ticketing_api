@@ -15,6 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
+    # Runners are UTC. Applies to every step, so anything reading the local
+    # clock reports Paris time.
+    env:
+      TZ: Europe/Paris
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
