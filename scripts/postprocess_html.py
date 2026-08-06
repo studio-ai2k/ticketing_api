@@ -48,6 +48,18 @@ UPLOAD_LINK_RE = re.compile(
 FOOTER_OLD = '📤 Données uploadées'
 FOOTER_NEW = '🔄 Données API'
 
+# The nav avatar hotlinks the logo from another account's Pages site while the
+# password overlay already loads the identical file from our own origin - the
+# same 944 KB asset fetched twice, from two places, on every page load.
+#
+# The cross-account copy is the fragile one: it depends on madameloyal's repo
+# staying published, which is outside this project's control and tied to that
+# account's plan. Point the nav at the copy that ships in this repo. Relative,
+# so it resolves under both the custom domain and github.io, and it matches the
+# form the overlay already uses.
+LOGO_REMOTE = 'https://madameloyal.github.io/budgetflow/LOGO_ROND_JAUNE.png'
+LOGO_LOCAL = 'LOGO_ROND_JAUNE.png'
+
 AUTH_KEY = 'festiflow_auth'
 
 # On load the template reads its per-event key and hides the overlay. Widen the
@@ -426,6 +438,12 @@ def postprocess(path):
     html, link_count = UPLOAD_LINK_RE.subn('', html)
     footer_count = html.count(FOOTER_OLD)
     html = html.replace(FOOTER_OLD, FOOTER_NEW)
+
+    # Before the nav rewrite, so the swapped-in avatar carries the local src -
+    # and so this still applies if the nav pass ever bails.
+    logo_count = html.count(LOGO_REMOTE)
+    html = html.replace(LOGO_REMOTE, LOGO_LOCAL)
+
     html, problems = add_shared_auth(html)
     # Runs last: it appends the account avatar as the final child of .nav-top,
     # which is only correct once the upload link above has been removed.
@@ -436,11 +454,14 @@ def postprocess(path):
         problems.append('"Mettre à jour" still present after removing the upload link')
     if FOOTER_OLD in html:
         problems.append(f'"{FOOTER_OLD}" still present after footer replacement')
+    if LOGO_REMOTE in html:
+        problems.append('the cross-account logo hotlink survived the rewrite')
 
     path.write_text(html, encoding='utf-8')
     sw_items = html.count('class="sw-item')
     print(f"{path.name}: removed {link_count} upload link(s), "
           f"replaced {footer_count} footer label(s), "
+          f"relocalised {logo_count} logo hotlink(s), "
           f"shared auth via {AUTH_KEY}, "
           f"nav shell aligned ({sw_items} session items)")
 
@@ -452,6 +473,8 @@ def postprocess(path):
         print("  ⚠ no upload link found - template may have changed")
     if footer_count == 0:
         print("  ⚠ no footer label found - template may have changed")
+    if logo_count == 0:
+        print("  ⚠ no logo hotlink found - template may already point at the local copy")
     return True
 
 

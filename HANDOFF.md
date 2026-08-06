@@ -296,3 +296,25 @@ path alone - it has a demonstrated success and needs no help.
 
 Note also that two handoff documents exist and disagree; this file had no trap
 list at all before this entry, which is how the contradiction went unnoticed.
+
+## Unaudited: main.py github_push() publishes to a second repo
+
+`main.py` has a publishing path nobody has reviewed as part of the API work:
+
+    GITHUB_REPO = os.environ.get("GITHUB_REPO", "")   # e.g. madameloyal/festiflow
+    def github_push(event_id, html_content):          # PUT .../contents/{filename}
+
+It writes dashboard HTML into a **different repository** over the GitHub
+contents API, using `GITHUB_TOKEN` / `GITHUB_REPO` from the environment. That
+is a second route by which these dashboards reach the internet, entirely
+separate from the Pages deploy this project drives, and outside the
+do-not-modify boundary that covers `main.py` itself.
+
+Worth an hour on its own, independent of the Pages work. Open questions:
+
+- Which repo does `GITHUB_REPO` actually point at in the Railway environment,
+  and is that repo public?
+- Is this path still invoked, or dead code left from the manual upload flow?
+- Does it publish the same post-processed HTML, or the raw run.py output with
+  the upload link and the old footer?
+- Whatever access control gets put in front of ai2k.dev does not apply to it.
