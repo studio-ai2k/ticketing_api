@@ -29,12 +29,17 @@ ACCOUNTS = [
 ]
 
 
-def probe(event_id, account, token, organizer_id):
-    query = urllib.parse.urlencode({
+def probe(event_id, account, token, organizer_id, cohosted=False):
+    params = {
         'token': token,
         'organizer_id': organizer_id,
         'event_id': event_id,
-    })
+    }
+    if cohosted:
+        # Co-hosted events can sit under the co-host's organizer; without this
+        # the API returns an empty set that looks identical to "no sales".
+        params['include_cohosted_events'] = '1'
+    query = urllib.parse.urlencode(params)
     url = f"{SHOTGUN_API}?{query}"
     try:
         payload = http_json(url)
@@ -68,8 +73,10 @@ def main():
             if not token:
                 print(f"  {account:8} (org {organizer_id}): SKIPPED (no token)")
                 continue
-            result = probe(event_id, account, token, organizer_id)
-            print(f"  {account:8} (org {organizer_id}): {result}")
+            for cohosted in (False, True):
+                label = 'cohosted=1' if cohosted else 'cohosted=0'
+                result = probe(event_id, account, token, organizer_id, cohosted)
+                print(f"  {account:8} (org {organizer_id}) {label}: {result}")
 
 
 if __name__ == '__main__':
