@@ -35,3 +35,14 @@
   .nav-sw-av{width:30px;height:30px}
   .nav-user{width:30px;height:30px}
 }
+
+/* Module-switcher dropdown (right side of nav) */
+.sw-item.disabled{cursor:default;color:var(--text-dim)}
+.sw-item.disabled:hover{background:transparent;color:var(--text-dim)}
+.sw-ico{width:16px;height:16px;flex-shrink:0;opacity:.8}
+.mod-trigger{padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.07);background:var(--surface-2)}
+.mod-trigger:hover{border-color:rgba(255,255,255,.14)}
+.mod-name{font-size:12px;font-weight:600;color:#fff;white-space:nowrap}
+.pill{margin-left:auto;font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border-h);color:var(--text-dim);white-space:nowrap}
+.pill.soon{color:var(--amber);border-color:rgba(251,191,36,0.25)}
+.pill.unset{color:var(--text-dim)}

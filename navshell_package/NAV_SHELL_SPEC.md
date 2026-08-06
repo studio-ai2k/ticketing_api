@@ -85,34 +85,58 @@ The full IIFE from `switcher.js` in this package. Inject before `</body>`. This 
 
 ---
 
-## CHANGE 2: Module buttons — add cross-module links
+## CHANGE 2: Module dropdown — add to the right side of nav
 
-### Current
-```html
-<button class="nm on" onclick="goPage('billetterie',this)"><svg...>Billetterie</button>
-<button class="nm" onclick="goPage('details',this)"><svg...>Détails</button>
+### What exists now
+No module dropdown. Just the in-module buttons (Billetterie, Détails).
+
+### What to add
+A module-switcher dropdown on the RIGHT side of the nav, positioned BEFORE the user avatar, inside the `margin-left:auto` wrapper. The exact HTML is in `module_dropdown.html` in this package.
+
+Layout after change:
 ```
-(The "Mettre à jour" link is already removed by existing post-processing.)
-
-### Target
-BudgetFlow's module buttons have:
-- SVG icons at `width="13" height="13"` with `style="vertical-align:-2px;margin-right:4px;opacity:.7"`
-- Active button: `.nm.on`
-- Links to other modules
-
-### What to do
-**Keep** "Billetterie" (active, `.nm.on`) and "Détails" buttons exactly as they are — they control in-page navigation (`goPage()`).
-
-**Add** a "Budget" button that links to BudgetFlow for this event. Insert it AFTER "Détails":
-```html
-<a class="nm" href="budget_{{EVENT_BUDGET_SLUG}}.html" style="text-decoration:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;opacity:.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Budget</a>
+[Event ▼]   Billetterie  Détails          [Billetterie ▼] [👤]
+ left        middle (in-module)            right (module dropdown + avatar)
 ```
 
-**NOTE:** The Budget link URL depends on the event → budget page mapping. For now, make the Budget button a placeholder (`.nm.pl` class — greyed out, not clickable):
+### Implementation
+Replace the current `margin-left:auto` wrapper (which will contain just the avatar after Change 3) with:
 ```html
-<button class="nm pl">Budget</button>
+<div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+  <!-- MODULE DROPDOWN (from module_dropdown.html) -->
+  {paste full content of module_dropdown.html here}
+  <!-- USER AVATAR -->
+  <div class="nav-user" title="Compte" style="margin-left:0">...</div>
+</div>
 ```
-This matches BudgetFlow's pattern for modules not yet linked. When the budget pages are mapped, it becomes a real `<a>` link.
+
+The dropdown uses the same `.sw-wrap` / `.sw-trigger` / `.sw-menu` component as the session switcher — the toggle JS from `switcher.js` handles BOTH dropdowns (it targets any `[data-sw-trigger]`).
+
+### CSS to inject (in addition to Change 1's CSS)
+The module-specific rules are at the bottom of `switcher.css`:
+```css
+.sw-item.disabled{cursor:default;color:var(--text-dim)}
+.sw-item.disabled:hover{background:transparent;color:var(--text-dim)}
+.sw-ico{width:16px;height:16px;flex-shrink:0;opacity:.8}
+.mod-trigger{padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.07);background:var(--surface-2)}
+.mod-trigger:hover{border-color:rgba(255,255,255,.14)}
+.mod-name{font-size:12px;font-weight:600;color:#fff;white-space:nowrap}
+.pill{margin-left:auto;font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border-h);color:var(--text-dim);white-space:nowrap}
+.pill.soon{color:var(--amber);border-color:rgba(251,191,36,0.25)}
+.pill.unset{color:var(--text-dim)}
+```
+
+### Module items (static for now)
+- **Événements** — disabled, "bientôt" pill (no events page exists yet for billetterie)
+- **Budgetflow** — disabled, "non configuré" pill (no cross-link mapping yet)
+- **Billetterie** ✓ — active, green checkmark (this is us)
+- **Demande d'Achat** — disabled, "bientôt" pill
+- **Partenaires** — disabled, "bientôt" pill
+
+When cross-module links are ready, the disabled items become `<a>` tags with real hrefs.
+
+### Keep the in-module buttons
+"Billetterie" and "Détails" buttons in the MIDDLE of the nav stay exactly as they are. They are NOT part of the module dropdown — they control in-page navigation (`goPage()`). Do not remove or move them.
 
 ---
 

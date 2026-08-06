@@ -27,6 +27,31 @@
 .nav-sw-name .dot{width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0}
 .nav-sw-sub{font-size:10px;color:var(--text-dim);margin-top:3px;white-space:nowrap}
 
+/* ── Session switcher DROPDOWN (canonical; folded inline per standalone head — BF, general,
+ *    and Module-Dates share THIS block, byte-for-byte). 3-part item sourced from the session's
+ *    qonto account: .sw-top (Nom Interne + " 2026") / .sw-qonto (Nom Qonto) / .sw-sub (type =
+ *    "Frais de structure" for the general, "Événement" for events). On open the menu re-parents
+ *    to <body> as .sw-float (fixed) to escape .nav's backdrop-filter compositing (Safari). ── */
+.sw-wrap{position:relative}
+.sw-trigger{display:flex;align-items:center;gap:7px;cursor:pointer}
+.sw-chev{flex-shrink:0;transition:transform .2s}
+.sw-wrap.open .sw-chev{transform:rotate(180deg)}
+.sw-menu{position:absolute;top:calc(100% + 8px);min-width:230px;background:var(--surface-2);border:1px solid var(--border-h);border-radius:12px;padding:6px;box-shadow:0 20px 60px rgba(0,0,0,0.45);z-index:200;display:none}
+.sw-menu.sw-float{position:fixed;display:block;z-index:1000;top:var(--sw-top);left:var(--sw-left)}
+.sw-menu.sw-float.right{left:auto;right:var(--sw-right)}
+.sw-menu.sw-float.left{left:var(--sw-left)}
+.sw-wrap.open .sw-menu{display:block}
+.sw-menu.left{left:0}
+.sw-menu.right{right:0}
+.sw-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:8px;font-size:13px;color:var(--text-muted);cursor:pointer;white-space:nowrap;text-decoration:none}
+.sw-item:hover{background:var(--surface);color:var(--text)}
+.sw-item.active{background:var(--surface);color:var(--text);font-weight:600}
+.sw-check{margin-left:auto;color:var(--green);flex-shrink:0}
+.sw-label{display:flex;flex-direction:column;gap:1px}
+.sw-top{font-size:13px;font-weight:600;color:var(--text)}
+.sw-qonto{font-size:11px;color:var(--text-muted)}
+.sw-sub{font-size:10px;color:var(--text-dim)}
+
 /* ── Module-link buttons (top-nav cross-tool destinations) ─────────── */
 .nm{font-size:12px;font-weight:500;padding:8px 12px;color:var(--text-dim);cursor:pointer;white-space:nowrap;transition:color .15s;border:none;background:none;font-family:inherit}
 .nm:hover{color:var(--text-muted)}
