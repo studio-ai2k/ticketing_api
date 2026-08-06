@@ -5,6 +5,11 @@ on:
   schedule:
     - cron: '0 6 * * *'
   workflow_dispatch:
+    inputs:
+      events:
+        description: 'Space-separated event_ids to rebuild (blank = every active event)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -29,9 +34,12 @@ jobs:
 
       - name: Build the matrix
         id: list
+        env:
+          ONLY: ${{ inputs.events }}
         run: |
           python - <<'PY' >> "$GITHUB_OUTPUT"
-          import csv, json
+          import csv, json, os
+          only = set((os.environ.get('ONLY') or '').split())
           seen, out = set(), []
           for row in csv.DictReader(open('event_config.csv', encoding='utf-8-sig')):
               eid = (row.get('event_id') or '').strip()
@@ -44,8 +52,14 @@ jobs:
               outfile = (row.get('output_filename') or '').strip()
               if not outfile:
                   continue
+              if only and eid not in only:
+                  continue
               seen.add(eid)
               out.append({'id': eid, 'out': outfile})
+          if only:
+              missing = only - {e['id'] for e in out}
+              if missing:
+                  raise SystemExit(f"not active events with an output_filename: {sorted(missing)}")
           print('events=' + json.dumps(out))
           PY
           cat "$GITHUB_OUTPUT"
