@@ -497,6 +497,12 @@ def fetch_shotgun_pages(token, organizer_id, shotgun_event_id):
         'token': token,
         'organizer_id': organizer_id,
         'event_id': shotgun_event_id,
+        # Co-hosted events can be owned by the partner organizer, and the
+        # endpoint excludes them by default - returning an empty set that is
+        # indistinguishable from "no sales". EPK 2026 (535882) returned nothing
+        # under either account until this was set. Harmless for single-host
+        # events: there is nothing extra to include.
+        'include_cohosted_events': '1',
     })
     url = f"{SHOTGUN_API}?{query}"
 
