@@ -71,6 +71,10 @@ jobs:
 
     env:
       TZ: Europe/Paris
+      # Shotgun's ~100 req/min quota is shared across concurrent jobs, so each
+      # fetcher paces at roughly 0.8s x max-parallel to stay under it together.
+      # Keep this in step with max-parallel above.
+      SHOTGUN_PAGE_PACING_S: '2.4'
 
     steps:
       - name: Checkout

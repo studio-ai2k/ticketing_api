@@ -46,8 +46,16 @@ from pathlib import Path
 SHOTGUN_API = 'https://api.shotgun.live/tickets'
 DICE_API = 'https://partners-endpoint.dice.fm/graphql'
 
-# Shotgun serves 100 tickets/page and allows 100 requests/minute -> pace at 0.8s
-SHOTGUN_PAGE_PACING_S = 0.8
+# Shotgun serves 100 tickets/page and allows ~100 requests/minute. 0.8s keeps a
+# single fetcher at ~75/min. When several events are fetched concurrently they
+# share that quota, so the workflow raises this via SHOTGUN_PAGE_PACING_S -
+# roughly 0.8 x the number of parallel jobs.
+SHOTGUN_PAGE_PACING_S = float(os.environ.get('SHOTGUN_PAGE_PACING_S') or 0.8)
+
+# A 429 is a per-minute quota, so backing off for seconds just burns retries -
+# the window has to roll over. Wait out the minute instead.
+RATE_LIMIT_BACKOFF_S = 60
+RATE_LIMIT_RETRIES = 6
 # 'resold' is Shotgun's resale marketplace: when a ticket changes hands the
 # original row is marked resold and the buyer gets a fresh 'valid' row, so
 # counting both counts one physical ticket twice. Bordeaux Jun 2026 carried
@@ -437,7 +445,11 @@ def http_json(url, method='GET', headers=None, payload=None):
     headers.setdefault('Accept', 'application/json')
 
     last_error = None
-    for attempt in range(HTTP_RETRIES):
+    attempt = 0
+    rate_limited = 0
+    while True:
+        attempt += 1
+        backoff = 2 ** attempt
         req = urllib.request.Request(url, data=body, headers=headers, method=method)
         try:
             with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT_S) as resp:
@@ -445,18 +457,29 @@ def http_json(url, method='GET', headers=None, payload=None):
         except urllib.error.HTTPError as e:
             detail = e.read().decode('utf-8', 'replace')[:500]
             last_error = f"HTTP {e.code} {e.reason}: {detail}"
-            # 4xx other than rate-limiting will not fix themselves
-            if e.code not in (429, 500, 502, 503, 504):
+            if e.code == 429:
+                # Rate limited: honour Retry-After when given, else wait out the
+                # quota window. Counted separately so a busy period cannot eat
+                # the retries meant for genuine transient failures.
+                rate_limited += 1
+                if rate_limited > RATE_LIMIT_RETRIES:
+                    raise RuntimeError(
+                        f"{method} {redact(url)} rate limited {rate_limited} times - {last_error}")
+                retry_after = (e.headers or {}).get('Retry-After')
+                backoff = (int(retry_after) if str(retry_after).isdigit()
+                           else RATE_LIMIT_BACKOFF_S)
+                attempt -= 1  # does not count against the transient-failure budget
+            elif e.code not in (500, 502, 503, 504):
+                # Other 4xx will not fix themselves
                 raise RuntimeError(f"{method} {redact(url)} failed - {last_error}")
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as e:
             last_error = f"{type(e).__name__}: {e}"
 
-        if attempt < HTTP_RETRIES - 1:
-            backoff = 2 ** (attempt + 1)
-            log(f"   ⚠ request failed ({last_error}) - retrying in {backoff}s")
-            time.sleep(backoff)
-
-    raise RuntimeError(f"{method} {redact(url)} failed after {HTTP_RETRIES} attempts - {last_error}")
+        if attempt >= HTTP_RETRIES:
+            raise RuntimeError(
+                f"{method} {redact(url)} failed after {attempt} attempts - {last_error}")
+        log(f"   ⚠ request failed ({last_error}) - retrying in {backoff}s")
+        time.sleep(backoff)
 
 
 def redact(url):
