@@ -1,0 +1,40 @@
+name: Probe DICE event access
+
+# Manual-only, read-only. Checks whether DICE_TOKEN can see a given event and
+# its orders before the event id is wired into event_config.csv - a token
+# without access returns an empty set rather than an error.
+on:
+  workflow_dispatch:
+    inputs:
+      events:
+        description: 'Space-separated DICE numeric event ids (e.g. 588085)'
+        required: true
+        default: '588085'
+
+jobs:
+  probe:
+    name: Probe DICE events
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Probe
+        env:
+          DICE_TOKEN: ${{ secrets.DICE_TOKEN }}
+        run: |
+          python scripts/probe_dice_event.py ${{ inputs.events }} | tee probe.log
+          {
+            echo '### DICE probe'
+            echo ''
+            echo '```'
+            cat probe.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
