@@ -1,0 +1,27 @@
+<nav class="nav" id="main-nav">
+  <div class="nav-top">
+    <div class="nav-sw">
+      <div class="nav-sw-av"><img src="{{POSTER_URL}}" alt="" onerror="this.style.display='none';this.parentNode.textContent='{{EVENT_SHORT_INITIALS}}'"></div>
+      <div>
+        <div style="display:flex;align-items:center;gap:5px"><span style="font-size:13px;font-weight:600;color:#fff">{{EVENT_SHORT_NAME}}</span><span style="width:5px;height:5px;border-radius:50%;background:var(--{{SALE_STATUS_DOT}});display:inline-block"></span></div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:3px">{{EVENT_CODE}} · {{J_MINUS_LABEL}}</div>
+      </div>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2.5" style="margin-left:2px"><path d="M6 9l6 6 6-6"/></svg>
+      <select class="session-sw" onchange="if(this.value){window.location.href=this.value}">
+        <option value="" disabled>Changer session</option>
+        {{SESSION_SWITCHER_OPTIONS}}
+      </select>
+    </div>
+    <button class="nm on" id="btn-billetterie" onclick="goPage('billetterie',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Billetterie</button>
+    <button class="nm" id="btn-details" onclick="goPage('details',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Détails</button>
+    <a class="nm" href="upload.html?event={{EVENT_ID}}&back={{OUTPUT_FILENAME}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Mettre à jour</a>
+  </div>
+  <div class="dept-tabs-bg" id="section-tabs">
+    <div class="dept-tabs">
+      <button class="dt on" onclick="scrollToSection('sec-overview',this)">Vue d'ensemble</button>
+      <button class="dt" onclick="scrollToSection('sec-repartition',this)">Répartition</button>
+      <button class="dt" onclick="scrollToSection('sec-suivi',this)">Suivi des ventes</button>
+      <button class="dt" onclick="scrollToSection('sec-projection',this)">Projections</button>
+    </div>
+  </div>
+</nav>
