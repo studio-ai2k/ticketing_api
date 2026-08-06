@@ -2,3 +2,9 @@ __pycache__/
 *.pyc
 data/
 api_output/
+
+# Local post-processing previews. These must not be tracked: a root-level
+# *.html matches both deploy-pages.yml's paths filter and the daily job's
+# `git add -- '*.html'`, so a committed preview would publish to Pages and be
+# re-committed as though it were a dashboard.
+*_preview.html
