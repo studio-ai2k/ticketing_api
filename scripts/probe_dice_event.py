@@ -33,7 +33,7 @@ query ProbeEvent($id: ID!) {
     id
     ... on Event {
       name
-      date
+      updatedAt
       tickets(first: 1) { totalCount }
     }
   }
@@ -66,6 +66,7 @@ def probe(token, numeric_id):
     print(f"  relay id : {relay}  (decodes to {base64.b64decode(relay).decode()!r})")
 
     reachable = False
+    event_tickets = None
     try:
         node = (dice_graphql(token, EVENT_QUERY, {'id': relay}) or {}).get('node')
     except Exception as exc:
@@ -75,16 +76,16 @@ def probe(token, numeric_id):
             print("  event    : not visible to this token (node resolved to null)")
         else:
             reachable = True
-            total = ((node.get('tickets') or {}).get('totalCount'))
-            print(f"  event    : name={node.get('name')!r} date={node.get('date')!r} "
-                  f"Event.tickets.totalCount={total}")
+            event_tickets = ((node.get('tickets') or {}).get('totalCount'))
+            print(f"  event    : name={node.get('name')!r} updatedAt={node.get('updatedAt')!r} "
+                  f"Event.tickets.totalCount={event_tickets}")
 
     try:
         conn = ((dice_graphql(token, ORDERS_QUERY, {'eventId': relay}).get('viewer') or {})
                 .get('orders') or {})
     except Exception as exc:
         print(f"  orders   : ERROR {str(exc)[:200]}")
-        return reachable, 0
+        return reachable, 0, event_tickets
 
     edges = conn.get('edges') or []
     tickets = sum(len((e.get('node') or {}).get('tickets') or []) for e in edges)
@@ -99,7 +100,7 @@ def probe(token, numeric_id):
               f"type={(first.get('ticketType') or {}).get('name')!r} "
               f"fullPrice={first.get('fullPrice')} total={first.get('total')}")
 
-    return reachable, conn.get('totalCount') or 0
+    return reachable, conn.get('totalCount') or 0, event_tickets
 
 
 def main():
@@ -112,13 +113,16 @@ def main():
         results[numeric_id] = probe(token, numeric_id)
 
     print("\n=== verdict ===")
-    for numeric_id, (reachable, orders) in results.items():
+    for numeric_id, (reachable, orders, event_tickets) in results.items():
         if orders:
             print(f"  {numeric_id}: ACCESSIBLE - {orders} orders. Safe to set as dice_mio_id.")
+        elif reachable and event_tickets:
+            print(f"  {numeric_id}: event is visible and reports {event_tickets} tickets, but "
+                  f"viewer.orders returns none - the orders belong to another DICE account. "
+                  f"A separate token for that account is needed.")
         elif reachable:
-            print(f"  {numeric_id}: event visible but 0 orders returned. Either genuinely no "
-                  f"sales, or the sales sit under another account - a separate DICE token "
-                  f"is needed.")
+            print(f"  {numeric_id}: event visible, Event.tickets.totalCount="
+                  f"{event_tickets!r}, 0 orders. No sales visible to this token.")
         else:
             print(f"  {numeric_id}: NOT ACCESSIBLE with this token - a separate DICE token "
                   f"for that account is needed.")
