@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="format-detection" content="telephone=no, date=no, address=no">
-<title>Festiflow — Billetterie · ML x Elektric Park XXL 2026</title>
+<title>Festiflow — Billetterie · Elektric Park 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
@@ -430,7 +430,7 @@ body {
 <div class="db-overlay" id="db-overlay">
   <div class="db-modal">
     <img src="LOGO_ROND_JAUNE.png" class="db-modal-logo">
-    <div class="db-modal-title">ML x Elektric Park XXL 2026</div>
+    <div class="db-modal-title">Elektric Park 2026</div>
     <div class="db-modal-sub">Tableau de bord interne</div>
     <div class="db-pw-field" id="db-pw-field">
       <input type="password" id="db-pw-input" style="position:absolute;opacity:0;width:1px;height:1px;" onkeydown="if(event.key==='Enter')dbSubmit()" oninput="dbUpdateDots(this.value)">
@@ -474,17 +474,18 @@ function dbSubmit(){
     <div class="nav-sw">
       <div class="nav-sw-av"><img src="https://madameloyal.github.io/budgetflow/LOGO_ROND_JAUNE.png" alt="" onerror="this.style.display='none';this.parentNode.textContent='EP'"></div>
       <div>
-        <div style="display:flex;align-items:center;gap:5px"><span style="font-size:13px;font-weight:600;color:#fff">Elektric Park XXL</span><span style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block"></span></div>
+        <div style="display:flex;align-items:center;gap:5px"><span style="font-size:13px;font-weight:600;color:#fff">Elektric Park</span><span style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block"></span></div>
         <div style="font-size:10px;color:var(--text-dim);margin-top:3px">EPK 050926 · J-31</div>
       </div>
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2.5" style="margin-left:2px"><path d="M6 9l6 6 6-6"/></svg>
       <select class="session-sw" onchange="if(this.value){window.location.href=this.value}">
         <option value="" disabled>Changer session</option>
-        <option value="bordeaux.html">Sonora Bordeaux 2026</option>
-<option value="epk.html" selected>ML x Elektric Park XXL 2026</option>
-<option value="bordeaux_oct.html">Sonora Bordeaux Oct 2026</option>
-<option value="geneve.html">ML Geneve 2026</option>
-<option value="rennes.html">ML Rennes 2026</option>
+        <option value="parisxxl.html">Paris XXL 2026</option>
+<option value="bordeaux.html">Bordeaux Juin 2026</option>
+<option value="epk.html" selected>Elektric Park 2026</option>
+<option value="bordeaux_oct.html">Bordeaux Octobre 2026</option>
+<option value="geneve.html">Genève 2026</option>
+<option value="rennes.html">Rennes 2026</option>
 
       </select>
     </div>
@@ -873,7 +874,7 @@ function dbSubmit(){
     <div id="proj-logique" class="hidden"><div class="proj-method"><strong>Méthodologie - Deux scénarios de projection</strong><br><br><strong>1. Trajectoire 2023</strong><br>Réplique exacte des ventes 2023 sur les J-31 restants. Les ventes journalières observées en 2023 à la même distance de l'événement sont ajoutées au cumul actuel 2026. Aucun ajustement - projection conservatrice basée sur l'historique brut.<br><br><strong>2. 2023 × coef. 2026</strong><br>La courbe de ventes 2023 est multipliée par le ratio de vélocité actuelle (2026 vs 2023 (même période)). Ce coefficient reflète la dynamique de vente actuelle : un coef. > 1 signifie que 2026 vend plus vite que 2023 au même stade.<br><br><strong>Samedi:</strong> vel. 14j = 19.5/jour · coef. = ×1.72<br>→ Trajectoire 2023: 2 075 (21%)<br>→ 2023 × coef. 2026: 2 473 (25%)<br><strong>Dimanche:</strong> vel. 14j = 7.6/jour · coef. = ×0.67<br>→ Trajectoire 2023: 1 554 (16%)<br>→ 2023 × coef. 2026: 1 300 (13%)<br><br><strong>Paramètres :</strong> billets payants uniquement · pass multi-jours = 1 entrée/jour · coefficient basé sur la vélocité 14j · projections plafonnées à la capacité</div></div>
 </div></div>
 
-<div style="text-align:center;padding:30px 0 10px;font-size:0.6em;color:var(--text-dim)">🎟 Dernier billet vendu · 05/08 · 21:03 &nbsp;·&nbsp; 🔄 Données API · 00:43 &nbsp;·&nbsp; Festiflow Dashboard v6</div>
+<div style="text-align:center;padding:30px 0 10px;font-size:0.6em;color:var(--text-dim)">🎟 Dernier billet vendu · 05/08 · 21:03 &nbsp;·&nbsp; 🔄 Données API · 02:03 &nbsp;·&nbsp; Festiflow Dashboard v6</div>
 
 </div>
 
@@ -881,7 +882,7 @@ function dbSubmit(){
 
 <div class="det-card">
     <div class="det-title">Événement</div>
-    <div class="det-row"><span class="det-k">Nom</span><span class="det-v">ML x Elektric Park XXL 2026</span></div>
+    <div class="det-row"><span class="det-k">Nom</span><span class="det-v">Elektric Park 2026</span></div>
     <div class="det-row"><span class="det-k">Marque</span><span class="det-v">Madame Loyal</span></div>
     <div class="det-row"><span class="det-k">Lieu</span><span class="det-v">Île des Impressionnistes, Chatou</span></div>
     <div class="det-row"><span class="det-k">Dates</span><span class="det-v">5-6 septembre 2026</span></div>
@@ -895,7 +896,7 @@ function dbSubmit(){
     <div class="det-title">Plateformes</div>
     <div class="det-links">
         <a class="det-link" href="https://dice.fm/partner/events/573271" target="_blank"><div class="det-link-icon" style="background:rgba(99,102,241,.1);color:#818cf8">DICE</div><div><div class="det-link-name">DICE Dashboard</div><div class="det-link-url">dice.fm/partner → 573271</div></div></a>
-        <a class="det-link" href="https://shotgun.live/en/festivals/madame-loyal-x-elektric-park" target="_blank"><div class="det-link-icon" style="background:rgba(251,191,36,.1);color:#fbbf24">SG</div><div><div class="det-link-name">Shotgun Dashboard</div><div class="det-link-url">shotgun.live → 535882</div></div></a>
+        <a class="det-link" href="https://shotgun.live/en/festivals/madame-loyal-x-elektric-park" target="_blank"><div class="det-link-icon" style="background:rgba(251,191,36,.1);color:#fbbf24">SG</div><div><div class="det-link-name">Shotgun Dashboard</div><div class="det-link-url">shotgun.live → </div></div></a>
         <a class="det-link" href="https://dice.fm/partner/tickets/event/oepro5-madame-loyal-x-elektric-park-xxl-edition-5th-sep-ile-des-impressionnistes-paris-tickets" target="_blank"><div class="det-link-icon" style="background:rgba(168,85,247,.08);color:#c4b5fd">www</div><div><div class="det-link-name">Page publique DICE</div><div class="det-link-url">dice.fm/partner/tickets/event/...</div></div></a>
         <a class="det-link" href="https://shotgun.live/en/festivals/madame-loyal-x-elektric-park" target="_blank"><div class="det-link-icon" style="background:rgba(168,85,247,.08);color:#c4b5fd">www</div><div><div class="det-link-name">Page publique Shotgun</div><div class="det-link-url">shotgun.live/en/festivals/mada...</div></div></a>
     </div>
@@ -923,7 +924,7 @@ function dbSubmit(){
 <div class="det-row"><span class="det-k">Dimanche 6 septembre</span><span class="det-v">10 000 places <span class="badge badge-edition" style="font-size:10px;padding:2px 7px;background:rgba(99,102,241,.1);color:#818cf8">Jour 2</span></span></div>
 </div>
 
-<div class="det-footer">🎟 Dernier billet vendu · 05/08 · 21:03 &nbsp;·&nbsp; 🔄 Données API · 00:43 &nbsp;·&nbsp; Festiflow Dashboard v6</div>
+<div class="det-footer">🎟 Dernier billet vendu · 05/08 · 21:03 &nbsp;·&nbsp; 🔄 Données API · 02:03 &nbsp;·&nbsp; Festiflow Dashboard v6</div>
 
 </div>
 
