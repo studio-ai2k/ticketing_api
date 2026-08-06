@@ -262,3 +262,37 @@ Ticket types:       XX                XX               —
 ```
 
 If any column is missing or misclassified, report which tickets diverged and why.
+
+---
+
+## Pages deploys: do NOT add deploy-pages@v4 (2026-08-06 outage)
+
+`Settings > Pages > Source` is **"Deploy from a branch"**, confirmed by Leo.
+The legacy `pages build and deployment` builder is therefore the only path that
+works, and it is fast: run 31113735296 deployed in **6 seconds** at 15:01 UTC.
+
+A separate handoff document (`HANDOFF_V6_6.md`, not in this repo) carries a
+trap list whose entry #11 reads:
+
+    "Pages deploys timeout at 10 min. Fixed by switching to Actions deploy
+     with deploy-pages@v4."
+
+**That prescribed fix is what caused the outage it describes.** `deploy-pages@v4`
+only works when Source is "GitHub Actions". Adding it while Source is
+branch-based leaves two paths contending for the single deployment slot, and
+every deploy after 15:02:56 UTC hung in `deployment_in_progress` until the
+action gave up - the legacy builder included, which had been healthy minutes
+earlier. Roughly five hours of dashboards never reached the site.
+
+Rewrite the trap as:
+
+    "deploy-pages@v4 requires Source = GitHub Actions. Adding it while Source
+     is branch-based breaks ALL deploys, including the branch builder that was
+     working."
+
+`.github/workflows/deploy-pages.yml` was deleted for this reason. Do not
+reintroduce it without switching Source first, and prefer leaving the branch
+path alone - it has a demonstrated success and needs no help.
+
+Note also that two handoff documents exist and disagree; this file had no trap
+list at all before this entry, which is how the contradiction went unnoticed.
