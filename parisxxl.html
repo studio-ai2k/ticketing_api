@@ -47,7 +47,6 @@ body {
 .nav-sw:hover { opacity: .8; }
 .nav-sw-av { width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2); border: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: .5px; overflow: hidden; }
 .nav-sw-av img { width: 100%; height: 100%; object-fit: cover; }
-.session-sw { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.01; cursor: pointer; z-index: 2; font-size: 16px; }
 .nm { font-size: 12px; font-weight: 500; padding: 8px 12px; color: var(--text-dim); cursor: pointer; white-space: nowrap; transition: color .15s; border: none; background: none; font-family: inherit; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
 .nm:hover { color: var(--text-muted); }
 .nm.on { color: #fff; font-weight: 600; }
@@ -424,6 +423,59 @@ body {
     canvas { max-height: 250px !important; }
     #suivi-future-days, #suivi-future-weeks { display: none !important; }
 }
+/* --- nav shell alignment with BudgetFlow (navshell_package/) --- */
+:root{--border-h:rgba(255,255,255,0.08)}
+.nm.pl{color:#333;cursor:default;font-style:normal}
+.nm.pl:hover{color:#333}
+
+/* Session switcher dropdown — from BudgetFlow, hardcoded for billetterie */
+.sw-wrap{position:relative}
+.sw-trigger{display:flex;align-items:center;gap:7px;cursor:pointer}
+.sw-chev{flex-shrink:0;transition:transform .2s}
+.sw-wrap.open .sw-chev{transform:rotate(180deg)}
+.sw-menu{position:absolute;top:calc(100% + 8px);min-width:230px;background:var(--surface-2);border:1px solid var(--border-h);border-radius:12px;padding:6px;box-shadow:0 20px 60px rgba(0,0,0,0.45);z-index:200;display:none}
+.sw-menu.sw-float{position:fixed;display:block;z-index:1000;top:var(--sw-top);left:var(--sw-left)}
+.sw-menu.sw-float.right{left:auto;right:var(--sw-right)}
+.sw-menu.sw-float.left{left:var(--sw-left)}
+.sw-wrap.open .sw-menu{display:block}
+.sw-menu.left{left:0}
+.sw-menu.right{right:0}
+.sw-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:8px;font-size:13px;color:var(--text-muted);cursor:pointer;white-space:nowrap;text-decoration:none}
+.sw-item:hover{background:var(--surface);color:var(--text)}
+.sw-item.active{background:var(--surface);color:var(--text);font-weight:600}
+.sw-check{margin-left:auto;color:var(--green);flex-shrink:0}
+.sw-label{display:flex;flex-direction:column;gap:1px}
+.sw-sub{font-size:10px;color:var(--text-dim)}
+.nav-sw-name{font-size:13px;font-weight:600;color:#fff;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.nav-sw-name .dot{width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0}
+.nav-sw-sub{font-size:10px;color:var(--text-dim);margin-top:3px;white-space:nowrap}
+.nav-top:has(.nav-sw.sw-wrap.open){overflow:visible;-webkit-mask-image:none;mask-image:none}
+
+/* Nav-user avatar */
+.nav-user{margin-left:auto;width:36px;height:36px;border-radius:50%;background:var(--surface-2);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);transition:opacity .15s;flex-shrink:0}
+.nav-user:hover{opacity:.8}
+
+/* Alignment overrides */
+.nav-top{max-width:1020px}
+.dept-tabs{max-width:1020px}
+.dt.on{color:#fff;font-weight:600;border-bottom:2px solid #fff;background:rgba(255,255,255,.06)}
+
+/* Mobile */
+@media(max-width:480px){
+  .nav-sw-av{width:30px;height:30px}
+  .nav-user{width:30px;height:30px}
+}
+
+/* Module-switcher dropdown (right side of nav) */
+.sw-item.disabled{cursor:default;color:var(--text-dim)}
+.sw-item.disabled:hover{background:transparent;color:var(--text-dim)}
+.sw-ico{width:16px;height:16px;flex-shrink:0;opacity:.8}
+.mod-trigger{padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.07);background:var(--surface-2)}
+.mod-trigger:hover{border-color:rgba(255,255,255,.14)}
+.mod-name{font-size:12px;font-weight:600;color:#fff;white-space:nowrap}
+.pill{margin-left:auto;font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border-h);color:var(--text-dim);white-space:nowrap}
+.pill.soon{color:var(--amber);border-color:rgba(251,191,36,0.25)}
+.pill.unset{color:var(--text-dim)}
 </style>
 </head>
 <body>
@@ -474,26 +526,73 @@ function dbSubmit(){
 
 <nav class="nav" id="main-nav">
   <div class="nav-top">
-    <div class="nav-sw">
-      <div class="nav-sw-av"><img src="https://madameloyal.github.io/budgetflow/LOGO_ROND_JAUNE.png" alt="" onerror="this.style.display='none';this.parentNode.textContent='PX'"></div>
-      <div>
-        <div style="display:flex;align-items:center;gap:5px"><span style="font-size:13px;font-weight:600;color:#fff">Paris XXL</span><span style="width:5px;height:5px;border-radius:50%;background:var(--text-dim);display:inline-block"></span></div>
-        <div style="font-size:10px;color:var(--text-dim);margin-top:3px">PARIS 130326 · Terminé</div>
+    <div class="nav-sw sw-wrap" style="position:relative">
+      <div class="sw-trigger" data-sw-trigger>
+        <div class="nav-sw-av"><img src="https://madameloyal.github.io/budgetflow/LOGO_ROND_JAUNE.png" alt="" onerror="this.style.display='none';this.parentNode.textContent='PX'"></div>
+        <div>
+          <div class="nav-sw-name">Paris XXL<span class="dot" style="background:var(--text-dim)"></span></div>
+          <div class="nav-sw-sub">PARIS 130326 · Terminé</div>
+        </div>
+        <svg class="sw-chev" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2.5" style="margin-left:2px"><path d="M6 9l6 6 6-6"/></svg>
       </div>
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2.5" style="margin-left:2px"><path d="M6 9l6 6 6-6"/></svg>
-      <select class="session-sw" onchange="if(this.value){window.location.href=this.value}">
-        <option value="" disabled>Changer session</option>
-        <option value="parisxxl.html" selected>Paris XXL 2026</option>
-<option value="bordeaux.html">Bordeaux Juin 2026</option>
-<option value="epk.html">Elektric Park 2026</option>
-<option value="bordeaux_oct.html">Bordeaux Octobre 2026</option>
-<option value="geneve.html">Genève 2026</option>
-<option value="rennes.html">Rennes 2026</option>
-
-      </select>
+      <div class="sw-menu left" role="menu" aria-label="Changer de session">
+        <a class="sw-item active" role="menuitem" href="parisxxl.html">
+          <span class="sw-label">Paris XXL 2026<span class="sw-sub">PARIS 130326 · Terminé</span></span>
+          <svg class="sw-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+        </a>
+        <a class="sw-item" role="menuitem" href="bordeaux.html">
+          <span class="sw-label">Bordeaux Juin 2026<span class="sw-sub">Événement</span></span>
+        </a>
+        <a class="sw-item" role="menuitem" href="epk.html">
+          <span class="sw-label">Elektric Park 2026<span class="sw-sub">Événement</span></span>
+        </a>
+        <a class="sw-item" role="menuitem" href="bordeaux_oct.html">
+          <span class="sw-label">Bordeaux Octobre 2026<span class="sw-sub">Événement</span></span>
+        </a>
+        <a class="sw-item" role="menuitem" href="geneve.html">
+          <span class="sw-label">Genève 2026<span class="sw-sub">Événement</span></span>
+        </a>
+        <a class="sw-item" role="menuitem" href="rennes.html">
+          <span class="sw-label">Rennes 2026<span class="sw-sub">Événement</span></span>
+        </a>
+      </div>
     </div>
     <button class="nm on" id="btn-billetterie" onclick="goPage('billetterie',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Billetterie</button>
     <button class="nm" id="btn-details" onclick="goPage('details',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Détails</button>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+<div class="sw-wrap" style="position:relative" aria-label="Changer de module">
+  <div class="sw-trigger mod-trigger" data-sw-trigger title="Changer de module">
+    <span class="mod-name">Billetterie</span>
+    <svg class="sw-chev" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+  </div>
+  <div class="sw-menu right" role="menu">
+    <a class="sw-item disabled" role="menuitem" href="#">
+      <svg class="sw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span class="sw-label">Événements</span>
+    </a>
+    <a class="sw-item disabled" role="menuitem" href="#">
+      <svg class="sw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+      <span class="sw-label">Budgetflow</span>
+    </a>
+    <span class="sw-item active" role="menuitem" aria-current="true">
+      <svg class="sw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 11v2"/><path d="M13 17v2"/></svg>
+      <span class="sw-label">Billetterie</span>
+      <svg class="sw-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+    </span>
+    <span class="sw-item disabled" role="menuitem">
+      <svg class="sw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+      <span class="sw-label">Demande d'Achat</span>
+      <span class="pill soon">bientôt</span>
+    </span>
+    <span class="sw-item disabled" role="menuitem">
+      <svg class="sw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="sw-label">Partenaires</span>
+      <span class="pill soon">bientôt</span>
+    </span>
+  </div>
+</div>
+<div class="nav-user" title="Compte" style="margin-left:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+</div>
     
   </div>
   <div class="dept-tabs-bg" id="section-tabs">
@@ -819,7 +918,7 @@ function dbSubmit(){
     <div id="proj-logique" class="hidden"><div class="proj-method"><strong>Méthodologie - Deux scénarios de projection</strong><br><br><strong>1. Trajectoire 2025</strong><br>Réplique exacte des ventes 2025 sur les J-0 restants. Les ventes journalières observées en 2025 à la même distance de l'événement sont ajoutées au cumul actuel 2026. Aucun ajustement - projection conservatrice basée sur l'historique brut.<br><br><strong>2. 2025 × coef. 2026</strong><br>La courbe de ventes 2025 est multipliée par le ratio de vélocité actuelle (2026 vs 2025 à J-0). Ce coefficient reflète la dynamique de vente actuelle : un coef. > 1 signifie que 2026 vend plus vite que 2025 au même stade.<br><br><strong>Vendredi:</strong> vel. 14j = 0.0/jour · coef. = ×0.00<br>→ Trajectoire 2025: 17 836 (83%)<br>→ 2025 × coef. 2026: 17 836 (83%)<br><strong>Samedi:</strong> vel. 14j = 0.0/jour · coef. = ×0.00<br>→ Trajectoire 2025: 23 350 (109%)<br>→ 2025 × coef. 2026: 23 350 (109%)<br><br><strong>Paramètres :</strong> billets payants uniquement · pass multi-jours = 1 entrée/jour · coefficient basé sur la vélocité 14j · projections plafonnées à la capacité</div></div>
 </div></div>
 
-<div style="text-align:center;padding:30px 0 10px;font-size:0.6em;color:var(--text-dim)">🎟 Dernier billet vendu · 30/03 · 13:01 &nbsp;·&nbsp; 🔄 Données API · 17:00 &nbsp;·&nbsp; Festiflow Dashboard v6</div>
+<div style="text-align:center;padding:30px 0 10px;font-size:0.6em;color:var(--text-dim)">🎟 Dernier billet vendu · 30/03 · 13:01 &nbsp;·&nbsp; 🔄 Données API · 21:28 &nbsp;·&nbsp; Festiflow Dashboard v6</div>
 
 </div>
 
@@ -869,7 +968,7 @@ function dbSubmit(){
 <div class="det-row"><span class="det-k">Samedi 14 mars</span><span class="det-v">21 500 places <span class="badge badge-edition" style="font-size:10px;padding:2px 7px;background:rgba(99,102,241,.1);color:#818cf8">Jour 2</span></span></div>
 </div>
 
-<div class="det-footer">🎟 Dernier billet vendu · 30/03 · 13:01 &nbsp;·&nbsp; 🔄 Données API · 17:00 &nbsp;·&nbsp; Festiflow Dashboard v6</div>
+<div class="det-footer">🎟 Dernier billet vendu · 30/03 · 13:01 &nbsp;·&nbsp; 🔄 Données API · 21:28 &nbsp;·&nbsp; Festiflow Dashboard v6</div>
 
 </div>
 
@@ -1098,6 +1197,60 @@ document.addEventListener('DOMContentLoaded', function(){
   if(d) d.textContent = fmt(_presenceNoWarmup);
   if(c) c.textContent = '/ ' + fmt(_capacityNoWarmup);
 });
+</script>
+<script>
+/* Session switcher toggle — from BudgetFlow, hardcoded for billetterie */
+(function(){
+  function placeFloat(wrap){
+    var menu = wrap._swMenu, trig = wrap.querySelector('[data-sw-trigger]');
+    if(!menu || !trig) return;
+    var r = trig.getBoundingClientRect();
+    menu.style.setProperty('--sw-top', (r.bottom + 8) + 'px');
+    if(menu.classList.contains('right')){
+      menu.style.setProperty('--sw-right', (window.innerWidth - r.right) + 'px');
+    } else {
+      menu.style.setProperty('--sw-left', r.left + 'px');
+    }
+  }
+  function openWrap(wrap){
+    var menu = wrap.querySelector('.sw-menu');
+    if(!menu) return;
+    wrap._swMenu = menu;
+    wrap._swHome = menu.parentNode;
+    wrap._swNext = menu.nextSibling;
+    document.body.appendChild(menu);
+    menu.classList.add('sw-float');
+    wrap.classList.add('open');
+    placeFloat(wrap);
+  }
+  function closeWrap(wrap){
+    var menu = wrap._swMenu;
+    if(menu){
+      menu.classList.remove('sw-float');
+      menu.style.cssText = '';
+      if(wrap._swHome) wrap._swHome.insertBefore(menu, wrap._swNext || null);
+    }
+    wrap.classList.remove('open');
+    wrap._swMenu = wrap._swHome = wrap._swNext = null;
+  }
+  function closeAll(){ document.querySelectorAll('.sw-wrap.open').forEach(closeWrap); }
+
+  document.addEventListener('click', function(e){
+    var trig = e.target.closest('[data-sw-trigger]');
+    if(trig){
+      var wrap = trig.closest('.sw-wrap');
+      var wasOpen = wrap.classList.contains('open');
+      closeAll();
+      if(!wasOpen) openWrap(wrap);
+      e.stopPropagation();
+      return;
+    }
+    if(!e.target.closest('.sw-menu')) closeAll();
+  });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeAll(); });
+  window.addEventListener('resize', function(){ document.querySelectorAll('.sw-wrap.open').forEach(placeFloat); });
+  window.addEventListener('scroll', function(){ document.querySelectorAll('.sw-wrap.open').forEach(placeFloat); }, true);
+})();
 </script>
 </body>
 </html>
