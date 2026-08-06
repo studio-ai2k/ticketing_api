@@ -134,6 +134,17 @@ NAV_SHELL_CSS = """
   .nav-sw-av{width:30px;height:30px}
   .nav-user{width:30px;height:30px}
 }
+
+/* Module-switcher dropdown (right side of nav) */
+.sw-item.disabled{cursor:default;color:var(--text-dim)}
+.sw-item.disabled:hover{background:transparent;color:var(--text-dim)}
+.sw-ico{width:16px;height:16px;flex-shrink:0;opacity:.8}
+.mod-trigger{padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.07);background:var(--surface-2)}
+.mod-trigger:hover{border-color:rgba(255,255,255,.14)}
+.mod-name{font-size:12px;font-weight:600;color:#fff;white-space:nowrap}
+.pill{margin-left:auto;font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border-h);color:var(--text-dim);white-space:nowrap}
+.pill.soon{color:var(--amber);border-color:rgba(251,191,36,0.25)}
+.pill.unset{color:var(--text-dim)}
 """
 
 NAV_SHELL_JS = """<script>
@@ -192,14 +203,56 @@ NAV_SHELL_JS = """<script>
 </script>
 """
 
-BUDGET_BUTTON = '<button class="nm pl">Budget</button>'
-NAV_USER = (
-    '<div style="margin-left:auto;display:flex;align-items:center;gap:10px">'
+# Verbatim from navshell_package/module_dropdown.html. Every entry but
+# Billetterie is inert on purpose - the other modules either do not exist yet
+# ("bientôt") or have no cross-link mapping ("non configuré"). They become <a>
+# tags with real hrefs once those exist.
+#
+# It is a second .sw-wrap / [data-sw-trigger], so the same switcher.js IIFE
+# drives it; .sw-menu.right anchors it to the right edge instead of the left.
+MODULE_DROPDOWN = """<div class="sw-wrap" style="position:relative" aria-label="Changer de module">
+  <div class="sw-trigger mod-trigger" data-sw-trigger title="Changer de module">
+    <span class="mod-name">Billetterie</span>
+    <svg class="sw-chev" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+  </div>
+  <div class="sw-menu right" role="menu">
+    <a class="sw-item disabled" role="menuitem" href="#">
+      <svg class="sw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span class="sw-label">Événements</span>
+      <span class="pill soon">bientôt</span>
+    </a>
+    <a class="sw-item disabled" role="menuitem" href="#">
+      <svg class="sw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+      <span class="sw-label">Budgetflow</span>
+      <span class="pill unset">non configuré</span>
+    </a>
+    <span class="sw-item active" role="menuitem" aria-current="true">
+      <svg class="sw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 11v2"/><path d="M13 17v2"/></svg>
+      <span class="sw-label">Billetterie</span>
+      <svg class="sw-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+    </span>
+    <span class="sw-item disabled" role="menuitem">
+      <svg class="sw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+      <span class="sw-label">Demande d'Achat</span>
+      <span class="pill soon">bientôt</span>
+    </span>
+    <span class="sw-item disabled" role="menuitem">
+      <svg class="sw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="sw-label">Partenaires</span>
+      <span class="pill soon">bientôt</span>
+    </span>
+  </div>
+</div>"""
+
+# The right-hand group: module dropdown, then the account avatar.
+NAV_RIGHT = (
+    '<div style="margin-left:auto;display:flex;align-items:center;gap:10px">\n'
+    + MODULE_DROPDOWN + '\n'
     '<div class="nav-user" title="Compte" style="margin-left:0">'
     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
     'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
     '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'
-    '</svg></div></div>'
+    '</svg></div>\n</div>'
 )
 SW_CHECK_SVG = (
     '<svg class="sw-check" width="14" height="14" viewBox="0 0 24 24" fill="none" '
@@ -300,18 +353,19 @@ def align_nav_shell(html):
 
     html, sw_count = NAV_SW_BLOCK_RE.subn(swap, html, count=1)
 
-    # 7-8. Budget placeholder then the account avatar, both after "Détails" so
-    # the avatar is the last child of .nav-top and its margin-left:auto pushes
-    # it to the far right. Depends on the upload link already being removed.
+    # 7-8. The right-hand group (module dropdown + account avatar) goes after
+    # "Détails" so it is the last child of .nav-top and its margin-left:auto
+    # pushes it right. The in-module buttons stay put - they drive goPage().
+    # Depends on the upload link already being removed.
     html, buttons_count = DETAILS_BUTTON_RE.subn(
-        lambda m: f'{m.group(1)}\n    {BUDGET_BUTTON}\n    {NAV_USER}', html, count=1
+        lambda m: f'{m.group(1)}\n    {NAV_RIGHT}', html, count=1
     )
 
     # 9. Toggle behaviour.
     html, js_count = re.subn(r'</body>', NAV_SHELL_JS + '</body>', html, count=1)
 
     for label, count in (('CSS injection', css_count), ('switcher markup', sw_count),
-                         ('Budget button + avatar', buttons_count), ('switcher JS', js_count)):
+                         ('module dropdown + avatar', buttons_count), ('switcher JS', js_count)):
         if count != 1:
             problems.append(f'nav shell: {label} did not apply (matched {count} times)')
     if dropped_css != 1:
@@ -322,6 +376,12 @@ def align_nav_shell(html):
         )
     if 'class="session-sw"' in html:
         problems.append('nav shell: a <select class="session-sw"> survived')
+    # Both dropdowns are driven by the one IIFE via [data-sw-trigger]; if the
+    # counts drift apart, one of them has lost its toggle and is dead markup.
+    if html.count('data-sw-trigger') - NAV_SHELL_JS.count('data-sw-trigger') != 2:
+        problems.append('nav shell: expected exactly 2 [data-sw-trigger] elements')
+    if html.count('class="mod-trigger"') + html.count('mod-trigger" data-sw-trigger') != 1:
+        problems.append('nav shell: module dropdown trigger missing')
     return html, problems
 
 
