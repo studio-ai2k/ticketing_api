@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
-   Festiflow dashboard stylesheet — redesign v6.7 (Deploy 3)
+   Festiflow dashboard stylesheet — redesign v6.8 (Deploy 3 + T3)
    EXACT contents of <style>...</style> from mock/epk_redesign_final.html
 
    This SUPERSEDES style/dashboard_v6_6.css. It is the Deploy 1 sheet
@@ -9,6 +9,17 @@
    rules (unused until the selector feature is approved — harmless).
 
    Swap it in wholesale inside apply_redesign. Do not hand-merge.
+
+   v6.8 = v6.7 plus two corrections to the LATER .scenario-* rules, which
+   redesigned the buttons as standalone bordered controls but only declared
+   display/gap/margin - so the EARLIER rule's pill-track background, padding
+   and radius survived and drew between them, and the active state used the
+   --day-1 pink plus an indigo (#818cf8) that is not in the palette at all.
+   The later rules now reset what the earlier one set, and the active state
+   matches .toggle-btn and .cmp-trigger.
+
+   Applied by hand because the corrected upstream sheet had not arrived. When
+   the v6.8 package lands, diff it against this file and swap wholesale.
    ═══════════════════════════════════════════════════════════════ */
 
 
@@ -403,9 +414,9 @@ body {
 .legend-swatch.dashed { border-top: 2px dashed; background: none; height: 0; }
 .legend-swatch.dotted { border-top: 2.5px dotted; background: none; height: 0; }
 .legend-swatch.band { height: 10px; border-radius: 2px; }
-.scenario-toggle { display: flex; gap: 6px; margin-top: 10px; }
+.scenario-toggle { display: flex; gap: 6px; margin-top: 10px; background: none; padding: 0; border-radius: 0; }
 .scenario-btn { flex: 1; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-muted); font-size: var(--fs-caption); font-family: inherit; cursor: pointer; transition: all 0.2s; }
-.scenario-btn.active { background: rgba(244,114,182,0.1); border-color: rgba(244,114,182,0.3); color: #818cf8; font-weight: 600; }
+.scenario-btn.active { background: rgba(255,255,255,0.07); border-color: var(--border-h); color: #fff; font-weight: 600; }
 .proj-method { background: var(--surface-2); border-radius: 12px; padding: 18px 20px; margin-top: 14px; font-size: var(--fs-caption); line-height: 1.7; color: var(--text); }
 .proj-method strong { color: #fff; }
 /* ═══ SECTION DIVIDERS ═══ */

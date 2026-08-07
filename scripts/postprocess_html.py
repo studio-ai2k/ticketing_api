@@ -240,6 +240,11 @@ UPLOAD_LINK_RE = re.compile(
 FOOTER_OLD = '📤 Données uploadées'
 FOOTER_NEW = '🔄 Données API'
 
+# Login overlay subtitle. Middle dot, matching the platform cards
+# ("Shotgun · Smartboard"); double-T "Billetterie", matching the nav.
+SUBTITLE_OLD = 'Tableau de bord interne'
+SUBTITLE_NEW = 'Festiflow · Billetterie'
+
 # The nav avatar hotlinks the logo from another account's Pages site while the
 # password overlay already loads the identical file from our own origin - the
 # same 944 KB asset fetched twice, from two places, on every page load.
@@ -261,10 +266,25 @@ VERSION_NEW = f'Festiflow Dashboard v{DASHBOARD_VERSION}'
 # Vendored from the redesign package: the exact <style> contents and <link>
 # tags of mock/epk_redesign_final.html. Kept as files rather than inlined
 # because it is 41 KB, and because bumping the design is then a file swap.
-STYLE_PATH = Path(__file__).resolve().parent.parent / 'style' / 'dashboard_v6_7.css'
+STYLE_PATH = Path(__file__).resolve().parent.parent / 'style' / 'dashboard_v6_8.css'
 FONT_LINKS_PATH = Path(__file__).resolve().parent.parent / 'style' / 'font_links.html'
 
 STYLE_BLOCK_RE = re.compile(r'<style>.*?</style>', re.DOTALL)
+
+# The template renders three per-event values INSIDE its <style> block:
+# {{LOGIN_BG_IMAGE}}, {{DAY_TAB_ACTIVE_CSS}} and {{PROJ_GRID_COLS}}. Replacing
+# that block wholesale throws all three away and substitutes whatever the mock
+# was baked with - which is how paris_xxl lost its configured login background
+# and silently fell back to epk's.
+#
+# The other two are dead: Deploy 2 removed .chart-tabs and .proj-grid from the
+# markup, so nothing selects the rules they fed. This one is live, so it is
+# carried across the swap.
+#
+# The general rule, which is what actually matters here: a wholesale <style>
+# replacement destroys every templated value in it. Before adding a fourth,
+# check this list.
+OVERLAY_BG_RE = re.compile(r"(\.db-overlay \{[^}]*url\(')([^']*)('\)[^}]*\})")
 FONT_LINK_RE = re.compile(r'[ \t]*<link[^>]*fonts\.(?:googleapis|gstatic)\.com[^>]*>\n?')
 
 # Attribute-scoped so a rename cannot hit the same word inside JS or text.
@@ -659,6 +679,14 @@ def apply_redesign(html):
     if not STYLE_PATH.exists() or not FONT_LINKS_PATH.exists():
         return html, [f"redesign assets missing at {STYLE_PATH.parent}"], {}
 
+    # Captured before the swap, restored after it.
+    original_style = STYLE_BLOCK_RE.search(html)
+    templated_bg = None
+    if original_style:
+        m = OVERLAY_BG_RE.search(original_style.group(0))
+        if m:
+            templated_bg = m.group(2)
+
     css = STYLE_PATH.read_text(encoding='utf-8')
     # The package's comment header names the old classes it has no rules for
     # (.details-toggle, .yoy-badge, .session-sw). Left in, those strings ship
@@ -668,6 +696,17 @@ def apply_redesign(html):
         lambda m: '<style>\n' + css + '\n</style>', html, count=1)
     if style_count != 1:
         problems.append(f"stylesheet swap matched {style_count} <style> blocks (want 1)")
+
+    if templated_bg:
+        html, bg_count = OVERLAY_BG_RE.subn(
+            lambda m: m.group(1) + templated_bg + m.group(3), html, count=1)
+        if bg_count != 1:
+            problems.append(
+                'login background: could not restore the per-event image after '
+                'the stylesheet swap')
+    else:
+        problems.append(
+            'login background: no url() found in the template .db-overlay rule')
 
     # Drop every generated font link, then insert the package's set once in
     # their place. The old line carries Outfit (dead) and JetBrains Mono
@@ -1638,8 +1677,17 @@ def postprocess(path):
     logo_count = html.count(LOGO_REMOTE)
     html = html.replace(LOGO_REMOTE, LOGO_LOCAL)
 
+    subtitle_count = html.count(SUBTITLE_OLD)
+    html = html.replace(SUBTITLE_OLD, SUBTITLE_NEW)
+    if subtitle_count != 1:
+        problems_early = f'login subtitle found {subtitle_count} time(s), expected 1'
+    else:
+        problems_early = None
+
     html, redesign_problems, renamed = apply_redesign(html)
     problems = list(redesign_problems)
+    if problems_early:
+        problems.append(problems_early)
 
     # _match_div walks raw <div>/</div> tags, so a <div inside a JS or CSS
     # string would silently mis-nest the whole rebuild. Assert it, rather than

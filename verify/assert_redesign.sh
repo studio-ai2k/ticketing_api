@@ -14,7 +14,7 @@ FAIL=0
 
 # The stylesheet postprocess_html.py vendors in. Assertions that would
 # otherwise hardcode a property of the design derive it from here instead.
-CSS="$(dirname "$0")/../style/dashboard_v6_7.css"
+CSS="$(dirname "$0")/../style/dashboard_v6_8.css"
 
 fail() { echo "  FAIL  $1"; FAIL=1; }
 pass() { echo "  ok    $1"; }
@@ -74,7 +74,22 @@ for f in "${FILES[@]}"; do
   # the version sits in its own .pgf-ver span. Asserting the old literal would
   # now read 0 on a correct file.
   n=$(count "Festiflow Dashboard<span class=\"pgf-ver\">v6\.8</span>" "$p")
-  [[ "$n" == "2" ]] && pass "footer v6.7 (x2)" || fail "footer version wrong or wrong count ($n, want 2)"
+  [[ "$n" == "2" ]] && pass "footer v6.8 (x2)" || fail "footer version wrong or wrong count ($n, want 2)"
+
+  # ---- 11. login overlay (T1, T2) ----
+  n=$(count "class=\"db-modal-sub\">Festiflow · Billetterie<" "$p")
+  [[ "$n" == "1" ]] && pass "login subtitle" || fail "$n login subtitle(s), want 1"
+  n=$(count "Tableau de bord interne" "$p")
+  [[ "$n" == "0" ]] && pass "old subtitle gone" || fail "old subtitle survived ($n)"
+
+  # The per-event login background lives inside the template's <style>, which
+  # apply_redesign replaces wholesale - so it has to be carried across the
+  # swap. Without that, every event silently inherits whatever the mock was
+  # baked with, which is how paris_xxl lost paris_login.jpg.
+  want=$(python3 verify/check_login_bg.py "$p" expected)
+  n=$(python3 verify/check_login_bg.py "$p" actual)
+  [[ "$n" == "$want" ]] && pass "login background $n (from config)" \
+                        || fail "login background is $n, config says $want"
 
   # ---- 8. nav shell still intact (regression guard) ----
   for m in "sw-wrap" "nav-user" "Partenaires"; do

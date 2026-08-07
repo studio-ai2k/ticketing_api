@@ -976,3 +976,64 @@ The same hazard applies to `str.format` and f-strings over injected JS (`{}` in
 an object literal), and to `%` formatting. Injected code should be concatenated
 or passed through a callable, never interpolated by a mechanism that reads its
 own metacharacters.
+
+## The stylesheet swap destroys templated values inside `<style>`
+
+`apply_redesign` replaces the template's entire `<style>` block with the
+vendored sheet. The template renders **three per-event values inside that
+block**, and all three were thrown away from Deploy 1 onward:
+
+| placeholder | status |
+| --- | --- |
+| `{{LOGIN_BG_IMAGE}}` | **live** — now carried across the swap |
+| `{{DAY_TAB_ACTIVE_CSS}}` | dead — Deploy 2 removed `.chart-tabs` from the markup |
+| `{{PROJ_GRID_COLS}}` | dead — Deploy 2 removed `.proj-grid` |
+
+The live one is how `paris_xxl` lost its configured background. Config says
+`paris_login.jpg`; `run.py` resolves `paris_login.jpg` correctly at every point;
+the published page requested `upload.JPG`, because that is what the mock was
+baked with. Proven from history — `git show 12182c4:parisxxl.html` has
+`url('paris_login.jpg')`, and every build after Deploy 1 has `url('upload.JPG')`.
+
+It failed in total silence twice over: a missing background falls back to the
+solid colour with nothing in the console, **and** the file it fell back to does
+not exist either.
+
+`verify/check_login_bg.py` now compares each published page against
+`event_config.csv` and is wired into `assert_redesign.sh`.
+
+**Before adding a fourth templated value to the template's `<style>`, add it to
+the carry-across list in `apply_redesign`.** A wholesale block replacement
+destroys everything in it, and nothing about that failure is visible.
+
+## Duplicate CSS selectors — the audit
+
+`verify/audit_css_overrides.py` lists every selector declared more than once at
+top level and reports which properties the **earlier** declaration leaves in
+force. Three real bugs came from this pattern (`.hero-unit`, `.det-link-icon`,
+`.scenario-toggle`), each visible only by looking at the page.
+
+Two things make the output usable rather than noise:
+
+- **Shorthand awareness.** A later `border-bottom: 2px solid #fff` does reset an
+  earlier `border-bottom-color`, so that is not a survivor. Without this the
+  audit cried wolf on `.dt.on`, and a noisy audit gets ignored — which is the
+  only way this pattern keeps shipping.
+- **Additive vs redesign.** Findings are ranked by how much of the earlier rule
+  the later one replaces. Near 0% means the later rule is layering a property
+  on, which is fine and is most of the list. High means it is a redesign, and
+  whatever it forgot to reset is the latent surprise.
+
+Current state: 398 selectors, 18 declared twice, **3 classed as redesigns**:
+
+- `.scenario-toggle` (83%) — `margin-bottom: 12px` still survives from the
+  pill-track rule even after the T3 fix. Harmless spacing, but it is a survivor.
+- `.scenario-btn` (71%) — `font-weight: 600` survives onto every button, which
+  makes `.scenario-btn.active { font-weight: 600 }` a **no-op**. Measured, not
+  inferred: idle and active both compute to 600. The active state cannot
+  distinguish itself by weight; it relies entirely on background and border.
+- `.pill` (89%) — created by Deploy 1's rename. `yoy-badge` became `pill`, which
+  is also the nav module dropdown's badge class, so two unrelated components now
+  share one name. The nav rule adds `margin-left: auto`, which lands on the YoY
+  badge too. Benign where it sits today, but the collision is real and a rename
+  is a design decision, not a build one.

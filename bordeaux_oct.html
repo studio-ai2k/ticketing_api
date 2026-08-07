@@ -404,9 +404,9 @@ body {
 .legend-swatch.dashed { border-top: 2px dashed; background: none; height: 0; }
 .legend-swatch.dotted { border-top: 2.5px dotted; background: none; height: 0; }
 .legend-swatch.band { height: 10px; border-radius: 2px; }
-.scenario-toggle { display: flex; gap: 6px; margin-top: 10px; }
+.scenario-toggle { display: flex; gap: 6px; margin-top: 10px; background: none; padding: 0; border-radius: 0; }
 .scenario-btn { flex: 1; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-muted); font-size: var(--fs-caption); font-family: inherit; cursor: pointer; transition: all 0.2s; }
-.scenario-btn.active { background: rgba(244,114,182,0.1); border-color: rgba(244,114,182,0.3); color: #818cf8; font-weight: 600; }
+.scenario-btn.active { background: rgba(255,255,255,0.07); border-color: var(--border-h); color: #fff; font-weight: 600; }
 .proj-method { background: var(--surface-2); border-radius: 12px; padding: 18px 20px; margin-top: 14px; font-size: var(--fs-caption); line-height: 1.7; color: var(--text); }
 .proj-method strong { color: #fff; }
 /* ═══ SECTION DIVIDERS ═══ */
@@ -625,7 +625,7 @@ body {
   <div class="db-modal">
     <img src="LOGO_ROND_JAUNE.png" class="db-modal-logo">
     <div class="db-modal-title">Bordeaux Octobre 2026</div>
-    <div class="db-modal-sub">Tableau de bord interne</div>
+    <div class="db-modal-sub">Festiflow · Billetterie</div>
     <div class="db-pw-field" id="db-pw-field">
       <input type="password" id="db-pw-input" style="position:absolute;opacity:0;width:1px;height:1px;" onkeydown="if(event.key==='Enter')dbSubmit()" oninput="dbUpdateDots(this.value)">
       <span class="db-pw-placeholder" id="db-pw-display">Mot de passe</span>
@@ -1177,7 +1177,7 @@ function dbSubmit(){
 </div>
 </div>
 
-<div class="pg-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">07/08 · 07:42</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 3.5V9H15"/></svg><span class="pgf-k">Données API</span><span class="pgf-v">00:41</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v6.8</span></span></div>
+<div class="pg-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">07/08 · 07:42</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 3.5V9H15"/></svg><span class="pgf-k">Données API</span><span class="pgf-v">01:10</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v6.8</span></span></div>
 
 </div>
 
@@ -1225,7 +1225,7 @@ function dbSubmit(){
 <div class="det-row"><span class="det-k">Samedi 17 octobre</span><span class="det-v">18 000 places <span class="badge badge-edition" style="font-size:var(--fs-nano);padding:2px 7px;background:rgba(99,102,241,.1);color:#818cf8">Jour 2</span></span></div>
 </div>
 
-<div class="pg-footer det-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">07/08 · 07:42</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 3.5V9H15"/></svg><span class="pgf-k">Données API</span><span class="pgf-v">00:41</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v6.8</span></span></div>
+<div class="pg-footer det-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">07/08 · 07:42</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 3.5V9H15"/></svg><span class="pgf-k">Données API</span><span class="pgf-v">01:10</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v6.8</span></span></div>
 
 </div>
 
