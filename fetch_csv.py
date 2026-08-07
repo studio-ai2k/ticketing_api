@@ -785,7 +785,8 @@ def process_shotgun_ticket(raw, event_days, organic_only=False):
     }, None
 
 
-def fetch_shotgun(event_config, token, organizer_id, account_name='?', organic_only=None):
+def fetch_shotgun(event_config, token, organizer_id, account_name='?', organic_only=None,
+                  after=None, since=None, probe=None):
     """Fetch + classify all Shotgun tickets for the event."""
     shotgun_event_id = event_config['shotgun_event_id']
     log(f"\n🔫 Shotgun: event {shotgun_event_id} (organizer {organizer_id})")
@@ -805,8 +806,21 @@ def fetch_shotgun(event_config, token, organizer_id, account_name='?', organic_o
     tickets = []
     skipped = defaultdict(int)
     total_raw = 0
-    for raw in fetch_shotgun_pages(token, organizer_id, shotgun_event_id):
+    for raw in fetch_shotgun_pages(token, organizer_id, shotgun_event_id,
+                                   after=after, probe=probe):
         total_raw += 1
+        # H9: a delta row whose ordered_at is at or before the stored maximum
+        # cannot be a new sale - the cursor orders by ticket_updated_at, so it
+        # is an existing ticket that changed (refund, cancellation, the resale
+        # flip). Ties are the common case, because the stored maximum IS the
+        # most recent sale, so this has to be <= and not <. Appending such a
+        # row would book a refund as a fresh sale.
+        if since is not None:
+            ordered_at = parse_shotgun_datetime(raw.get('ordered_at'))
+            if ordered_at is not None and ordered_at.replace(microsecond=0) <= since:
+                if probe is not None:
+                    probe['modified'] = probe.get('modified', 0) + 1
+                continue
         row, reason = process_shotgun_ticket(raw, event_config['event_days'], organic_only)
         if row is None:
             skipped[reason] += 1
@@ -1182,6 +1196,12 @@ def parse_args(argv):
     parser.add_argument('--out', default=None, help='output CSV path (default api_output/{event}_merged.csv)')
     parser.add_argument('--skip-shotgun', action='store_true', help='do not fetch Shotgun')
     parser.add_argument('--skip-dice', action='store_true', help='do not fetch DICE')
+    parser.add_argument('--incremental', action='store_true',
+                        help='resume Shotgun from the stored cursor; DICE is always full')
+    parser.add_argument('--full', action='store_true',
+                        help='force a full fetch even if incremental state exists')
+    parser.add_argument('--state-csv', default=None,
+                        help='stored merged CSV to resume from (default data/{event}_merged.csv)')
     return parser.parse_args(argv)
 
 
@@ -1211,6 +1231,38 @@ def main(argv=None):
         manual_dice_path = None
     log(f"Manual DICE: {manual_dice_path or '(none)'}")
 
+    # ---- incremental resume state -------------------------------------
+    # Only Shotgun benefits: it is 20k+ tickets at ~0.8s/page, while a DICE
+    # event is 2-5k and completes in seconds. DICE stays a full fetch.
+    stored_shotgun = []
+    resume_after = None
+    resume_since = None
+    probe = {}
+    if args.incremental and not args.full and not args.skip_shotgun:
+        state_csv = Path(args.state_csv) if args.state_csv else STATE_DIR / f"{args.event}_merged.csv"
+        stored = load_stored_rows(state_csv)
+        state = load_state(args.event)
+        why = None
+        if stored is None:
+            why = f"no usable stored CSV at {state_csv}"
+        elif state is None:
+            why = "no stored cursor"
+        elif str(state.get('shotgun_event_id') or '') != str(event_config['shotgun_event_id'] or ''):
+            why = (f"cursor was written for Shotgun event "
+                   f"{state.get('shotgun_event_id')}, config now says "
+                   f"{event_config['shotgun_event_id']}")
+        if why:
+            log(f"\n↻ incremental unavailable ({why}) - full fetch")
+        else:
+            # H10: only Shotgun rows carry forward. DICE is refetched whole
+            # every run, so keeping its stored rows would double the DICE side
+            # on every incremental pass.
+            stored_shotgun = [t for t in stored if t['platform'] == 'Shotgun']
+            resume_after = state['cursor']
+            resume_since = parse_shotgun_datetime(state.get('max_ordered_at'))
+            log(f"\n↻ incremental: {len(stored_shotgun)} stored Shotgun rows, "
+                f"resuming after {redact(resume_after)}")
+
     shotgun_tickets = []
     dice_tickets = []
     missing = []
@@ -1224,9 +1276,38 @@ def main(argv=None):
         # A manual DICE export makes this event dual-platform just as a
         # dice_mio_id would, so the same import-channel filter has to apply.
         organic_only = bool(event_config['dice_mio_id']) or bool(manual_dice_path)
-        shotgun_tickets = fetch_shotgun(
-            event_config, shotgun_token, organizer_id, account, organic_only=organic_only
+        delta = fetch_shotgun(
+            event_config, shotgun_token, organizer_id, account, organic_only=organic_only,
+            after=resume_after, since=resume_since, probe=probe,
         )
+        if resume_after and probe.get('modified'):
+            # H3 trip. A modification cannot be applied to an append-only file,
+            # so refetch this event whole. Machine-greppable for H8.
+            log(f"::warning::H3-TRIP event={args.event} reason=modified-rows "
+                f"count={probe['modified']} stored={len(stored_shotgun)} "
+                f"delta={len(delta)}")
+            probe = {}
+            shotgun_tickets = fetch_shotgun(
+                event_config, shotgun_token, organizer_id, account,
+                organic_only=organic_only, probe=probe,
+            )
+            stored_shotgun = []
+        elif resume_after and probe.get('total') is not None and \
+                probe['total'] != len(stored_shotgun) + len(delta):
+            log(f"::warning::H3-TRIP event={args.event} reason=total-mismatch "
+                f"reported={probe['total']} "
+                f"expected={len(stored_shotgun) + len(delta)}")
+            probe = {}
+            shotgun_tickets = fetch_shotgun(
+                event_config, shotgun_token, organizer_id, account,
+                organic_only=organic_only, probe=probe,
+            )
+            stored_shotgun = []
+        else:
+            shotgun_tickets = stored_shotgun + delta
+            if resume_after:
+                log(f"   ↻ appended {len(delta)} new Shotgun row(s) "
+                    f"to {len(stored_shotgun)} stored")
 
     if args.skip_dice or not event_config['dice_mio_id']:
         log("\n🎲 DICE: skipped")
@@ -1245,7 +1326,30 @@ def main(argv=None):
         dice_tickets = dice_tickets + load_manual_dice_tickets(manual_dice_path)
 
     tickets = merge_tickets(dice_tickets, shotgun_tickets)
+
+    # H10 guard. DICE is replaced wholesale each run, never appended, so the
+    # merged file must carry exactly this run's DICE rows. Anything larger
+    # means stored DICE rows survived and the platform is doubling.
+    dice_in_output = sum(1 for t in tickets if t['platform'] == 'DICE')
+    if dice_in_output != len(dice_tickets):
+        raise RuntimeError(
+            f"DICE row count in the merged output ({dice_in_output}) does not "
+            f"match this run's DICE fetch ({len(dice_tickets)}) - stored DICE "
+            f"rows leaked through. Refusing to write a doubled file."
+        )
+
     save_merged_csv(tickets, output_path)
+
+    # Record where the next incremental resumes from. Only after a Shotgun
+    # fetch that actually paged - otherwise the previous cursor stands.
+    if probe.get('cursor') and not args.skip_shotgun and event_config['shotgun_event_id']:
+        sg = [t for t in tickets if t['platform'] == 'Shotgun']
+        max_ordered = max((t['order_datetime'] for t in sg), default=None)
+        save_state(args.event, probe['cursor'], len(sg),
+                   max_ordered.strftime('%Y-%m-%d %H:%M:%S') if max_ordered else None,
+                   event_config['shotgun_event_id'])
+        log(f"   ↻ state saved: {len(sg)} Shotgun rows, "
+            f"total field {'found via ' + probe['total_key'] if probe.get('total') else 'not exposed'}")
     print_summary(tickets, event_config, output_path)
     return 0
 
