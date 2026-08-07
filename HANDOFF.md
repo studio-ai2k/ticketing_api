@@ -947,3 +947,32 @@ reintroducing the single-label update fails it (`column header "2023
 wired into `assert_redesign.sh` — run it by hand after any renderer change.
 
 **Do not remove its negative tests.** Same standing as `check_offset.py`'s.
+
+## Trap #6: injecting code through `re.sub` — the escape you get away with
+
+`postprocess_html.py` injects a client-side `<script>` by passing it to
+`re.subn` as the **replacement**, where a backslash is an escape sequence, not
+a literal. A single `\s` in an injected JS regex aborted the build:
+
+```
+re.error: bad escape \s at position 90129
+```
+
+That one was free — it failed loudly, in seconds, because `\s` is not a valid
+`re` replacement escape. **The dangerous case is the one that is valid.**
+`\1`, `\g<0>`, `\n`, `\\` are all legal in a replacement string, so a JS regex
+containing any of them would be silently rewritten on its way into the page.
+The build passes, the file looks right, and a client-side regex quietly means
+something else.
+
+That is trap #5 in a new place: nothing in the path would have failed.
+
+**Rule: never pass injected code as a `re.sub` replacement string.** Use a
+lambda — `re.subn(pattern, lambda _m: payload, html)` — which does no escape
+processing at all. Both injection sites in `suivi_selector.py` do this, and any
+new one must.
+
+The same hazard applies to `str.format` and f-strings over injected JS (`{}` in
+an object literal), and to `%` formatting. Injected code should be concatenated
+or passed through a callable, never interpolated by a mechanism that reads its
+own metacharacters.
