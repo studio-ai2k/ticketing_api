@@ -96,11 +96,30 @@ for f in "${FILES[@]}"; do
     [[ "$n" == "0" ]] && pass "$f: $m gone" || fail "$f: $m survived ($n)"
   done
 
-  # The projection line and its legend swatch drawn from one literal. This
-  # generator emits amber, not the mock's blue, so the count is 0 either way —
-  # the assertion is here to catch a future palette change regressing it.
-  n=$(count "rgba(96,165,250,\.8)" "$p")
-  [[ "$n" == "0" ]] && pass "$f: projection line solid" || fail "$f: projection line not solid ($n)"
+  # ---- the chart palette (N1) ----
+  # Sales line white, projection solid blue, prior-year reference unchanged.
+  for m in "rgba(96,165,250,\.8)" "rgba(251,191,36,\.8)"; do
+    n=$(count "$m" "$p")
+    [[ "$n" == "0" ]] && pass "$f: $m gone" || fail "$f: $m survived ($n)"
+  done
+
+  # #fbbf24 must be gone from the projection block AND still present outside
+  # it — it also drives the day tag text colours, the hebdo bars and the
+  # velocity/revenue charts. A zero count document-wide means the replace was
+  # too broad and repainted half the dashboard.
+  n=$(count "#fbbf24" "$p")
+  [[ "$n" -gt 0 ]] && pass "$f: #fbbf24 still used elsewhere ($n)" \
+                   || fail "$f: #fbbf24 gone entirely — recolour was too broad"
+  n=$(python3 - "$p" <<'PY'
+import re, sys
+h = open(sys.argv[1], encoding='utf-8').read()
+i = h.index('<div id="sec-projection"')
+j = h.index('🎟 Dernier billet vendu', i)
+print(h[i:j].count('#fbbf24'))
+PY
+)
+  [[ "$n" == "0" ]] && pass "$f: no amber left in #sec-projection" \
+                    || fail "$f: $n #fbbf24 left inside #sec-projection"
 
   # Day count, derived twice and required to agree.
   days=$(count 'class="q-card"' "$p")

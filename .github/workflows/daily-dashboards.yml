@@ -246,6 +246,43 @@ jobs:
           python scripts/postprocess_html.py "api_output/${{ matrix.event.id }}.html"
           cp "api_output/${{ matrix.event.id }}.html" "${{ matrix.event.out }}"
 
+      # N4: M1 skips the rebuild when the CSV is byte-identical, which also
+      # freezes the footer's "Données API · HH:MM". That stamp answers "how
+      # fresh is the CHECK", not "how fresh is the DATA" - the ticket stamp
+      # beside it already answers that - so leaving it frozen makes a quiet
+      # event look like a broken pipeline. Twice misdiagnosed here already.
+      #
+      # So patch the one line instead of regenerating the page: a one-line
+      # diff per quiet event, and run.py is never invoked.
+      #
+      # Only ever reached after a SUCCESSFUL fetch or a deliberate skip - a
+      # failed fetch fails the job at that step and never gets here, leaving
+      # the previous stamp in place, which is the honest outcome.
+      - name: Restamp the footer
+        id: stamp
+        if: steps.change.outputs.changed != 'true' || matrix.event.fetch != 'true'
+        run: |
+          OUT="${{ matrix.event.out }}"
+          if [ "${{ matrix.event.fetch }}" = "true" ]; then
+            # Fetched, nothing moved. Bump the check time.
+            python scripts/stamp_footer.py "$OUT" --checked "$(date +%H:%M)"
+          else
+            # Finished event: nothing was fetched, so the check stamp must not
+            # move. Switch to the frozen label instead, keeping whatever freeze
+            # date the published page already carries - a force_rebuild would
+            # otherwise overwrite it with a fresh "Données API" stamp implying
+            # a fetch that never happened.
+            prev=$(git show "HEAD:$OUT" 2>/dev/null \
+                   | python scripts/stamp_footer.py - --read-frozen || true)
+            python scripts/stamp_footer.py "$OUT" --frozen "${prev:-$(date +%d/%m)}"
+          fi
+          if git diff --quiet -- "$OUT"; then
+            echo "stamped=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::${{ matrix.event.id }} footer already current"
+          else
+            echo "stamped=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Summarise
         if: always()
         run: |
@@ -294,7 +331,7 @@ jobs:
              "data/${{ matrix.event.id }}_merged.csv"
 
       - name: Upload dashboard
-        if: steps.change.outputs.changed == 'true'
+        if: steps.change.outputs.changed == 'true' || steps.stamp.outputs.stamped == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: dashboard-${{ matrix.event.id }}

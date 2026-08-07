@@ -505,52 +505,50 @@ behind it. It would also mean porting run.py's analytics to JS while run.py
 stays authoritative, and would not reduce deploys, since any commit triggers
 Pages regardless of content.
 
-## OPEN: the mock's chart palette was never applied
+## The chart palette (applied 2026-08-07)
 
-**Status: on hold, awaiting a ruling from Leo. Do not build it unprompted.**
+Leo ruled it in. The projection charts now use the mock's palette:
 
-`mock/epk_redesign_final.html` uses a different projection-chart palette from
-anything this repo generates. Deploy 2 shipped the structural restructure but
-**not** the recolour, and the redesign handoff describes the recolour as an
-applied change ("2026 actual = white line, projection = solid blue, 2023 =
-dashed red"). It is not applied. Verified against generated output, not assumed:
-
-| series | mock | generated today |
+| series | was | now |
 | --- | --- | --- |
-| Ventes 2026 (sales line) | `#ffffff` white | `#fbbf24` amber |
-| Trajectoire 2023 (projection) | `#60a5fa` solid blue | `rgba(251,191,36,.8)` amber |
-| 2023 (reference) | red dashed | red dashed — already matches |
+| Ventes 2026 (sales line) | `#fbbf24` amber | `#ffffff` white |
+| Trajectoire / projection | `rgba(251,191,36,.8)` amber | `#60a5fa` blue |
+| prior-year reference | red dashed | unchanged |
 
-**How this was nearly missed.** The Deploy 2 spec asked for one swap,
-`rgba(96,165,250,.8)` → `#60a5fa`, justified as "so the line matches its own
-legend swatch". That literal appears **zero times** in every dashboard this repo
-produces — the spec took it from the mock. Reading it as a mismatch fix makes it
-a no-op and the whole palette change disappears silently. It was never about a
-mismatch; it was the tail end of a recolour whose other half was never
-specified. If a spec line looks like a no-op against generated output, check
-whether it is the visible corner of a larger change.
+Applied in `_recolour_projection` (`postprocess_html.py`), with the legend
+swatches so the key agrees with the line. `run.py`'s Chart.js configs
+(3604 / 3741 / 3746) are do-not-modify, so this is a postprocess rewrite.
 
-The swap is still wired and counted in `restructure_projection` (reported as
-`projection line recoloured x0`) so a future palette move cannot regress it.
+**`#fbbf24` is NOT safe to replace globally.** It also drives the day tag text
+colours, the hebdo bar chart, and the velocity and revenue charts - twelve
+occurrences outside the projection block on a two-day event. The pass is
+therefore scoped twice over: the swatch swap runs only inside
+`#sec-projection`, and the dataset swaps only inside the brace-matched config
+of a `chartDay{N}S{1,2}` chart, keyed on `borderColor:` rather than on the bare
+colour. Both directions are asserted - amber must be **gone** from
+`#sec-projection` and must still be **present** document-wide. A zero count
+document-wide means the replace was too broad.
 
-**If Leo wants it**, it is a small postprocess pass — the colours live in
-`run.py`'s Chart.js configs at 3604 / 3741 / 3746, which is do-not-modify:
+**Two residual differences from the mock, both deliberate.** The mock draws the
+projection as a solid line with a solid legend swatch labelled "Projection";
+here it stays dashed, labelled with the scenario name (`Trajectoire 2023`,
+`2023 x coef. 2026`). The dash is what distinguishes projected from actual, and
+the scenario name is dynamic per event. Leo's ruling was colour only. Line and
+swatch agree with each other, which was the requirement.
 
-- sales line `borderColor:'#fbbf24'` → `#ffffff`, and its
-  `pointBackgroundColor`
-- projection `rgba(251,191,36,.8)` → `#60a5fa`, both the S1 and S2 datasets
-- the matching legend swatches: `class="legend-swatch" style="background:#fbbf24"`
-  and `class="legend-swatch dashed" style="border-color:..."`
+**How this was nearly missed, which is the transferable part.** The Deploy 2
+spec asked for one swap, `rgba(96,165,250,.8)` -> `#60a5fa`, justified as "so
+the line matches its own legend swatch". That literal appears **zero times** in
+anything this repo generates - the spec took it from the mock. Reading it as a
+mismatch fix makes it a no-op and the whole palette change disappears silently.
+It was never about a mismatch; it was the tail end of a recolour whose other
+half was never specified.
 
-**Key it on markup and on the dataset context, never on the bare colour
-string.** `#fbbf24` appears elsewhere — day tag text colours, the hebdo bar
-chart, the velocity and revenue charts — and a global replace would repaint
-half the dashboard. Same class of trap as the `sw-wrap` guard matching the
-stylesheet.
+> **If a spec line looks like a no-op against generated output, check whether
+> it is the visible corner of a larger change.**
 
-**If Leo declines it**, say so here and delete this section's "if he wants it"
-half. Leaving the discrepancy undocumented means the next session rediscovers
-it and rederives this whole exchange.
+The `rgba(96,165,250,.8)` entry is still wired and counted, so if the palette
+ever moves to the mock's own pre-recolour blue it cannot regress silently.
 
 ## Chart canvases: assert the ancestry, not just the markup
 
@@ -570,3 +568,59 @@ comes from npm, since cdnjs is blocked by the network policy — intercept the
 `<script src>` with a Playwright route). All six dashboards: every S1 chart
 builds and paints, `switchScenario` still builds S2 at full width, no page
 errors. Worth repeating after any pass that moves markup.
+
+## The footer carries two different facts — keep them distinct
+
+```
+🎟 Dernier billet vendu · DD/MM · HH:MM     how fresh is the DATA
+🔄 Données API · HH:MM                      how fresh is the CHECK
+🔒 Données figées · DD/MM                   finished event, no longer checked
+```
+
+**M1 broke the middle one and it had to be fixed separately.** With
+Build/Stage/Upload gated on `changed == 'true'`, a run where nothing sold never
+regenerates the page, so `{{DATA_TIME}}` froze at the last time a ticket
+**sold** rather than the last time a fetch **ran**. At four-hourly on a quiet
+event the stamp drifts within a day, and a dashboard reading
+"Données API · 16:50" at 21:00 is indistinguishable from a broken pipeline.
+That exact failure has been misdiagnosed twice on this project.
+
+The fix keeps M1's benefit: **CSV changed → full rebuild as before. CSV
+unchanged → do not invoke `run.py`; patch the stamp in place in the already
+committed HTML** (`scripts/stamp_footer.py`). A quiet event produces a six-byte
+diff instead of a full regeneration. What it costs is the no-commit case - up
+to six small commits a day - which is the price of a timestamp that tells the
+truth.
+
+Four cases, all exercised:
+
+| fetch | CSV changed | what happens |
+| --- | --- | --- |
+| yes | yes | full rebuild; `run.py` mints the stamp itself |
+| yes | no | `--checked $(date +%H:%M)` — six-byte diff |
+| no (finished) | no | `--frozen` — once, then a no-op forever |
+| no (finished) | yes (`force_rebuild`) | rebuild, then `--frozen` restores the freeze date from `git show HEAD:<file>` |
+
+**A failed fetch never reaches the stamp step** — the job fails at `Fetch
+tickets` and the previous stamp survives, which is the honest outcome. Never
+bump a stamp on a fetch that did not happen.
+
+**Finished events must not be bumped** — nothing was checked. They get
+`🔒 Données figées · DD/MM` instead, dated the day they froze. "figées" says
+the numbers will not move again and the date says since when, so a receding
+date reads as a deliberate end state rather than a stalled job. Rejected:
+"Données finales" (describes the result, not the pipeline state) and anything
+built on "dernière vérification" (a claim that we checked, which is exactly
+what we did not do). After the first freeze commit a finished event contributes
+zero churn forever.
+
+The `--frozen` path deliberately reads the previous freeze date back out of
+`git show HEAD:<file>`. Without that, a `force_rebuild` on a finished event
+would regenerate the page with a fresh "Données API · HH:MM" — a stamp claiming
+a fetch that never happened — and the original freeze date would be lost.
+
+**Considered and not taken:** publishing the check time as a small JSON file
+fetched client-side. It shrinks the diff from six files to one, but it still
+commits and still deploys, so it saves nothing that matters; it adds a runtime
+dependency with a silent failure mode; and it loses the per-event stamp, which
+is exactly what makes the frozen/live distinction visible.

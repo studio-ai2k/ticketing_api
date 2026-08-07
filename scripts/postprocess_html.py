@@ -622,18 +622,39 @@ DAY_ACCORDION_HEAD = (
     '<span>Détails</span><span class="arrow">▼</span></div>'
 )
 
-# The projection line and its own legend swatch are drawn from two different
-# literals. In the reference mock the line is rgba(96,165,250,.8) against a
-# solid #60a5fa swatch, and the spec asks for the alpha to go.
+# --- the projection chart palette ---------------------------------------
+# The mock's palette, ruled in by Leo: sales line white, projection solid
+# blue, the prior-year reference unchanged (red dashed).
 #
-# This generator does not emit that colour at all - run.py builds the
-# projection line from rgba(251,191,36,.8) against a #fbbf24 swatch, which are
-# the same rgb. So the swap below is a no-op on every dashboard we produce
-# today. It is kept, and counted, because the mock is the design source of
-# truth and the day the palette moves to blue this would otherwise regress
-# silently.
-PROJ_LINE_OLD = 'rgba(96,165,250,.8)'
-PROJ_LINE_NEW = '#60a5fa'
+# #fbbf24 is NOT safe to replace globally. It also drives the day tag text
+# colours, the hebdo bar chart, and the velocity and revenue charts - twelve
+# occurrences outside the projection block on a two-day event. So both halves
+# of this are doubly scoped: the markup swap runs only inside #sec-projection,
+# and the dataset swaps run only inside the brace-matched config of a
+# chartDay{N}S{1,2} chart, keyed on `borderColor:` rather than on the bare
+# colour string.
+SALES_LINE_OLD, SALES_LINE_NEW = '#fbbf24', '#ffffff'
+PROJ_LINE_OLD, PROJ_LINE_NEW = 'rgba(251,191,36,.8)', '#60a5fa'
+
+# rgba(96,165,250,.8) is the mock's own pre-recolour projection literal. This
+# generator has never emitted it, so this entry is a no-op today; it is kept
+# and counted so a future palette move cannot regress silently.
+MOCK_PROJ_LINE_OLD = 'rgba(96,165,250,.8)'
+
+CHART_DATASET_RECOLOUR = (
+    (f"borderColor:'{SALES_LINE_OLD}'", f"borderColor:'{SALES_LINE_NEW}'"),
+    (f"borderColor:'{PROJ_LINE_OLD}'", f"borderColor:'{PROJ_LINE_NEW}'"),
+    (f"borderColor:'{MOCK_PROJ_LINE_OLD}'", f"borderColor:'{PROJ_LINE_NEW}'"),
+)
+
+# The swatches carry the same two colours in two different CSS properties -
+# the sales key is a filled block, the projection key a dashed outline.
+LEGEND_RECOLOUR = (
+    (f'<div class="legend-swatch" style="background:{SALES_LINE_OLD}">',
+     f'<div class="legend-swatch" style="background:{SALES_LINE_NEW}">'),
+    (f'<div class="legend-swatch dashed" style="border-color:{SALES_LINE_OLD}">',
+     f'<div class="legend-swatch dashed" style="border-color:{PROJ_LINE_NEW}">'),
+)
 
 
 def _match_div(html, start):
@@ -710,6 +731,54 @@ def _div_ancestor_classes(html, pos):
             cls = re.search(r'class="([^"]*)"', m.group(0))
             stack.append(cls.group(1) if cls else '')
     return stack
+
+
+def _chart_config_span(html, canvas_id):
+    """(start, end) of the Chart.js config object built onto `canvas_id`."""
+    at = html.find(f"getElementById('{canvas_id}')")
+    if at < 0:
+        return None
+    brace = html.find(',{', at)
+    if brace < 0:
+        return None
+    close = _js_match_brace(html, brace + 1)
+    if close < 0:
+        return None
+    return brace + 1, close + 1
+
+
+def _recolour_projection(html, section_start, section_end, n):
+    """
+    Apply the mock's chart palette. Returns (html, counts, problems).
+
+    Scoped twice over, because #fbbf24 is load-bearing elsewhere: the swatches
+    only inside #sec-projection, the datasets only inside a chartDay* config.
+    """
+    counts = {'legend': 0, 'dataset': 0}
+    problems = []
+
+    section = html[section_start:section_end]
+    for old, new in LEGEND_RECOLOUR:
+        counts['legend'] += section.count(old)
+        section = section.replace(old, new)
+    html = html[:section_start] + section + html[section_end:]
+
+    # Every S1 and S2 config, taken one at a time so a rename in one cannot
+    # bleed into another chart's extent.
+    for i in range(n):
+        for scenario in ('S1', 'S2'):
+            canvas = f'chartDay{i}{scenario}'
+            span = _chart_config_span(html, canvas)
+            if span is None:
+                problems.append(f'projection: no Chart config found for {canvas}')
+                continue
+            start, end = span
+            cfg = html[start:end]
+            for old, new in CHART_DATASET_RECOLOUR:
+                counts['dataset'] += cfg.count(old)
+                cfg = cfg.replace(old, new)
+            html = html[:start] + cfg + html[end:]
+    return html, counts, problems
 
 
 def restructure_projection(html):
@@ -862,8 +931,14 @@ def restructure_projection(html):
     # day{N}S2 stays lazy on purpose: its .q-chart-wrap is display:none until
     # switchScenario reveals it, and a Chart built into a display:none parent
     # measures 0x0 and never recovers.
-    stats['projection_line_recoloured'] = html.count(PROJ_LINE_OLD)
-    html = html.replace(PROJ_LINE_OLD, PROJ_LINE_NEW)
+
+    # The section boundaries have to be re-found: the rebuild above moved them.
+    new_start = html.index('<div id="sec-projection"')
+    new_close, new_end = _match_div(html, new_start)
+    html, counts, colour_problems = _recolour_projection(
+        html, new_start, new_end, n)
+    problems += colour_problems
+    stats['recoloured'] = counts
     return html, problems, stats
 
 
@@ -925,8 +1000,35 @@ def _assert_projection(html, stats, div_balance_before, ac_t_before):
         problems.append(
             f'projection: {ac_t} .ac-t element(s), expected {want_ac_t}')
 
-    if PROJ_LINE_OLD in html:
-        problems.append(f'projection: {PROJ_LINE_OLD} survived the recolour')
+    # --- the palette ---------------------------------------------------
+    # Two charts per day (S1 and S2), each carrying one sales line and one
+    # projection line, and each with a legend repeating the same two colours.
+    want = {'dataset': 4 * n, 'legend': 4 * n}
+    got = stats.get('recoloured', {})
+    for kind, expected in want.items():
+        if got.get(kind) != expected:
+            problems.append(
+                f'projection: recoloured {got.get(kind)} {kind} colour(s), '
+                f'expected {expected}')
+
+    for literal in (PROJ_LINE_OLD, MOCK_PROJ_LINE_OLD):
+        if literal in html:
+            problems.append(f'projection: {literal} survived the recolour')
+
+    at = html.find('<div id="sec-projection"')
+    close, end = _match_div(html, at)
+    if SALES_LINE_OLD in html[at:end]:
+        problems.append(
+            f'projection: {SALES_LINE_OLD} survived inside #sec-projection')
+
+    # The other side of the same coin. #fbbf24 also drives the day tag text
+    # colours, the hebdo bars and the velocity and revenue charts, so a zero
+    # count document-wide means the replace reached outside the projection
+    # block and repainted things nobody asked to change.
+    if SALES_LINE_OLD not in html:
+        problems.append(
+            f'projection: {SALES_LINE_OLD} is gone from the whole document - '
+            f'the recolour was too broad')
 
     for i in range(n):
         if f'canvas id="chartDay{i}S1"' not in html:
@@ -1011,7 +1113,7 @@ def postprocess(path):
           f"nav shell aligned ({sw_items} session items), "
           f"projection restructured into {proj_stats.get('days', 0)} day card(s), "
           f"charts built immediately: {proj_stats.get('built_immediately', [])}, "
-          f"projection line recoloured x{proj_stats.get('projection_line_recoloured', 0)}")
+          f"palette: {proj_stats.get('recoloured', {})}")
 
     if problems:
         for p in problems:
