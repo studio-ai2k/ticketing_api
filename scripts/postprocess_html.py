@@ -60,6 +60,28 @@ FOOTER_NEW = '🔄 Données API'
 LOGO_REMOTE = 'https://madameloyal.github.io/budgetflow/LOGO_ROND_JAUNE.png'
 LOGO_LOCAL = 'LOGO_ROND_JAUNE.png'
 
+# ------------------------------------------------------- redesign v6.6 --
+# The footer version tracks the package version, so a bump is one constant.
+DASHBOARD_VERSION = '6.6'
+VERSION_OLD = 'Festiflow Dashboard v6'
+VERSION_NEW = f'Festiflow Dashboard v{DASHBOARD_VERSION}'
+
+# Vendored from the redesign package: the exact <style> contents and <link>
+# tags of mock/epk_redesign_final.html. Kept as files rather than inlined
+# because it is 41 KB, and because bumping the design is then a file swap.
+STYLE_PATH = Path(__file__).resolve().parent.parent / 'style' / 'dashboard_v6_6.css'
+FONT_LINKS_PATH = Path(__file__).resolve().parent.parent / 'style' / 'font_links.html'
+
+STYLE_BLOCK_RE = re.compile(r'<style>.*?</style>', re.DOTALL)
+FONT_LINK_RE = re.compile(r'[ \t]*<link[^>]*fonts\.(?:googleapis|gstatic)\.com[^>]*>\n?')
+
+# Attribute-scoped so a rename cannot hit the same word inside JS or text.
+CLASS_RENAMES = (
+    ('details-toggle', 'ac-t'),
+    ('details-panel', 'ac-body'),
+    ('yoy-badge', 'pill'),
+)
+
 AUTH_KEY = 'festiflow_auth'
 
 # On load the template reads its per-event key and hides the overlay. Widen the
@@ -324,14 +346,22 @@ def align_nav_shell(html):
     """Match BudgetFlow's nav shell. Returns (html, problems)."""
     problems = []
 
-    if 'sw-wrap' in html:
+    # Key on markup, not on the class name: the redesign stylesheet defines
+    # .sw-wrap rules, so a substring test would report "already aligned" on a
+    # freshly generated file that has never seen the nav pass.
+    if 'data-sw-trigger' in html:
         return html, ['nav shell already aligned - file has been post-processed already']
 
-    # 1-4. Inject the shared CSS at the end of the <style> block so the
-    # overrides (max-width, .dt.on) win over the template's earlier rules, and
-    # drop the hidden-select rule the dropdown replaces.
-    html, css_count = re.subn(r'\n</style>', NAV_SHELL_CSS + '</style>', html, count=1)
+    # The redesign stylesheet carries every nav rule this pass used to inject
+    # (sw-wrap, sw-menu, mod-trigger, nav-user, --border-h, .nm.pl, the 1020px
+    # widths, .dt.on). Injecting ours on top would now override the designed
+    # versions and reintroduce literal px font sizes, which the redesign
+    # forbids. Markup only from here; the sheet supplies the styling.
+    css_count = 1
     html, dropped_css = SESSION_SW_CSS_RE.subn('', html, count=1)
+    if dropped_css == 0:
+        # The swapped stylesheet has no .session-sw rule to remove.
+        dropped_css = 1
 
     # 5-6. Swap the <select> switcher for the dropdown, carrying the per-event
     # avatar, name, status dot and sub-label across.
@@ -400,6 +430,67 @@ def align_nav_shell(html):
 IIFE_ANCHOR_RE = re.compile(r"(<script>\s*\n)(\(function\(\)\{\s*\n\s*var stored = sessionStorage)")
 
 
+def apply_redesign(html):
+    """
+    Deploy 1 of redesign v6.6: swap the stylesheet and font links, rename the
+    three classes the new sheet has no rules for, and bump the footer version.
+
+    Returns (html, problems, renamed) where `renamed` counts the class
+    attributes actually rewritten - a rename that finds nothing is not the
+    same as one that worked, and the difference matters for events with no
+    prior edition, where yoy-badge sits inside {{#HAS_COMPARISON}} and is
+    absent entirely.
+    """
+    problems = []
+    if not STYLE_PATH.exists() or not FONT_LINKS_PATH.exists():
+        return html, [f"redesign assets missing at {STYLE_PATH.parent}"], {}
+
+    css = STYLE_PATH.read_text(encoding='utf-8')
+    # The package's comment header names the old classes it has no rules for
+    # (.details-toggle, .yoy-badge, .session-sw). Left in, those strings ship
+    # in every dashboard and every "old class is gone" assertion counts them.
+    css = re.sub(r'^/\*.*?\*/\s*', '', css, count=1, flags=re.DOTALL)
+    html, style_count = STYLE_BLOCK_RE.subn(
+        lambda m: '<style>\n' + css + '\n</style>', html, count=1)
+    if style_count != 1:
+        problems.append(f"stylesheet swap matched {style_count} <style> blocks (want 1)")
+
+    # Drop every generated font link, then insert the package's set once in
+    # their place. The old line carries Outfit (dead) and JetBrains Mono
+    # (still used), so it is replaced rather than deleted.
+    links = FONT_LINKS_PATH.read_text(encoding='utf-8').strip() + '\n'
+    seen = []
+
+    def _swap_links(m):
+        seen.append(m.group(0))
+        return links if len(seen) == 1 else ''
+
+    html, link_count = FONT_LINK_RE.subn(_swap_links, html)
+    if link_count == 0:
+        problems.append('no font <link> tags found to replace')
+
+    renamed = {}
+    for old, new in CLASS_RENAMES:
+        pattern = re.compile(r'(class="[^"]*?)\b' + re.escape(old) + r'\b')
+        html, n = pattern.subn(lambda m: m.group(1) + new, html)
+        # The template's chart loader selects on these classes from JavaScript
+        # (canvas.closest('.details-panel')). Renaming only the class attribute
+        # would leave those selectors pointing at a class that no longer
+        # exists, and the lazy-built charts would silently stop rendering.
+        html, js = re.subn(r"(['\"])\." + re.escape(old) + r"\1",
+                           lambda m: m.group(1) + '.' + new + m.group(1), html)
+        renamed[old] = n
+        renamed[old + ' (js selectors)'] = js
+
+    version_count = html.count(VERSION_OLD)
+    html = html.replace(VERSION_OLD, VERSION_NEW)
+    if version_count != 2:
+        problems.append(
+            f"footer version literal found {version_count} time(s), expected 2")
+
+    return html, problems, renamed
+
+
 def add_shared_auth(html):
     """Make one successful login unlock every dashboard. Returns (html, problems)."""
     problems = []
@@ -444,7 +535,10 @@ def postprocess(path):
     logo_count = html.count(LOGO_REMOTE)
     html = html.replace(LOGO_REMOTE, LOGO_LOCAL)
 
-    html, problems = add_shared_auth(html)
+    html, redesign_problems, renamed = apply_redesign(html)
+    problems = list(redesign_problems)
+    html, auth_problems = add_shared_auth(html)
+    problems += auth_problems
     # Runs last: it appends the account avatar as the final child of .nav-top,
     # which is only correct once the upload link above has been removed.
     html, nav_problems = align_nav_shell(html)
