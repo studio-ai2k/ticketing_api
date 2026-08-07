@@ -69,6 +69,44 @@ import stamp_footer
 # stylesheet contains hundreds of class names.
 #
 # ---------------------------------------------------------------------------
+# SCOPE - the dependency graph is wider than this file
+# ---------------------------------------------------------------------------
+# Anything that greps generated output is a consumer and belongs in the graph,
+# even though it is not a pass and never appears in the table below:
+#
+#   verify/assert_redesign.sh + verify/check_*.py   assert on generated markup
+#   scripts/stamp_footer.py                         REWRITES published markup,
+#                                                   out of band, hours later
+#
+# Deploy 3 §7 broke two of these and neither was a pass. The verify script
+# matched on "🎟 Dernier billet vendu" and on the literal "Festiflow Dashboard
+# v6.7"; §7 deleted the first and split the second across a <span>, so both
+# assertions read 0 on a correct file. stamp_footer.py would have silently
+# stopped matching, which fails four hours later rather than at build time.
+#
+# Before restructuring any generated markup: grep verify/ and scripts/ for the
+# strings you are about to destroy. The pass table is necessary, not
+# sufficient.
+#
+# ---------------------------------------------------------------------------
+# STANDING RULE - a correct match count does not mean a correct match
+# ---------------------------------------------------------------------------
+# stamp_footer.STAMP_ITEM_RE once matched exactly twice - the right number -
+# while deleting four elements. Its icon body was `.*?` under DOTALL, so a
+# match starting at the "Dernier billet" item expanded past that item's own
+# </svg>, its label, its value and the separator, and landed on the next
+# item's "Données API" label. Six .pgf-item became two.
+#
+# EVERY count-based assertion in this repo would have passed that. So:
+#
+#   assert the surrounding structure is UNCHANGED, not merely that your own
+#   match count is right.
+#
+# In practice: dry-run the substitution and compare a count of the elements
+# you did NOT intend to touch. postprocess and stamp_footer both do this now,
+# and both refuse to write when it moves.
+#
+# ---------------------------------------------------------------------------
 # STANDING RULE - every count says what it counts
 # ---------------------------------------------------------------------------
 # We have shipped this bug three times, each time by counting a stylesheet

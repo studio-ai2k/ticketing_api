@@ -788,3 +788,55 @@ Waiting on the revenue row layout (S1). Decisions already made:
   wrong implementation.
 - Add a CI check comparing the closed-form offset against `run._prev_match_dow`
   exhaustively. That retires the divergence risk rather than managing it.
+
+## Trap: a correct match count does not mean a correct match
+
+`stamp_footer.STAMP_ITEM_RE` once matched **exactly twice** — the right number,
+one footer per page — while deleting four elements.
+
+The icon body was `<svg class="pgf-ico".*?</svg>` under `re.DOTALL`. A lazy dot
+under DOTALL will cross anything. A match starting at the *Dernier billet* item
+expanded past that item's own `</svg>`, its label, its value and the separator,
+and landed on the next item's `Données API` label — a legal match, twice, and
+on substitution it replaced both items with one. Six `.pgf-item` became two.
+
+**Every count-based assertion in this repo would have passed it.** The build-time
+check asserting "exactly 2 stampable items" passed. The one that caught it
+compared the item count before and after a dry-run substitution.
+
+So the general rule:
+
+> **Matching the right number of times is not the same as matching only your
+> own element.** Assert that the surrounding structure is *unchanged*, not just
+> that your own match count is right.
+
+In practice: dry-run the substitution and count the elements you did **not**
+intend to touch. `postprocess_html.py` and `scripts/stamp_footer.py` both do
+this and both refuse to write when it moves.
+
+The fix in the regex is `(?:(?!</svg>).)*` instead of `.*?` — greedy, but
+unable to cross a `</svg>`, so a match is confined to one item.
+
+**The guard was proven, not just written.** The lazy dot was deliberately
+re-introduced afterwards to confirm the check blocks it: exit 1, file
+untouched, `Dernier billet` intact. A guard nobody has seen fire is a guess.
+
+## The dependency graph is wider than postprocess_html.py
+
+The pass table covers passes. It does not cover everything that consumes
+generated markup, and Deploy 3 §7 broke two things that are not passes:
+
+| consumer | what it matched | how §7 broke it |
+| --- | --- | --- |
+| `verify/assert_redesign.sh` | `🎟 Dernier billet vendu` | emoji deleted → the check errored on a correct file |
+| `verify/assert_redesign.sh` | `Festiflow Dashboard v6.7` | version moved into `.pgf-ver` → literal reads 0 |
+| `scripts/stamp_footer.py` | the whole footer line | would have silently stopped matching |
+
+The first two fail loudly at build time. The third fails **four hours later**,
+on a quiet run, as a stamp that stopped moving.
+
+So: **anything that greps generated output is in the dependency graph**, pass
+or not. Before restructuring markup, grep `verify/` and `scripts/` for the
+strings you are about to destroy. The pass table is necessary, not sufficient.
+
+Recorded in the scope note at the top of `scripts/postprocess_html.py`.
