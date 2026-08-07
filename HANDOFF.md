@@ -297,7 +297,12 @@ path alone - it has a demonstrated success and needs no help.
 Note also that two handoff documents exist and disagree; this file had no trap
 list at all before this entry, which is how the contradiction went unnoticed.
 
-## Unaudited: main.py github_push() publishes to a second repo
+## RESOLVED: main.py github_push() - file deleted 2026-08-07
+
+The section below described an unaudited publishing route. `main.py` has since
+been deleted as orphaned, so the route no longer exists. Kept for context.
+
+## (historical) Unaudited: main.py github_push() publishes to a second repo
 
 `main.py` has a publishing path nobody has reviewed as part of the API work:
 
@@ -366,3 +371,26 @@ stylesheet swap, a postprocess edit, a design pass - instead of a full fetch:
     done
 
 The data only needs refetching when the *numbers* should change.
+
+## Finished events are not refetched
+
+The daily job derives a per-event `fetch` flag from `max(day_date)` plus a
+30-day grace period (stdlib only - no dateutil, so a calendar month is
+approximated). Past that, the event is rebuilt from its committed
+`data/{event}_merged.csv` and no API call is made.
+
+**Why derived and not a status value.** `status` is read in two places that
+matter: the workflow's plan job (the fetch gate) and `run.py:2088`, which
+builds `SESSION_SWITCHER_OPTIONS`. Demoting a finished event out of `active`
+would drop it from the event dropdown on every dashboard, and `run.py` is
+off-limits. Deriving gates the fetch and touches nothing else.
+
+The grace period exists because sales run up to and during the event and
+refunds, chargebacks and settlement corrections land for weeks afterwards.
+An unparseable `day_date` fetches rather than skips - reading as "past" would
+silently freeze a live event. A missing stored CSV also falls back to fetching.
+
+`main.py` was deleted here: orphaned (nothing imports or invokes it), a
+Railway upload tool from madameloyal/festiflow with no role in this pipeline.
+That also closes the unaudited `github_push()` route to a second repository -
+the file is gone, so the route is gone.

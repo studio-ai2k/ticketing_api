@@ -38,12 +38,45 @@ jobs:
           ONLY: ${{ inputs.events }}
         run: |
           python - <<'PY' >> "$GITHUB_OUTPUT"
-          import csv, json, os
+          import csv, json, os, sys
+          from datetime import date, datetime, timedelta
+
+          # A finished event's tickets cannot change, so refetching them every
+          # run re-downloads frozen data - Paris XXL and Bordeaux Juin alone are
+          # ~67k of ~93k tickets across the six. Skip the fetch and build from
+          # the committed CSV instead.
+          #
+          # Derived from day_date rather than from status: status is also what
+          # run.py uses to populate the session switcher, so demoting a finished
+          # event would drop it from the dropdown on every dashboard. Deriving
+          # gates the fetch and touches nothing else.
+          #
+          # Grace period is 30 days (stdlib only - no dateutil in this project,
+          # so a calendar month is approximated). Sales run up to and during the
+          # event, and refunds, chargebacks and settlement corrections land for
+          # weeks afterwards; cutting the fetch the morning after would freeze
+          # the numbers before they stop moving.
+          GRACE_DAYS = 30
+          today = date.today()
+
           only = set((os.environ.get('ONLY') or '').split())
-          seen, out = set(), []
+          seen, out, notes, problems = set(), [], [], []
+          days = {}
           for row in csv.DictReader(open('event_config.csv', encoding='utf-8-sig')):
               eid = (row.get('event_id') or '').strip()
-              if not eid or eid in seen:
+              if not eid:
+                  continue
+              raw = (row.get('day_date') or '').strip()
+              if raw:
+                  try:
+                      days.setdefault(eid, []).append(
+                          datetime.strptime(raw, '%Y-%m-%d').date())
+                  except ValueError:
+                      # K2: never let an unparseable date read as "past" - that
+                      # would silently stop fetching a live event.
+                      problems.append(f"{eid}: unparseable day_date {raw!r}")
+                      days.setdefault(eid, []).append(None)
+              if eid in seen:
                   continue
               if (row.get('status') or '').strip() != 'active':
                   continue
@@ -56,10 +89,43 @@ jobs:
                   continue
               seen.add(eid)
               out.append({'id': eid, 'out': outfile})
+
+          for e in out:
+              dates = days.get(e['id']) or []
+              last = max((d for d in dates if d), default=None)
+              if last is None or any(d is None for d in dates):
+                  e['fetch'] = 'true'
+                  reason = 'no usable day_date - fetching to be safe'
+                  age = 'n/a'
+              else:
+                  age = (today - last).days
+                  if age > GRACE_DAYS:
+                      # K3: nothing to build from without the stored CSV.
+                      if os.path.exists(f"data/{e['id']}_merged.csv"):
+                          e['fetch'] = 'false'
+                          reason = f'finished {age}d ago, using stored CSV'
+                      else:
+                          e['fetch'] = 'true'
+                          reason = f'finished {age}d ago but no stored CSV - fetching'
+                  else:
+                      e['fetch'] = 'true'
+                      reason = ('upcoming' if age < 0 else
+                                f'{age}d past, inside {GRACE_DAYS}d grace')
+              notes.append(f"  {e['id']:<20} last={last} age={age} "
+                           f"fetch={e['fetch']}  ({reason})")
+
           if only:
               missing = only - {e['id'] for e in out}
               if missing:
                   raise SystemExit(f"not active events with an output_filename: {sorted(missing)}")
+
+          # K4: the decision, per event, so a misfire is readable after the fact.
+          print('DECISIONS<<EOD', file=sys.stderr)
+          for line in notes:
+              print(line, file=sys.stderr)
+          for p in problems:
+              print(f"  ::warning::{p}", file=sys.stderr)
+          print('EOD', file=sys.stderr)
           print('events=' + json.dumps(out))
           PY
           cat "$GITHUB_OUTPUT"
@@ -103,6 +169,7 @@ jobs:
           python-version: '3.11'
 
       - name: Fetch tickets
+        if: matrix.event.fetch == 'true'
         env:
           SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
           SHOTGUN_TOKEN_SONORA: ${{ secrets.SHOTGUN_TOKEN_SONORA }}
@@ -112,6 +179,15 @@ jobs:
           mkdir -p api_output
           python fetch_csv.py --event "${{ matrix.event.id }}" \
             --out "api_output/${{ matrix.event.id }}_merged.csv"
+
+      - name: Use the stored CSV (event finished, data frozen)
+        if: matrix.event.fetch != 'true'
+        run: |
+          mkdir -p api_output
+          cp "data/${{ matrix.event.id }}_merged.csv" \
+             "api_output/${{ matrix.event.id }}_merged.csv"
+          echo "::notice::${{ matrix.event.id }} not fetched - event finished, \
+          rebuilt from the committed CSV ($(wc -l < "data/${{ matrix.event.id }}_merged.csv") lines)"
 
       - name: Build dashboard
         run: |
