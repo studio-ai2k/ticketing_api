@@ -1,0 +1,131 @@
+name: Verify incremental fetch
+
+# Manual-only. Answers the one thing that cannot be checked offline: does
+# Shotgun accept a cursor we synthesised from the last row of a completed
+# fetch, rather than one it handed us in pagination.next?
+#
+# Self-contained on purpose - it does a full fetch and an incremental fetch in
+# the same job, so it needs no committed state and can run before the daily
+# job has ever seeded one.
+on:
+  workflow_dispatch:
+    inputs:
+      event:
+        description: 'event_id to verify'
+        required: true
+        default: 'rennes_2026'
+
+jobs:
+  verify:
+    name: full vs incremental
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TZ: Europe/Paris
+      SHOTGUN_PAGE_PACING_S: '0.8'
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Full fetch (writes the cursor)
+        env:
+          SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
+          SHOTGUN_TOKEN_SONORA: ${{ secrets.SHOTGUN_TOKEN_SONORA }}
+          SHOTGUN_ORGANIZER_ID_SONORA: ${{ secrets.SHOTGUN_ORGANIZER_ID_SONORA }}
+          DICE_TOKEN: ${{ secrets.DICE_TOKEN }}
+        run: |
+          mkdir -p api_output data
+          start=$(date +%s)
+          python fetch_csv.py --event "${{ inputs.event }}" --full \
+            --out "api_output/full.csv" 2>&1 | tee full.log
+          echo "FULL_SECONDS=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
+          cp "api_output/full.csv" "data/${{ inputs.event }}_merged.csv"
+          echo "--- cursor state written:"
+          cat "data/${{ inputs.event }}_state.json"
+
+      - name: Incremental fetch (resumes from that cursor)
+        env:
+          SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
+          SHOTGUN_TOKEN_SONORA: ${{ secrets.SHOTGUN_TOKEN_SONORA }}
+          SHOTGUN_ORGANIZER_ID_SONORA: ${{ secrets.SHOTGUN_ORGANIZER_ID_SONORA }}
+          DICE_TOKEN: ${{ secrets.DICE_TOKEN }}
+        run: |
+          start=$(date +%s)
+          python fetch_csv.py --event "${{ inputs.event }}" --incremental \
+            --out "api_output/incr.csv" 2>&1 | tee incr.log
+          echo "INCR_SECONDS=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
+
+      - name: Compare
+        run: |
+          {
+            echo "### Incremental verification - ${{ inputs.event }}"
+            echo ""
+            echo "| | full | incremental |"
+            echo "|---|---|---|"
+            echo "| wall clock | ${FULL_SECONDS}s | ${INCR_SECONDS}s |"
+            python - <<'PY'
+          import csv, os
+          from collections import Counter
+
+          def load(p):
+              return list(csv.DictReader(open(p, encoding='utf-8')))
+
+          a, b = load('api_output/full.csv'), load('api_output/incr.csv')
+          ca, cb = Counter(r['platform'] for r in a), Counter(r['platform'] for r in b)
+          ga = sum(float(r['gross_price']) for r in a if r['is_paid'] == '1')
+          gb = sum(float(r['gross_price']) for r in b if r['is_paid'] == '1')
+          print(f"| rows | {len(a)} | {len(b)} |")
+          print(f"| shotgun | {ca.get('Shotgun',0)} | {cb.get('Shotgun',0)} |")
+          print(f"| dice | {ca.get('DICE',0)} | {cb.get('DICE',0)} |")
+          print(f"| gross (paid) | {ga:,.2f} | {gb:,.2f} |")
+          print("")
+
+          # The full fetch's rows must all survive into the incremental one.
+          # Compared as multisets of the 11 columns - the merge sorts by date,
+          # so ordering is not meaningful and identity is not available.
+          key = lambda r: tuple(r[c] for c in r)
+          ma, mb = Counter(map(key, a)), Counter(map(key, b))
+          lost, gained = ma - mb, mb - ma
+          print(f"- rows in full but missing from incremental: **{sum(lost.values())}**")
+          print(f"- rows only in incremental (new sales since): **{sum(gained.values())}**")
+
+          # The real question. If Shotgun ignored or rejected the cursor the
+          # incremental pass would have refetched everything, and its delta
+          # would be the size of the whole event.
+          import re
+          log = open('incr.log', encoding='utf-8').read()
+          appended = re.search(r'appended (\d+) new Shotgun row', log)
+          tripped = 'H3-TRIP' in log
+          print(f"- H3 guard tripped: **{tripped}**")
+          if appended:
+              n = int(appended.group(1))
+              print(f"- delta fetched: **{n}** rows "
+                    f"(full Shotgun side is {ca.get('Shotgun',0)})")
+              print(f"- cursor accepted: **{n < ca.get('Shotgun',0)}**")
+          else:
+              print("- delta line absent - incremental did not resume "
+                    "(see the log for why)")
+          print("")
+          print("Verdict: **" + (
+              "PASS - cursor accepted, no rows lost"
+              if sum(lost.values()) == 0 and appended and not tripped
+              else "INVESTIGATE - see above"
+          ) + "**")
+          PY
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload both CSVs and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-${{ inputs.event }}
+          path: |
+            api_output/full.csv
+            api_output/incr.csv
+            full.log
+            incr.log
+            data/${{ inputs.event }}_state.json
+          retention-days: 3

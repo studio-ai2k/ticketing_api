@@ -10,6 +10,7 @@ api_output/
 # raw uploads become committable. (See incident 2026-04-21_PII_EXPOSURE.)
 data/*
 !data/*_merged.csv
+!data/*_state.json
 
 # Local post-processing previews. These must not be tracked: a root-level
 # *.html matches both deploy-pages.yml's paths filter and the daily job's
