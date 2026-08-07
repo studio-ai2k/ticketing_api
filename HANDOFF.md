@@ -400,6 +400,33 @@ the file is gone, so the route is gone.
 The daily job runs **every four hours**, with **full fetches**. `--incremental`
 is built, tested and verified, and deliberately not wired in. It is not broken.
 
+**The cursor is fully verified — accepted AND correctly positioned.** Shotgun's
+`after` parameter is a keyset cursor of shape `{ticket_updated_at}_{ticket_id}`,
+not a date filter, and we synthesise one from the last row of a completed fetch
+rather than keeping the `pagination.next` the API handed us. Both halves of that
+are now proven by `verify-incremental.yml` (`workflow_dispatch`, self-contained,
+runs a full and an incremental fetch in the same job):
+
+| run | window | result |
+| --- | --- | --- |
+| `epk_2026` | 12h backdated | PASS (detector) — H9 caught 3 modified rows |
+| `rennes_2026` | 6h backdated | PASS (detector) — H9 caught 2 modified rows |
+| `rennes_2026` | **2h backdated** | **PASS (positioning)** — delta of 5 rows against a full Shotgun side of 1,379, **zero rows lost, zero gained**, H3 silent. 31s full vs 16s incremental. |
+
+The two detector passes are passes, not failures: a backdated window containing
+a refund makes H9 fire on a row whose `ordered_at` predates the cutoff, and it
+aborts into a full refetch, which is the designed behaviour. But they leave
+positioning untested, which is why the 2h run mattered — a mispositioned cursor
+would have shown up as rows lost or gained versus the full fetch.
+
+**The measured modification rate is the evidence for leaving incremental off.**
+Roughly **2 modifications per 6h on rennes, 3 per 12h on epk, 0 per 2h**. At a
+four-hourly cadence the H3 guard would trip on most windows for a live event,
+and every trip costs a full refetch on top of the incremental attempt — i.e.
+incremental would be *slower* than full more often than not. Re-measure before
+reopening this; the rate is a property of how the events are selling, not of
+the code.
+
 **Actions minutes are free here because the repo is PUBLIC.** GitHub's free
 allowance for private repos (2,000 min/month) does not apply. That makes
 cadence a question of churn and queue exposure rather than cost: every run
@@ -477,3 +504,69 @@ epk 914 KB against 270 KB - the pre-computed page is far smaller than the data
 behind it. It would also mean porting run.py's analytics to JS while run.py
 stays authoritative, and would not reduce deploys, since any commit triggers
 Pages regardless of content.
+
+## OPEN: the mock's chart palette was never applied
+
+**Status: on hold, awaiting a ruling from Leo. Do not build it unprompted.**
+
+`mock/epk_redesign_final.html` uses a different projection-chart palette from
+anything this repo generates. Deploy 2 shipped the structural restructure but
+**not** the recolour, and the redesign handoff describes the recolour as an
+applied change ("2026 actual = white line, projection = solid blue, 2023 =
+dashed red"). It is not applied. Verified against generated output, not assumed:
+
+| series | mock | generated today |
+| --- | --- | --- |
+| Ventes 2026 (sales line) | `#ffffff` white | `#fbbf24` amber |
+| Trajectoire 2023 (projection) | `#60a5fa` solid blue | `rgba(251,191,36,.8)` amber |
+| 2023 (reference) | red dashed | red dashed — already matches |
+
+**How this was nearly missed.** The Deploy 2 spec asked for one swap,
+`rgba(96,165,250,.8)` → `#60a5fa`, justified as "so the line matches its own
+legend swatch". That literal appears **zero times** in every dashboard this repo
+produces — the spec took it from the mock. Reading it as a mismatch fix makes it
+a no-op and the whole palette change disappears silently. It was never about a
+mismatch; it was the tail end of a recolour whose other half was never
+specified. If a spec line looks like a no-op against generated output, check
+whether it is the visible corner of a larger change.
+
+The swap is still wired and counted in `restructure_projection` (reported as
+`projection line recoloured x0`) so a future palette move cannot regress it.
+
+**If Leo wants it**, it is a small postprocess pass — the colours live in
+`run.py`'s Chart.js configs at 3604 / 3741 / 3746, which is do-not-modify:
+
+- sales line `borderColor:'#fbbf24'` → `#ffffff`, and its
+  `pointBackgroundColor`
+- projection `rgba(251,191,36,.8)` → `#60a5fa`, both the S1 and S2 datasets
+- the matching legend swatches: `class="legend-swatch" style="background:#fbbf24"`
+  and `class="legend-swatch dashed" style="border-color:..."`
+
+**Key it on markup and on the dataset context, never on the bare colour
+string.** `#fbbf24` appears elsewhere — day tag text colours, the hebdo bar
+chart, the velocity and revenue charts — and a global replace would repaint
+half the dashboard. Same class of trap as the `sw-wrap` guard matching the
+stylesheet.
+
+**If Leo declines it**, say so here and delete this section's "if he wants it"
+half. Leaving the discrepancy undocumented means the next session rediscovers
+it and rederives this whole exchange.
+
+## Chart canvases: assert the ancestry, not just the markup
+
+Three charts build lazily off `canvas.closest('.ac-body')` — `chartVelocity`,
+`chartVelocity14`, `chartRevenue` — and Deploy 2 moves `.ac-body` elements
+around them. A `closest()` that stops resolving throws nothing and logs
+nothing; the chart simply never draws.
+
+`_assert_projection` therefore walks the div stack from the top of the document
+and asserts each of those canvases still has an `.ac-body` ancestor. **Keep
+this.** A markup-count assertion cannot catch a re-parenting bug — the counts
+stay right while the tree is wrong.
+
+Rendering was also verified end to end in headless Chromium (available in the
+container at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`; Chart.js
+comes from npm, since cdnjs is blocked by the network policy — intercept the
+`<script src>` with a Playwright route). All six dashboards: every S1 chart
+builds and paints, `switchScenario` still builds S2 at full width, no page
+errors. Worth repeating after any pass that moves markup.
