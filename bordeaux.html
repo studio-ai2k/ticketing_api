@@ -106,6 +106,17 @@ body {
 .det-link-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size:var(--fs-nano); font-weight: 700; letter-spacing: .5px; flex-shrink: 0; }
 .det-link-name { font-size: var(--fs-caption); font-weight: 600; color: #fff; }
 .det-link-url { font-size: var(--fs-micro); color: var(--text-dim); margin-top: 2px; }
+.det-link{min-width:0}
+.det-link-txt{min-width:0;flex:1 1 auto;overflow:hidden}
+.det-link-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.det-link-url{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr}
+.det-link-icon{overflow:hidden;background:#000!important}
+.det-link-icon img{width:100%;height:100%;object-fit:cover;display:block}
+.det-link-icon img + span{display:none}
+@media (max-width:720px){
+  .det-link{padding:11px 12px;gap:9px}
+  .det-link-icon{width:28px;height:28px}
+}
 .det-compare { border-left: 2px solid var(--green, #34d399); padding-left: 14px; margin-bottom: 14px; }
 .det-compare-name { font-size: var(--fs-caption); font-weight: 600; color: #fff; }
 .det-compare-meta { font-size: var(--fs-micro); color: var(--text-muted); margin-top: 3px; }
@@ -134,11 +145,14 @@ body {
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; transition: border-color 0.3s, box-shadow 0.3s; }
 /* hover removed */
 .card-label { font-size: var(--fs-caption); font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 20px; }
-.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.card-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px; }
+.card-controls { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: nowrap; }
+.card-controls .cmp { min-width: 0; flex: 0 1 auto; order: 2; }
+.card-controls .toggle-group { flex: 0 0 auto; order: 1; }
 /* ═══ SHARED ═══ */
 .hero { font-family: var(--ff-display); font-size: var(--fs-hero); font-weight: 700; color: #fff; line-height: 1.1; letter-spacing: -0.5px;  font-family: var(--ff-display);}
 .hero-lg { font-family: var(--ff-display); font-size: var(--fs-display); letter-spacing: -1px;  font-family: var(--ff-display);}
-.hero-unit { font-family: var(--ff-body); font-size: var(--fs-micro); font-weight: 400; color: var(--text-dim); letter-spacing: 0; margin-left: 2px; }
+.hero-unit { font-family: var(--ff-body); font-size: var(--fs-micro); font-weight: 400; color: var(--text-dim); letter-spacing: 0; margin-left: 10px; }
 .yoy-tag { display: inline-block; margin-top: 6px; padding: 3px 9px; border-radius: 6px; font-size: var(--fs-caption); font-weight: 600; }
 .yoy-tag.positive { background: rgba(56,189,248,0.1); color: var(--green); }
 .yoy-tag.negative { background: rgba(248,113,113,0.1); color: var(--red); }
@@ -400,6 +414,57 @@ body {
 .section-divider-line { flex: 1; height: 1px; background: var(--border); }
 .section-divider-text { font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: 3px; color: var(--text-dim); font-weight: 600; white-space: nowrap; }
 /* ── Custom scrollbar ── */
+/* Past-day lists were the only ones without a height, so expanding them
+   grew the page instead of scrolling inside the card. */
+/* ═══ Vélocité table — same header treatment as Répartition ═══ */
+.vel-head, .vel-grid{display:grid;grid-template-columns:1.7fr 76px 70px 62px;gap:0 16px}
+.vel-head{padding:8px 2px 6px;font-size:var(--fs-micro);text-transform:uppercase;
+  letter-spacing:1.2px;color:var(--text-dim);font-weight:600;
+  border-bottom:1px solid var(--border)}
+.vel-head span:not(:first-child){text-align:right}
+.vel-grid{align-items:baseline;font-size:var(--fs-body);row-gap:4px;padding:10px 2px 2px}
+.v-cur{color:#fff;font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.v-prev{color:rgba(255,255,255,.55);text-align:right;font-variant-numeric:tabular-nums}
+.v-d{font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.v-d.pos{color:var(--green)} .v-d.neg{color:var(--red)}
+@media (max-width:480px){
+  .vel-head,.vel-grid{grid-template-columns:1.4fr 62px 58px 50px;gap:0 10px}
+}
+
+/* ═══ page footer ═══ */
+.pg-footer{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
+  gap:0 16px;margin-top:34px;padding:16px 0 6px;border-top:1px solid var(--border)}
+.pgf-item{display:inline-flex;align-items:center;gap:7px;padding:4px 0;white-space:nowrap}
+.pgf-ico{width:13px;height:13px;flex:0 0 auto;color:var(--text-dim);opacity:.8}
+.pgf-k{font-size:var(--fs-nano);letter-spacing:.09em;text-transform:uppercase;color:var(--text-dim)}
+.pgf-v{font-size:var(--fs-tiny);color:var(--text-muted);font-variant-numeric:tabular-nums}
+.pgf-sep{width:1px;height:11px;background:var(--border);flex:0 0 auto}
+.pgf-brand{font-size:var(--fs-tiny);color:var(--text-dim);letter-spacing:.02em}
+.pgf-ver{margin-left:7px;font-family:'JetBrains Mono',monospace;font-size:var(--fs-nano);
+  color:var(--text-muted);background:rgba(255,255,255,.05);border-radius:4px;padding:2px 6px}
+@media (max-width:480px){
+  .pg-footer{gap:0 10px}
+  .pgf-sep{display:none}
+  .pgf-item{flex:1 0 100%;justify-content:center}
+}
+
+/* ═══ comparison selector (Suivi only) ═══ */
+.cmp{position:relative}
+.cmp-trigger{display:flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;font-family:inherit;font-size:var(--fs-caption);font-weight:600;color:var(--text-muted);white-space:nowrap;max-width:100%}
+.cmp-eyebrow{color:var(--text-dim);font-weight:500}
+.cmp-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmp-chev{width:8px;height:8px;flex:0 0 auto;opacity:.5}
+.cmp-menu{display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:60;min-width:268px;background:#12121b;border:1px solid var(--border-h,rgba(255,255,255,.14));border-radius:11px;padding:6px;box-shadow:0 18px 40px rgba(0,0,0,.6)}
+.cmp-menu.open{display:block}
+.cmp-group{font-size:var(--fs-nano);letter-spacing:.09em;text-transform:uppercase;color:var(--text-dim);padding:9px 10px 5px}
+.cmp-item{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;background:none;border:0;border-radius:7px;padding:8px 10px;cursor:pointer;font-family:inherit;font-size:var(--fs-mini);color:var(--text)}
+.cmp-item[aria-current="true"]{background:rgba(255,255,255,.07)}
+.cmp-ref{font-size:var(--fs-nano);letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-left:7px}
+.cmp-meta{font-size:var(--fs-tiny);color:var(--text-dim)}
+.cmp-note{margin:2px 0 12px;font-size:var(--fs-tiny);color:var(--text-dim);line-height:1.5}
+
+#suivi-hidden-days { max-height: 400px; overflow-y: auto; }
+#suivi-hidden-weeks { max-height: 300px; overflow-y: auto; }
 #suivi-future-days, #suivi-future-weeks, #suivi-hidden-weeks, #suivi-hidden-days {
     scrollbar-width: thin;
     scrollbar-color: rgba(255,255,255,0.15) transparent;
@@ -474,6 +539,15 @@ body {
    media rules elsewhere — postprocess string-matches on these. */
 /* ── max-width:720px ── */
 @media (max-width:720px) {
+  /* Suivi header: title on its own line, the three controls stay on one row */
+  #sec-suivi .card-header{flex-wrap:wrap}
+  #sec-suivi .card-header .section-title{flex:1 0 100%}
+  .card-controls{width:100%;gap:6px;justify-content:flex-end}
+  .cmp-trigger{padding:6px 8px;gap:5px}
+  .cmp-name{max-width:15ch}
+  #sec-suivi .toggle-btn{padding:6px 11px}
+  .cmp-menu{min-width:0;width:min(280px,calc(100vw - 34px));right:0;left:auto}
+
   .nav-link { padding: 10px 10px; font-size: var(--fs-micro); letter-spacing: 1px; }
   .kpi-grid { grid-template-columns: 1fr; }
   .proj-grid { grid-template-columns: 1fr; }
@@ -712,13 +786,9 @@ function dbSubmit(){
         <div class="hero hero-lg" style="color:var(--amber)">0<span class="hero-unit">jours restants</span></div>
         <div style="font-size:0.72em;color:var(--text-dim);text-align:right;line-height:1.4"><strong style="color:var(--text-muted);font-weight:500">11-13 juin</strong><br>2026</div>
     </div>
-    <div class="divider"></div>
-    <div style="display:grid;grid-template-columns:1fr 50px 44px 44px;gap:4px 10px;align-items:baseline;font-size:0.85em">
-    <span style="color:var(--text-muted);font-weight:500">Fenêtre</span><span style="color:var(--text-muted);font-weight:500;text-align:right">2026</span><span style="color:rgba(255,255,255,0.5);font-weight:500;text-align:right">2025</span><span style="color:rgba(255,255,255,0.5);font-weight:500;text-align:right">Δ</span>
-    <span class="meta-key">Vélocité 3j</span><span style="color:#fff;font-weight:500;text-align:right">709/j</span><span style="color:rgba(255,255,255,0.55);text-align:right">433/j</span><span style="color:var(--green);font-weight:500;text-align:right">+64%</span>
-    <span class="meta-key">Vélocité 7j</span><span style="color:#fff;font-weight:500;text-align:right">568/j</span><span style="color:rgba(255,255,255,0.55);text-align:right">346/j</span><span style="color:var(--green);font-weight:500;text-align:right">+64%</span>
-    <span class="meta-key">Vélocité 14j</span><span style="color:#fff;font-weight:500;text-align:right">483/j</span><span style="color:rgba(255,255,255,0.55);text-align:right">356/j</span><span style="color:var(--green);font-weight:500;text-align:right">+36%</span>
-    <span class="meta-key">Vélocité 30j</span><span style="color:#fff;font-weight:500;text-align:right">322/j</span><span style="color:rgba(255,255,255,0.55);text-align:right">271/j</span><span style="color:var(--green);font-weight:500;text-align:right">+19%</span>
+    <div class="vel-head"><span>Fenêtre</span><span>2026</span><span>2025</span><span>Δ</span></div>
+    <div class="vel-grid">
+        <span class="meta-key">Vélocité 3j</span><span class="v-cur">709/j</span><span class="v-prev">433/j</span><span class="v-d pos">+64%</span><span class="meta-key">Vélocité 7j</span><span class="v-cur">568/j</span><span class="v-prev">346/j</span><span class="v-d pos">+64%</span><span class="meta-key">Vélocité 14j</span><span class="v-cur">483/j</span><span class="v-prev">356/j</span><span class="v-d pos">+36%</span><span class="meta-key">Vélocité 30j</span><span class="v-cur">322/j</span><span class="v-prev">271/j</span><span class="v-d pos">+19%</span>
     </div>
     <div class="divider"></div>
     <div class="ac-t" onclick="toggleDetails(this)"><span>Détails</span><span class="arrow">▼</span></div>
@@ -765,8 +835,6 @@ function dbSubmit(){
         
         <div class="detail-inset"><div class="inset-label">vs 2025 (même J-0)</div>
             <div class="inset-row"><span class="k">Présence totale</span><span class="v">34,404 <span class="change-tag" style="color:var(--green)">+18.5%</span></span></div>
-            <div class="inset-divider"></div>
-            
         </div>
         
     </div></div>
@@ -827,7 +895,7 @@ function dbSubmit(){
     <div class="card-header"><div class="section-title" style="margin-bottom:0">Suivi des ventes<span class="info-tip" style="font-size:0.5em">i<span class="info-bubble">Les totaux quotidiens peuvent légèrement différer des dashboards Shotgun. Shotgun répartit les ventes par phase tarifaire, tandis que ce dashboard utilise la date d'achat individuelle de chaque billet. Les totaux cumulés restent identiques.</span></span></div><div class="toggle-group"><button class="toggle-btn active" onclick="switchSuivi('jour')">Jour</button><button class="toggle-btn" onclick="switchSuivi('semaine')">Semaine</button></div></div>
     <div id="suivi-jour">
         <div class="dtl-col-labels"><div class="dtl-col-label">2025 (même jour)</div><div class="dtl-col-label center">Diff</div><div class="dtl-col-label right">2026 (actuel)</div></div>
-        <button class="show-more-btn" onclick="var h=document.getElementById('suivi-hidden-days');if(h){if(h.style.display==='none'){h.style.display='block';this.textContent='Masquer les jours anciens'}else{h.style.display='none';this.textContent='Voir les 172 jours précédents'}}">Voir les 172 jours précédents</button>
+        <button class="show-more-btn" onclick="var h=document.getElementById('suivi-hidden-days');if(h){if(h.style.display==='none'){h.style.display='block';h.scrollTop=h.scrollHeight;var sp=document.getElementById('sep-prev-days');if(sp)sp.style.display='flex';this.textContent='Masquer les jours anciens'}else{h.style.display='none';var sp=document.getElementById('sep-prev-days');if(sp)sp.style.display='none';this.textContent='Voir les 172 jours précédents'}}">Voir les 172 jours précédents</button>
         <div id="suivi-hidden-days" style="display:none">
         <div class="dtl-row"><div class="dtl-left"><div class="dtl-date">Mar 17 Déc</div><div class="dtl-sales">0</div><div class="dtl-detail">SG 0 · DICE 0</div><div class="dtl-accum">Cumulé 0</div></div><div class="dtl-center"><div class="dtl-diff pos">+0</div><div class="dtl-pct">+0.0%</div></div><div class="dtl-right"><div class="dtl-date">Mar 16 Déc</div><div class="dtl-sales">0</div><div class="dtl-detail">SG 0 · DICE 0</div><div class="dtl-accum">Cumulé 0</div></div></div>
         <div class="dtl-row"><div class="dtl-left"><div class="dtl-date">Mer 18 Déc</div><div class="dtl-sales">1779</div><div class="dtl-detail">SG 529 · DICE 1250</div><div class="dtl-accum">Cumulé 1,779</div></div><div class="dtl-center"><div class="dtl-diff neg">-1779</div><div class="dtl-pct">-100.0%</div></div><div class="dtl-right"><div class="dtl-date">Mer 17 Déc</div><div class="dtl-sales">0</div><div class="dtl-detail">SG 0 · DICE 0</div><div class="dtl-accum">Cumulé 0</div></div></div>
@@ -1001,7 +1069,8 @@ function dbSubmit(){
         <div class="dtl-row"><div class="dtl-left"><div class="dtl-date">Mer 4 Juin</div><div class="dtl-sales">455</div><div class="dtl-detail">SG 177 · DICE 278</div><div class="dtl-accum">Cumulé 21,228</div></div><div class="dtl-center"><div class="dtl-diff pos">+25</div><div class="dtl-pct">+5.5%</div></div><div class="dtl-right"><div class="dtl-date">Mer 3 Juin</div><div class="dtl-sales">480</div><div class="dtl-detail">SG 379 · DICE 101</div><div class="dtl-accum">Cumulé 21,838</div></div></div>
         <div class="dtl-row"><div class="dtl-left"><div class="dtl-date">Jeu 5 Juin</div><div class="dtl-sales">350</div><div class="dtl-detail">SG 113 · DICE 237</div><div class="dtl-accum">Cumulé 21,578</div></div><div class="dtl-center"><div class="dtl-diff pos">+97</div><div class="dtl-pct">+27.7%</div></div><div class="dtl-right"><div class="dtl-date">Jeu 4 Juin</div><div class="dtl-sales">447</div><div class="dtl-detail">SG 343 · DICE 104</div><div class="dtl-accum">Cumulé 22,285</div></div></div>
         <div class="dtl-row"><div class="dtl-left"><div class="dtl-date">Ven 6 Juin</div><div class="dtl-sales">328</div><div class="dtl-detail">SG 103 · DICE 225</div><div class="dtl-accum">Cumulé 21,906</div></div><div class="dtl-center"><div class="dtl-diff pos">+107</div><div class="dtl-pct">+32.6%</div></div><div class="dtl-right"><div class="dtl-date">Ven 5 Juin</div><div class="dtl-sales">435</div><div class="dtl-detail">SG 313 · DICE 122</div><div class="dtl-accum">Cumulé 22,720</div></div></div>
-        </div><div class="dtl-row"><div class="dtl-left"><div class="dtl-date">Sam 7 Juin</div><div class="dtl-sales">217</div><div class="dtl-detail">SG 52 · DICE 165</div><div class="dtl-accum">Cumulé 22,123</div></div><div class="dtl-center"><div class="dtl-diff pos">+103</div><div class="dtl-pct">+47.5%</div></div><div class="dtl-right"><div class="dtl-date">Sam 6 Juin</div><div class="dtl-sales">320</div><div class="dtl-detail">SG 223 · DICE 97</div><div class="dtl-accum">Cumulé 23,040</div></div></div>
+        </div>
+<div class="dtl-cutoff" id="sep-prev-days" style="display:none"><div class="dtl-cutoff-line"></div><div class="dtl-cutoff-label">Précédent</div><div class="dtl-cutoff-line"></div></div><div class="dtl-row"><div class="dtl-left"><div class="dtl-date">Sam 7 Juin</div><div class="dtl-sales">217</div><div class="dtl-detail">SG 52 · DICE 165</div><div class="dtl-accum">Cumulé 22,123</div></div><div class="dtl-center"><div class="dtl-diff pos">+103</div><div class="dtl-pct">+47.5%</div></div><div class="dtl-right"><div class="dtl-date">Sam 6 Juin</div><div class="dtl-sales">320</div><div class="dtl-detail">SG 223 · DICE 97</div><div class="dtl-accum">Cumulé 23,040</div></div></div>
         <div class="dtl-row"><div class="dtl-left"><div class="dtl-date">Dim 8 Juin</div><div class="dtl-sales">224</div><div class="dtl-detail">SG 86 · DICE 138</div><div class="dtl-accum">Cumulé 22,347</div></div><div class="dtl-center"><div class="dtl-diff pos">+154</div><div class="dtl-pct">+68.8%</div></div><div class="dtl-right"><div class="dtl-date">Dim 7 Juin</div><div class="dtl-sales">378</div><div class="dtl-detail">SG 276 · DICE 102</div><div class="dtl-accum">Cumulé 23,418</div></div></div>
         <div class="dtl-row"><div class="dtl-left"><div class="dtl-date">Lun 9 Juin</div><div class="dtl-sales">280</div><div class="dtl-detail">SG 94 · DICE 186</div><div class="dtl-accum">Cumulé 22,627</div></div><div class="dtl-center"><div class="dtl-diff pos">+244</div><div class="dtl-pct">+87.1%</div></div><div class="dtl-right"><div class="dtl-date">Lun 8 Juin</div><div class="dtl-sales">524</div><div class="dtl-detail">SG 362 · DICE 162</div><div class="dtl-accum">Cumulé 23,942</div></div></div>
         <div class="dtl-row"><div class="dtl-left"><div class="dtl-date">Mar 10 Juin</div><div class="dtl-sales">402</div><div class="dtl-detail">SG 158 · DICE 244</div><div class="dtl-accum">Cumulé 23,029</div></div><div class="dtl-center"><div class="dtl-diff pos">+225</div><div class="dtl-pct">+56.0%</div></div><div class="dtl-right"><div class="dtl-date">Mar 9 Juin</div><div class="dtl-sales">627</div><div class="dtl-detail">SG 438 · DICE 189</div><div class="dtl-accum">Cumulé 24,569</div></div></div>
@@ -1018,7 +1087,7 @@ function dbSubmit(){
     </div>
     <div id="suivi-semaine" class="hidden">
         <div class="dtl-col-labels"><div class="dtl-col-label">2025</div><div class="dtl-col-label center">Diff</div><div class="dtl-col-label right">2026</div></div>
-        <button class="show-more-btn" onclick="var h=document.getElementById('suivi-hidden-weeks');if(h){if(h.style.display==='none'){h.style.display='block';this.textContent='Masquer les semaines anciennes'}else{h.style.display='none';this.textContent='Voir les 19 semaines précédentes'}}">Voir les 19 semaines précédentes</button>
+        <button class="show-more-btn" onclick="var h=document.getElementById('suivi-hidden-weeks');if(h){if(h.style.display==='none'){h.style.display='block';h.scrollTop=h.scrollHeight;var sp=document.getElementById('sep-prev-weeks');if(sp)sp.style.display='flex';this.textContent='Masquer les semaines anciennes'}else{h.style.display='none';var sp=document.getElementById('sep-prev-weeks');if(sp)sp.style.display='none';this.textContent='Voir les 19 semaines précédentes'}}">Voir les 19 semaines précédentes</button>
         <div id="suivi-hidden-weeks" style="display:none">
         <div class="dtl-row" style="opacity:0.5"><div class="dtl-left"><div class="dtl-date">S-25 · 20-26 Déc</div><div class="dtl-sales">2404</div><div class="dtl-detail">SG 785 · DICE 1619</div><div class="dtl-detail" style="margin-top:2px">6.7%&ensp;·&ensp;6.7% cumulé</div><div class="dtl-accum">€171k</div></div><div class="dtl-center"><div class="dtl-diff" style="color:var(--text-dim)">-</div></div><div class="dtl-right"><div class="dtl-date" style="color:var(--text-dim)">S-25 · 18-24 Déc</div><div class="dtl-sales" style="color:var(--text-dim)">-</div></div></div>
         <div class="dtl-row" style="opacity:0.5"><div class="dtl-left"><div class="dtl-date">S-24 · 27 Déc-02 Jan</div><div class="dtl-sales">915</div><div class="dtl-detail">SG 283 · DICE 632</div><div class="dtl-detail" style="margin-top:2px">2.5%&ensp;·&ensp;9.2% cumulé</div><div class="dtl-accum">€61k</div></div><div class="dtl-center"><div class="dtl-diff" style="color:var(--text-dim)">-</div></div><div class="dtl-right"><div class="dtl-date" style="color:var(--text-dim)">S-24 · 25-31 Déc</div><div class="dtl-sales" style="color:var(--text-dim)">-</div></div></div>
@@ -1039,7 +1108,8 @@ function dbSubmit(){
         <div class="dtl-row"><div class="dtl-left"><div class="dtl-date">S-9 · 11-17 Avr</div><div class="dtl-sales">979</div><div class="dtl-detail">SG 464 · DICE 515</div><div class="dtl-detail" style="margin-top:2px">2.7%&ensp;·&ensp;31.0% cumulé</div><div class="dtl-accum">€76k</div></div><div class="dtl-center"><div class="dtl-diff neg">-94</div><div class="dtl-pct">-9.6%</div></div><div class="dtl-right"><div class="dtl-date">S-9 · 09-15 Avr</div><div class="dtl-sales">885</div><div class="dtl-detail">SG 505 · DICE 380</div><div class="dtl-detail" style="margin-top:2px">2.0%&ensp;·&ensp;29.0% cumulé</div><div class="dtl-accum">€64k</div></div></div>
         <div class="dtl-row"><div class="dtl-left"><div class="dtl-date">S-8 · 18-24 Avr</div><div class="dtl-sales">725</div><div class="dtl-detail">SG 305 · DICE 420</div><div class="dtl-detail" style="margin-top:2px">2.0%&ensp;·&ensp;33.0% cumulé</div><div class="dtl-accum">€54k</div></div><div class="dtl-center"><div class="dtl-diff pos">+71</div><div class="dtl-pct">+9.8%</div></div><div class="dtl-right"><div class="dtl-date">S-8 · 16-22 Avr</div><div class="dtl-sales">796</div><div class="dtl-detail">SG 451 · DICE 345</div><div class="dtl-detail" style="margin-top:2px">1.8%&ensp;·&ensp;30.8% cumulé</div><div class="dtl-accum">€56k</div></div></div>
         <div class="dtl-row"><div class="dtl-left"><div class="dtl-date">S-7 · 25 Avr-01 Mai</div><div class="dtl-sales">758</div><div class="dtl-detail">SG 310 · DICE 448</div><div class="dtl-detail" style="margin-top:2px">2.1%&ensp;·&ensp;35.1% cumulé</div><div class="dtl-accum">€57k</div></div><div class="dtl-center"><div class="dtl-diff neg">-189</div><div class="dtl-pct">-24.9%</div></div><div class="dtl-right"><div class="dtl-date">S-7 · 23-29 Avr</div><div class="dtl-sales">569</div><div class="dtl-detail">SG 297 · DICE 272</div><div class="dtl-detail" style="margin-top:2px">1.3%&ensp;·&ensp;32.1% cumulé</div><div class="dtl-accum">€40k</div></div></div>
-        </div><div class="dtl-row"><div class="dtl-left"><div class="dtl-date">S-6 · 02-08 Mai</div><div class="dtl-sales">1038</div><div class="dtl-detail">SG 443 · DICE 595</div><div class="dtl-detail" style="margin-top:2px">2.9%&ensp;·&ensp;38.0% cumulé</div><div class="dtl-accum">€79k</div></div><div class="dtl-center"><div class="dtl-diff neg">-305</div><div class="dtl-pct">-29.4%</div></div><div class="dtl-right"><div class="dtl-date">S-6 · 30 Avr-06 Mai</div><div class="dtl-sales">733</div><div class="dtl-detail">SG 469 · DICE 264</div><div class="dtl-detail" style="margin-top:2px">1.6%&ensp;·&ensp;33.7% cumulé</div><div class="dtl-accum">€53k</div></div></div>
+        </div>
+<div class="dtl-cutoff" id="sep-prev-weeks" style="display:none"><div class="dtl-cutoff-line"></div><div class="dtl-cutoff-label">Précédent</div><div class="dtl-cutoff-line"></div></div><div class="dtl-row"><div class="dtl-left"><div class="dtl-date">S-6 · 02-08 Mai</div><div class="dtl-sales">1038</div><div class="dtl-detail">SG 443 · DICE 595</div><div class="dtl-detail" style="margin-top:2px">2.9%&ensp;·&ensp;38.0% cumulé</div><div class="dtl-accum">€79k</div></div><div class="dtl-center"><div class="dtl-diff neg">-305</div><div class="dtl-pct">-29.4%</div></div><div class="dtl-right"><div class="dtl-date">S-6 · 30 Avr-06 Mai</div><div class="dtl-sales">733</div><div class="dtl-detail">SG 469 · DICE 264</div><div class="dtl-detail" style="margin-top:2px">1.6%&ensp;·&ensp;33.7% cumulé</div><div class="dtl-accum">€53k</div></div></div>
         <div class="dtl-row"><div class="dtl-left"><div class="dtl-date">S-5 · 09-15 Mai</div><div class="dtl-sales">1502</div><div class="dtl-detail">SG 591 · DICE 911</div><div class="dtl-detail" style="margin-top:2px">4.2%&ensp;·&ensp;42.2% cumulé</div><div class="dtl-accum">€116k</div></div><div class="dtl-center"><div class="dtl-diff neg">-472</div><div class="dtl-pct">-31.4%</div></div><div class="dtl-right"><div class="dtl-date">S-5 · 07-13 Mai</div><div class="dtl-sales">1030</div><div class="dtl-detail">SG 652 · DICE 378</div><div class="dtl-detail" style="margin-top:2px">2.3%&ensp;·&ensp;36.0% cumulé</div><div class="dtl-accum">€74k</div></div></div>
         <div class="dtl-row"><div class="dtl-left"><div class="dtl-date">S-4 · 16-22 Mai</div><div class="dtl-sales">1496</div><div class="dtl-detail">SG 565 · DICE 931</div><div class="dtl-detail" style="margin-top:2px">4.2%&ensp;·&ensp;46.3% cumulé</div><div class="dtl-accum">€112k</div></div><div class="dtl-center"><div class="dtl-diff neg">-319</div><div class="dtl-pct">-21.3%</div></div><div class="dtl-right"><div class="dtl-date">S-4 · 14-20 Mai</div><div class="dtl-sales">1177</div><div class="dtl-detail">SG 687 · DICE 490</div><div class="dtl-detail" style="margin-top:2px">2.6%&ensp;·&ensp;38.7% cumulé</div><div class="dtl-accum">€83k</div></div></div>
         <div class="dtl-row"><div class="dtl-left"><div class="dtl-date">S-3 · 23-29 Mai</div><div class="dtl-sales">1267</div><div class="dtl-detail">SG 449 · DICE 818</div><div class="dtl-detail" style="margin-top:2px">3.5%&ensp;·&ensp;49.8% cumulé</div><div class="dtl-accum">€94k</div></div><div class="dtl-center"><div class="dtl-diff neg">-286</div><div class="dtl-pct">-22.6%</div></div><div class="dtl-right"><div class="dtl-date">S-3 · 21-27 Mai</div><div class="dtl-sales">981</div><div class="dtl-detail">SG 632 · DICE 349</div><div class="dtl-detail" style="margin-top:2px">2.2%&ensp;·&ensp;40.9% cumulé</div><div class="dtl-accum">€66k</div></div></div>
@@ -1091,7 +1161,7 @@ function dbSubmit(){
 </div>
 </div>
 
-<div style="text-align:center;padding:30px 0 10px;font-size:0.6em;color:var(--text-dim)">🎟 Dernier billet vendu · 13/06 · 19:23 &nbsp;·&nbsp; 🔄 Données API · 21:42 &nbsp;·&nbsp; Festiflow Dashboard v6.6</div>
+<div style="text-align:center;padding:30px 0 10px;font-size:0.6em;color:var(--text-dim)">🎟 Dernier billet vendu · 13/06 · 19:23 &nbsp;·&nbsp; 🔄 Données API · 22:31 &nbsp;·&nbsp; Festiflow Dashboard v6.7</div>
 
 </div>
 
@@ -1112,10 +1182,10 @@ function dbSubmit(){
 <div class="det-card">
     <div class="det-title">Plateformes</div>
     <div class="det-links">
-        <a class="det-link" href="https://dice.fm/partner/events/540197" target="_blank"><div class="det-link-icon" style="background:rgba(99,102,241,.1);color:#818cf8">DICE</div><div><div class="det-link-name">DICE Dashboard</div><div class="det-link-url">dice.fm/partner → 540197</div></div></a>
-        <a class="det-link" href="https://shotgun.live/en/festivals/madame-loyal-x-sonora" target="_blank"><div class="det-link-icon" style="background:rgba(251,191,36,.1);color:#fbbf24">SG</div><div><div class="det-link-name">Shotgun Dashboard</div><div class="det-link-url">shotgun.live → 505434</div></div></a>
-        <a class="det-link" href="https://dice.fm/partner/tickets/event/av3vr2-madame-loyal-x-sonora-bordeaux-12-13-juin-2026-11th-jun-parc-des-expositions-de-bordeaux-bordeaux-tickets" target="_blank"><div class="det-link-icon" style="background:rgba(168,85,247,.08);color:#c4b5fd">www</div><div><div class="det-link-name">Page publique DICE</div><div class="det-link-url">dice.fm/partner/tickets/event/...</div></div></a>
-        <a class="det-link" href="https://shotgun.live/en/festivals/madame-loyal-x-sonora" target="_blank"><div class="det-link-icon" style="background:rgba(168,85,247,.08);color:#c4b5fd">www</div><div><div class="det-link-name">Page publique Shotgun</div><div class="det-link-url">shotgun.live/en/festivals/mada...</div></div></a>
+        <a class="det-link" href="https://smartboard.shotgun.live/events/505434" target="_blank"><div class="det-link-icon" style="background:#000"><img src="logo-shotgun.png" alt="" onerror="this.remove()"><span>SG</span></div><div class="det-link-txt"><div class="det-link-name">Shotgun · Smartboard</div><div class="det-link-url">Event ID : 505434</div></div></a>
+        <a class="det-link" href="https://shotgun.live/en/festivals/madame-loyal-x-sonora" target="_blank"><div class="det-link-icon" style="background:#000"><img src="logo-shotgun.png" alt="" onerror="this.remove()"><span>SG</span></div><div class="det-link-txt"><div class="det-link-name">Shotgun · Page publique</div><div class="det-link-url">shotgun.live/en/festivals/madame-loyal-x-sonora</div></div></a>
+        <a class="det-link" href="https://mio.dice.fm/events/RXZlbnQ6NTQwMTk3/overview" target="_blank"><div class="det-link-icon" style="background:#000"><img src="logo-dice.png" alt="" onerror="this.remove()"><span>DICE</span></div><div class="det-link-txt"><div class="det-link-name">DICE · Mio</div><div class="det-link-url">Event ID : 540197</div></div></a>
+        <a class="det-link" href="https://dice.fm/partner/tickets/event/av3vr2-madame-loyal-x-sonora-bordeaux-12-13-juin-2026-11th-jun-parc-des-expositions-de-bordeaux-bordeaux-tickets" target="_blank"><div class="det-link-icon" style="background:#000"><img src="logo-dice.png" alt="" onerror="this.remove()"><span>DICE</span></div><div class="det-link-txt"><div class="det-link-name">DICE · Page publique</div><div class="det-link-url">dice.fm/partner/tickets/event/av3vr2-madame-loyal-x-sonora-bordeaux-12-13-juin-2026-11th-jun-parc-des-expositions-de-bordeaux-bordeaux-tickets</div></div></a>
     </div>
 </div>
 
@@ -1142,7 +1212,7 @@ function dbSubmit(){
 <div class="det-row"><span class="det-k">Samedi 13 juin</span><span class="det-v">18 000 places <span class="badge badge-edition" style="font-size:var(--fs-nano);padding:2px 7px;background:rgba(251,191,36,.08);color:#fbbf24">Jour 3</span></span></div>
 </div>
 
-<div class="det-footer">🎟 Dernier billet vendu · 13/06 · 19:23 &nbsp;·&nbsp; 🔄 Données API · 21:42 &nbsp;·&nbsp; Festiflow Dashboard v6.6</div>
+<div class="det-footer">🎟 Dernier billet vendu · 13/06 · 19:23 &nbsp;·&nbsp; 🔄 Données API · 22:31 &nbsp;·&nbsp; Festiflow Dashboard v6.7</div>
 
 </div>
 

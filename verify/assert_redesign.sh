@@ -12,6 +12,10 @@ DIR="${1:-.}"
 FILES=(parisxxl.html bordeaux.html epk.html bordeaux_oct.html geneve.html rennes.html)
 FAIL=0
 
+# The stylesheet postprocess_html.py vendors in. Assertions that would
+# otherwise hardcode a property of the design derive it from here instead.
+CSS="$(dirname "$0")/../style/dashboard_v6_7.css"
+
 fail() { echo "  FAIL  $1"; FAIL=1; }
 pass() { echo "  ok    $1"; }
 
@@ -45,10 +49,17 @@ for f in "${FILES[@]}"; do
   n=$(count "Outfit" "$p");            [[ "$n" == "0" ]] && pass "no Outfit font"      || fail "Outfit still loaded ($n)"
   n=$(count "font-size:[0-9]*px" "$p"); [[ "$n" == "0" ]] && pass "no literal px sizes" || fail "literal font-size:Npx present ($n)"
 
-  # ---- 5. responsive section present, one block per breakpoint ----
+  # ---- 5. responsive section present, intact ----
+  # Derived from the vendored stylesheet, not hardcoded. This used to assert
+  # exactly one block per breakpoint, which was true of v6.6 and became wrong
+  # the moment v6.7 added mobile rules for .det-link, .vel-head and .pg-footer.
+  # Comparing against the source file still catches both real failures - the
+  # swap not happening, and a block lost in it - and survives design changes.
   for bp in "720px" "600px" "480px" "420px"; do
+    want=$(count "@media (max-width:$bp)" "$CSS")
     n=$(count "@media (max-width:$bp)" "$p")
-    [[ "$n" == "1" ]] && pass "one @media $bp block" || fail "@media $bp appears $n times (want 1)"
+    [[ "$n" == "$want" ]] && pass "@media $bp x$n (matches stylesheet)" \
+                          || fail "@media $bp appears $n times, stylesheet has $want"
   done
   n=$(count "prefers-reduced-motion" "$p")
   [[ "$n" -gt 0 ]] && pass "reduced-motion block" || fail "reduced-motion block missing"
@@ -59,8 +70,8 @@ for f in "${FILES[@]}"; do
   [[ "$n" -gt 0 ]] && pass "overflow-x contained" || fail "overflow-x:hidden missing"
 
   # ---- 7. footer version tracks the zip version ----
-  n=$(count "Festiflow Dashboard v6\.6" "$p")
-  [[ "$n" == "2" ]] && pass "footer v6.6 (x2)" || fail "footer version wrong or wrong count ($n, want 2)"
+  n=$(count "Festiflow Dashboard v6\.7" "$p")
+  [[ "$n" == "2" ]] && pass "footer v6.7 (x2)" || fail "footer version wrong or wrong count ($n, want 2)"
 
   # ---- 8. nav shell still intact (regression guard) ----
   for m in "sw-wrap" "nav-user" "Partenaires"; do
@@ -141,6 +152,75 @@ PY
   want=$(( days + 5 ))
   n=$(count 'class="ac-t"' "$p")
   [[ "$n" == "$want" ]] && pass "$f: $n .ac-t" || fail "$f: $n .ac-t, want $want"
+done
+# ─────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────
+# DEPLOY 3 — suivi scroll/separators, vélocité header, platform cards.
+#
+# Every markup count keys on class="..." / id="...". The v6.7 stylesheet ships
+# .dtl-cutoff, .vel-head, .det-link and .inset-divider rules, so a bare grep
+# counts the CSS as well — the mistake that has now produced three wrong
+# baselines (.ac-t 8+N, .inset-divider 3, and the sw-wrap guard).
+echo "── DEPLOY 3"
+for f in "${FILES[@]}"; do
+  p="$DIR/$f"
+  [[ -f "$p" ]] || continue
+
+  # --- suivi ---
+  for sep in sep-prev-days sep-prev-weeks; do
+    n=$(count "id=\"$sep\"" "$p")
+    [[ "$n" == "1" ]] && pass "$f: #$sep" || fail "$f: $n #$sep in markup, want 1"
+  done
+  n=$(count "h.scrollTop=h.scrollHeight" "$p")
+  [[ "$n" == "2" ]] && pass "$f: 2 scroll-to-bottom calls" || fail "$f: $n scroll calls, want 2"
+
+  # .dtl-cutoff is derived, never fixed: parisxxl generates none, bordeaux one,
+  # the other four two — plus the two this pass adds.
+  n=$(count "class=\"dtl-cutoff\"" "$p")
+  [[ "$n" -ge 2 ]] && pass "$f: $n .dtl-cutoff in markup" \
+                   || fail "$f: $n .dtl-cutoff in markup, want at least the 2 new ones"
+
+  # --- vélocité ---
+  n=$(count "grid-template-columns:1fr 50px 44px 44px" "$p")
+  [[ "$n" == "0" ]] && pass "$f: old vélocité grid gone (whole file)" || fail "$f: old grid survived ($n)"
+  for cls in vel-head vel-grid; do
+    n=$(count "class=\"$cls\"" "$p")
+    [[ "$n" == "1" ]] && pass "$f: .$cls" || fail "$f: $n .$cls in markup, want 1"
+  done
+
+  # --- comparison inset ---
+  n=$(count "class=\"inset-divider\"" "$p")
+  [[ "$n" == "1" ]] && pass "$f: 1 .inset-divider in markup" \
+                    || fail "$f: $n .inset-divider in markup, want 1 (whole file reads 2: +1 CSS rule)"
+
+  # --- platform cards ---
+  links=$(count "class=\"det-link\"" "$p")
+  [[ "$links" -ge 2 ]] && pass "$f: $links platform card(s)" || fail "$f: $links platform cards"
+  n=$(count "class=\"det-link-txt\"" "$p")
+  [[ "$n" == "$links" ]] && pass "$f: $n .det-link-txt" || fail "$f: $n .det-link-txt, want $links"
+  n=$(( $(count "<img src=\"logo-shotgun.png\"" "$p") + $(count "<img src=\"logo-dice.png\"" "$p") ))
+  [[ "$n" == "$links" ]] && pass "$f: $n platform logo(s)" || fail "$f: $n logos, want $links"
+
+  n=$(count "dice.fm/partner/events/" "$p")
+  [[ "$n" == "0" ]] && pass "$f: old DICE backend URL gone" || fail "$f: old DICE backend URL survived ($n)"
+  n=$(count "smartboard.shotgun.live/events/" "$p")
+  [[ "$n" == "1" ]] && pass "$f: Smartboard URL" || fail "$f: $n Smartboard URLs, want 1"
+
+  # Derived: only an event with a DICE backend card gets a Mio URL.
+  want_mio=$(count "DICE · Mio" "$p")
+  n=$(count "mio.dice.fm/events/" "$p")
+  [[ "$n" == "$want_mio" ]] && pass "$f: $n Mio URL(s)" || fail "$f: $n Mio URLs, want $want_mio"
+
+  # Both Shotgun cards shared an href before this pass; if they still do, the
+  # Smartboard rewrite silently did nothing.
+  n=$(python3 verify/check_platform_cards.py "$p" dupes)
+  [[ "$n" == "0" ]] && pass "$f: every platform card has a distinct href" \
+                    || fail "$f: $n duplicate platform href(s)"
+
+  n=$(python3 verify/check_platform_cards.py "$p" order)
+  [[ "$n" == "0" ]] && pass "$f: platform cards in canonical order" \
+                    || fail "$f: platform cards out of canonical order"
 done
 # ─────────────────────────────────────────────────────────────
 
