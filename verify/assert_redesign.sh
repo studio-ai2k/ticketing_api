@@ -70,7 +70,10 @@ for f in "${FILES[@]}"; do
   [[ "$n" -gt 0 ]] && pass "overflow-x contained" || fail "overflow-x:hidden missing"
 
   # ---- 7. footer version tracks the zip version ----
-  n=$(count "Festiflow Dashboard v6\.7" "$p")
+  # Deploy 3 §7 split this: "Festiflow Dashboard v6.7" is no longer one string,
+  # the version sits in its own .pgf-ver span. Asserting the old literal would
+  # now read 0 on a correct file.
+  n=$(count "Festiflow Dashboard<span class=\"pgf-ver\">v6\.7</span>" "$p")
   [[ "$n" == "2" ]] && pass "footer v6.7 (x2)" || fail "footer version wrong or wrong count ($n, want 2)"
 
   # ---- 8. nav shell still intact (regression guard) ----
@@ -121,14 +124,12 @@ for f in "${FILES[@]}"; do
   n=$(count "#fbbf24" "$p")
   [[ "$n" -gt 0 ]] && pass "$f: #fbbf24 still used elsewhere ($n)" \
                    || fail "$f: #fbbf24 gone entirely — recolour was too broad"
-  n=$(python3 - "$p" <<'PY'
-import re, sys
-h = open(sys.argv[1], encoding='utf-8').read()
-i = h.index('<div id="sec-projection"')
-j = h.index('🎟 Dernier billet vendu', i)
-print(h[i:j].count('#fbbf24'))
-PY
-)
+  # Bounded by div depth, not by the footer. This originally sliced up to the
+  # "🎟 Dernier billet vendu" string, which Deploy 3 §7 deleted - so the check
+  # started erroring on a correct file. An assertion consuming something a
+  # later pass emits is the same trap the pass table exists for; it applies to
+  # the verify scripts too.
+  n=$(python3 verify/check_section_amber.py "$p")
   [[ "$n" == "0" ]] && pass "$f: no amber left in #sec-projection" \
                     || fail "$f: $n #fbbf24 left inside #sec-projection"
 
@@ -221,6 +222,28 @@ for f in "${FILES[@]}"; do
   n=$(python3 verify/check_platform_cards.py "$p" order)
   [[ "$n" == "0" ]] && pass "$f: platform cards in canonical order" \
                     || fail "$f: platform cards out of canonical order"
+
+  # --- footer (§7) ---
+  n=$(count "class=\"pg-footer" "$p")
+  [[ "$n" == "2" ]] && pass "$f: 2 .pg-footer" || fail "$f: $n .pg-footer in markup, want 2"
+  n=$(count "class=\"pg-footer det-footer\"" "$p")
+  [[ "$n" == "1" ]] && pass "$f: .det-footer variant kept" || fail "$f: $n .pg-footer.det-footer, want 1"
+  n=$(count "class=\"pgf-item" "$p")
+  [[ "$n" == "6" ]] && pass "$f: 6 footer items" || fail "$f: $n .pgf-item, want 6 (3 x 2 footers)"
+
+  # Whole file: the stylesheet cannot contain an emoji. 🔒 belongs here too —
+  # stamp_footer.py's frozen label used it, and it is the same raster glyph
+  # problem §7 exists to remove.
+  for g in "🎟" "🔄" "🔒"; do
+    n=$(count "$g" "$p")
+    [[ "$n" == "0" ]] && pass "$f: no $g" || fail "$f: raster glyph $g survived ($n)"
+  done
+
+  # The reason §7 shipped alone: stamp_footer.py patches this markup in
+  # published HTML hours later, and a mismatch fails silently on a quiet run.
+  n=$(python3 verify/check_stampable.py "$p")
+  [[ "$n" == "0" ]] && pass "$f: footer is stampable and stamps surgically" \
+                    || fail "$f: footer would break stamp_footer.py (code $n)"
 done
 # ─────────────────────────────────────────────────────────────
 

@@ -41,6 +41,13 @@ import re
 import sys
 from pathlib import Path
 
+# The footer markup and its matcher live in stamp_footer, because that script
+# has to find them in published HTML long after this one ran. Importing rather
+# than duplicating means the two cannot drift - and a drift here would not fail
+# the build, it would fail hours later on a quiet run, silently.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import stamp_footer
+
 # ============================================================================
 # PASS TABLE - read this before adding or reordering a pass
 # ============================================================================
@@ -153,17 +160,37 @@ from pathlib import Path
 #   scope    - 6 must not touch #sec-projection or .nav-top. Every selector it
 #              uses is either an id or lives under #sec-suivi / .det-links.
 #
-# STILL TO COME - Deploy 3 §7 (footer restructure), which will ship as its own
-# commit. When it does:
+# Deploy 3 §7 (apply_footer) is pass 7, after apply_deploy3:
 #
-#   - pass 2 EMITS "🔄 Données API" and §7 CONSUMES it. That producer/consumer
-#     pair spans four passes and must be recorded here, not rediscovered.
-#   - postprocess()'s `if FOOTER_OLD in html` end-check has to move after §7,
-#     or it will assert on a string §7 has destroyed. It is still correct today
-#     only because nothing downstream of pass 2 touches the footer yet.
-#   - scripts/stamp_footer.py matches that same footer in published HTML, out
-#     of band. §7 must update it in the same commit, and postprocess must then
-#     assert the emitted footer is stamp-compatible.
+#   consumes: the two generated footer <div>s, and specifically the string
+#             "🔄 Données API" that PASS 2 emits - a producer/consumer pair
+#             spanning five passes
+#   emits:    .pg-footer / .pgf-item / .pgf-k / .pgf-v / .pgf-sep / .pgf-brand,
+#             two inline SVG line icons
+#
+#   after 2  - it consumes pass 2's output. Trivially satisfied, but it is the
+#             longest-range coupling in this file and belongs written down.
+#   note     - the end-check `if FOOTER_OLD in html` does NOT need to move.
+#             FOOTER_OLD is "📤 Données uploadées"; §7 destroys FOOTER_NEW.
+#             (An earlier version of this table said otherwise. It was wrong.)
+#   note     - "Festiflow Dashboard v6.7" stops being one string here: the
+#             version moves into its own .pgf-ver span. Anything asserting the
+#             old literal reads 0 on a correct file, including
+#             verify/assert_redesign.sh, which was updated with it.
+#
+# OUT-OF-BAND CONSUMER - scripts/stamp_footer.py patches this same footer in
+# published HTML, hours later, on a run where nothing sold. It is not a pass,
+# it never sees this file, and a disagreement between the two fails silently:
+# the stamp stops moving and the dashboard looks like a dead pipeline, which is
+# the exact symptom N4 existed to remove. Two things keep them honest:
+#
+#   - the markup lives in stamp_footer.build_item(); this file imports it
+#     rather than writing its own copy.
+#   - postprocess dry-runs stamp_footer.restamp() against its own output and
+#     requires two matches AND an unchanged item count. The second half is not
+#     redundant: the first STAMP_ITEM_RE matched twice and still deleted a
+#     neighbouring item, because a lazy dot let the icon body span an item
+#     boundary.
 #
 # ============================================================================
 
@@ -1290,6 +1317,70 @@ def apply_deploy3(html):
     return html, problems, stats
 
 
+# ------------------------------------------ redesign v6.7, deploy 3 §7 --
+# The two footer emoji are full-colour raster glyphs: they render differently
+# per OS and sit off the text baseline, next to a nav built from inline line
+# icons. And the run-on "&nbsp;·&nbsp;" string reads as prose where it is
+# three separate facts.
+#
+# Verbatim from mock/epk_redesign_final.html. 24 viewBox, currentColor, no
+# fill, so they inherit --text-dim like the nav icons do.
+PGF_ICON_TICKET = (
+    '<svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+    'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
+    '<path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 '
+    '3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/>'
+    '<path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg>'
+)
+
+# The old footer, both occurrences: one bare <div style="...">, one
+# .det-footer. Everything between the separators is dynamic, so the values are
+# lifted out and re-emitted rather than reconstructed.
+OLD_FOOTER_RE = re.compile(
+    r'<div (class="det-footer"|style="text-align:center[^"]*")>'
+    r'🎟 Dernier billet vendu · (.*?)\s*&nbsp;·&nbsp;\s*'
+    r'🔄 Données API · (.*?)\s*&nbsp;·&nbsp;\s*'
+    r'Festiflow Dashboard (v[\d.]+)</div>'
+)
+
+
+def apply_footer(html):
+    """
+    Deploy 3 §7. Returns (html, problems, count).
+
+    Ships separately from the rest of Deploy 3 because it is the only change
+    here that touches a runtime contract: scripts/stamp_footer.py patches this
+    same markup in published HTML, out of band, hours later. A mismatch fails
+    silently on a quiet run and looks exactly like the stale-stamp problem N4
+    existed to remove - so postprocess asserts stamp-compatibility at build
+    time, using the stamper's own matcher rather than a copy of it.
+    """
+    problems = []
+
+    def _rebuild(m):
+        holder, sold, checked, version = m.groups()
+        cls = 'pg-footer det-footer' if 'det-footer' in holder else 'pg-footer'
+        return (
+            f'<div class="{cls}">'
+            f'<span class="pgf-item">{PGF_ICON_TICKET}'
+            f'<span class="pgf-k">Dernier billet</span>'
+            f'<span class="pgf-v">{sold}</span></span>'
+            f'<span class="pgf-sep"></span>'
+            f'{stamp_footer.build_item(stamp_footer.CHECK_LABEL, checked)}'
+            f'<span class="pgf-sep"></span>'
+            f'<span class="pgf-item pgf-brand">Festiflow Dashboard'
+            f'<span class="pgf-ver">{version}</span></span></div>'
+        )
+
+    html, n = OLD_FOOTER_RE.subn(_rebuild, html)
+    # One page's footer restructured and the other's left behind is worse than
+    # neither: the two would disagree, and the stamper would only patch one.
+    if n != 2:
+        problems.append(
+            f'footer: rebuilt {n} footer(s), expected 2 - the template changed')
+    return html, problems, n
+
+
 def add_shared_auth(html):
     """Make one successful login unlock every dashboard. Returns (html, problems)."""
     problems = []
@@ -1530,6 +1621,10 @@ def postprocess(path):
         problems += d3_problems
         problems += _assert_deploy3(html, d3_stats, ac_t_before, cutoffs_before)
 
+        html, footer_problems, footers = apply_footer(html)
+        problems += footer_problems
+        d3_stats['footers'] = footers
+
     html, auth_problems = add_shared_auth(html)
     problems += auth_problems
     # Runs last: it appends the account avatar as the final child of .nav-top,
@@ -1543,6 +1638,29 @@ def postprocess(path):
         problems.append(f'"{FOOTER_OLD}" still present after footer replacement')
     if LOGO_REMOTE in html:
         problems.append('the cross-account logo hotlink survived the rewrite')
+
+    # The whole point of shipping §7 separately. stamp_footer.py patches the
+    # footer in published HTML out of band; if this file is not stampable the
+    # failure surfaces four hours later, on a quiet run, as a stale timestamp -
+    # which is the exact symptom N4 existed to remove. Assert it here, with the
+    # stamper's own matcher, so it is a failed build instead.
+    stampable = len(stamp_footer.STAMP_ITEM_RE.findall(html))
+    if stampable != 2:
+        problems.append(
+            f'footer: stamp_footer.py would match {stampable} item(s), needs '
+            f'exactly 2 - a quiet run would stop updating the timestamp')
+    # And that stamping is surgical: dry-run it and require the item count to
+    # survive. Matching twice is not the same as matching only its own item.
+    items = html.count('class="pgf-item')
+    dry, _ = stamp_footer.restamp(html, stamp_footer.CHECK_LABEL, '00:00')
+    dry_items = dry.count('class="pgf-item')
+    if dry_items != items:
+        problems.append(
+            f'footer: a stamp would take the item count from {items} to '
+            f'{dry_items} - the match is consuming its neighbours')
+    for emoji in ('🎟', '🔄', '🔒'):
+        if emoji in html:
+            problems.append(f'footer: raster glyph {emoji} survived (whole file)')
 
     path.write_text(html, encoding='utf-8')
     sw_items = html.count('class="sw-item')
