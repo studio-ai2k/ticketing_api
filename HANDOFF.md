@@ -624,3 +624,167 @@ fetched client-side. It shrinks the diff from six files to one, but it still
 commits and still deploys, so it saves nothing that matters; it adds a runtime
 dependency with a silent failure mode; and it loses the per-event stamp, which
 is exactly what makes the frozen/live distinction visible.
+
+## Standing rule: every count says what it counts
+
+Three shipped bugs, all the same mistake — a stylesheet selector counted as
+markup:
+
+| | claimed | actual (markup) | where the extra came from |
+| --- | --- | --- | --- |
+| `.ac-t` baseline | 8 | 4 | four `.ac-t` selectors in the CSS |
+| `.inset-divider` | 3 | 2 | the `.inset-divider` rule |
+| `sw-wrap` guard | "present" | absent | the guard matched the stylesheet, so **every** dashboard silently got no nav markup |
+
+So, without exception:
+
+1. A markup count keys on `class="name"`, never the bare word.
+2. Every assertion states whether it is over **markup** or the **whole file**.
+   "3 `.inset-divider`" is not a fact. "3 in the whole file, 2 in markup" is.
+3. A whole-file count is only valid for things the stylesheet cannot contain —
+   emoji, hostnames, JS identifiers, colour literals inside `borderColor:`.
+
+**When a number in an incoming spec disagrees with generated output, assume the
+spec counted the stylesheet before assuming the generator changed.** That has
+been the right guess three times out of three.
+
+The rule is also written at the top of `scripts/postprocess_html.py`, where it
+gets read.
+
+## The comparison offset is a constant — here is why
+
+`run.py`'s `_prev_match_dow` finds the previous-edition date at the same J-X
+*and* the same weekday. It looks date-dependent. It is not: for any given pair
+of events it collapses to one constant integer, which is what makes a
+client-side comparison selector cheap and keeps every date decision in Python.
+
+With `G = (event_date_first_current − event_date_first_previous).days`:
+
+```
+j_x        = (E_cur − d).days
+candidate  = E_prev − j_x            =  d − G
+wd_diff    = d.weekday() − candidate.weekday()
+           = w − ((w − G) mod 7)     where w = d.weekday()
+```
+
+Let `r = G mod 7`. Then
+
+```
+w ≥ r  →  (w − r) mod 7 = w − r      →  wd_diff = r
+w < r  →  (w − r) mod 7 = w − r + 7  →  wd_diff = r − 7
+```
+
+Now apply run.py's clamp (`>3 → −7`, `<−3 → +7`):
+
+- `r ∈ {0,1,2,3}`: the first branch gives `r` (no clamp); the second gives
+  `r − 7 ∈ [−7,−4]`, which clamps back to `r`. Both → **r**.
+- `r ∈ {4,5,6}`: the first gives `r ∈ [4,6]`, which clamps to `r − 7`; the
+  second gives `r − 7 ∈ [−3,−1]`, unclamped. Both → **r − 7**.
+
+Either way `wd_diff` is the signed representative of `r` in `[−3, 3]` and does
+not depend on `d`. Therefore
+
+```
+matched_date = d − (G − signed_mod7(G))
+
+offset = G − signed_mod7(G)          constant per event pair
+```
+
+Checked numerically over 200,000 date/pair combinations across random anchor
+gaps: **0 mismatches.** The offsets in use:
+
+| event | compare_to | G | offset |
+| --- | --- | --- | --- |
+| epk_2026 | epk_2023 | 1100 | 1099 |
+| bordeaux_2026 | bordeaux_2025 | 363 | 364 |
+| geneve_2026 | geneve_2025 | 363 | 364 |
+| rennes_2026 | rennes_2025 | 364 | 364 |
+| paris_xxl_2026 | paris_xxl_2025 | 364 | 364 |
+| bordeaux_oct_2026 | halloween_2025 | 350 | 350 |
+
+It holds for `_prev_match_dsl` too — same clamp, a different constant anchor —
+so even that dead mode would not break it. Three worries that do **not** apply:
+differing day counts (only `event_date_first` enters), a mid-campaign date
+change (`G` changes, the page regenerates, nothing stale is cached), and DST
+(`date` arithmetic, no timezones).
+
+## Deploy 3 (v6.7) — what shipped and what did not
+
+Shipped in `680c134`: the stylesheet swap, suivi scroll containers and
+`Précédent` separators, the vélocité header, the trailing-inset-divider
+removal, and the platform cards.
+
+**Both backend platform links were wrong before this.** `run.py` has no Shotgun
+dashboard URL, so that card fell back to `shotgun_url` — the public festival
+page — and on rennes and geneve the two Shotgun cards were byte-identical
+destinations. DICE pointed at `dice.fm/partner/events/{id}` rather than the Mio
+backoffice actually in use. Both are derivable, so both are fixed in
+postprocess:
+
+```
+https://smartboard.shotgun.live/events/{shotgun_event_id}
+https://mio.dice.fm/events/{base64("Event:" + dice_mio_id)}/overview
+```
+
+The relay id is the same encoding `fetch_csv.py` uses for GraphQL, generated
+rather than tabulated, and asserted against four known values.
+
+**Not shipped: §7, the footer restructure.** It is the only item touching a
+runtime contract rather than generated markup — `scripts/stamp_footer.py`
+patches that same footer in published HTML, out of band, four hours later, on a
+quiet run. A break there fails silently and looks exactly like the pipeline
+problem N4 existed to remove. It ships alone so it can be reverted alone. When
+it does, see the pass-table note in `postprocess_html.py`: pass 2 emits the
+string §7 consumes, the `FOOTER_OLD` end-check has to move after it, and
+postprocess must assert the emitted footer is stamp-compatible at build time.
+
+The frozen variant becomes a three-part edit — label, value, and icon, since a
+sync arrow is wrong for an event that will never sync again.
+
+## The DICE handover guard
+
+Adding a `dice_mio_id` retires a committed manual export in favour of an API
+call (`fetch_csv.py`). If the token cannot reach the event, the API answers
+**HTTP 200 with an empty set** — valid token, wrong account, indistinguishable
+from "no sales" — and the export is already gone. Genève is 2,912 tickets and
+~186k EUR, more than its Shotgun side.
+
+**M1 does not protect against this.** M1 publishes when the CSV changes, and
+the CSV changing is the symptom.
+
+So the retiring branch counts what it discards and holds the replacement to
+that number. Not a non-zero check: partial account access returning three
+tickets passes that while losing 2,909. Override is `--allow-dice-shrink`, for
+a drop that is real rather than a reachability failure. The guard retires
+itself — once the API is authoritative the event leaves `MANUAL_DICE_CSVS`.
+
+**Do not add `geneve_2026.dice_mio_id` until the Collaborateur token can reach
+event 588085.** The guard now turns that mistake into a failed run instead of a
+silent loss, but the id still should not land early.
+
+## Suivi comparison selector — decided, not built
+
+Waiting on the revenue row layout (S1). Decisions already made:
+
+- **No `run.py` change.** `scripts/build_dashboard.py` already imports `run`
+  and replaces three module attributes before calling `run.main()`. Add a
+  fourth that wraps `_generate_suivi_v3` to **observe** — capturing
+  `cutoff_date`, `event_config`, `event_config_prev` from the arguments run.py
+  itself passes. Nothing is re-derived and `run.py` stays byte-identical.
+- **`data-cur` positionally, never by parsing.** The rendered dates carry no
+  year (`Jeu 15 Déc`) and the daily table spans 232 rows across a year
+  boundary, so parsing is ambiguous, not merely fragile. The past rows are a
+  strictly consecutive one-per-day sequence ending at `cutoff_date` — verified,
+  0 non-consecutive steps over 232 / 179 / 93 rows — so counting backwards from
+  the last row is exact.
+- **Payload: 62 KB raw, ~11 KB gzipped** for all twelve candidates against a
+  ~270 KB page. No shortlist.
+- **Row range is not extended** (S2). Where a candidate's series does not cover
+  a row's matched date, render an em dash — a zero asserts "no sales that day",
+  which is false. Caption the coverage when a candidate is short.
+- **Cumulative is prefix-summed from the full series, never from visible rows**
+  (S3). Follows from the above: on a truncated candidate the first visible
+  row's true cumulative is not zero. Summing what is on screen is the obvious
+  wrong implementation.
+- Add a CI check comparing the closed-form offset against `run._prev_match_dow`
+  exhaustively. That retires the divergence risk rather than managing it.
