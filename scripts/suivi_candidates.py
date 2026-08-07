@@ -136,6 +136,12 @@ def aggregate(path):
             elif row.get('platform') == 'DICE':
                 e['dice'] += 1
             try:
+                # `price`, NOT `gross_price`. run.py's weekly rows sum
+                # t['price'], so gross would put figures on the page that
+                # disagree with the € column already rendered beside them.
+                # Cross-checked: 17 of 18 weekly rows on epk reproduce both
+                # columns exactly with `price`. gross_price is the obvious
+                # wrong choice for whoever touches this next.
                 e['rev'] += float(row.get('price') or 0)
             except ValueError:
                 pass
@@ -194,12 +200,19 @@ def build(event_id, config_path, today=None):
             'series': s,
         })
 
+    # The viewed event's own series ships too. The right-hand column needs it
+    # for the revenue figures, and it is never a candidate - you cannot compare
+    # an event against itself.
+    own_path = series_path(event_id)
+    own = aggregate(own_path) if own_path else {}
+
     return {
         'event': event_id,
         'name': me['name'],
         'first': me['first'].isoformat(),
         'capacity': me['capacity'],
         'reference': reference,
+        'own_series': own,
         'candidates': candidates,
     }
 

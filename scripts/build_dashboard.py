@@ -23,13 +23,23 @@ csv_database/<compare_to>/.
 
 import argparse
 import csv
+import inspect
+import json
 import os
 import shutil
 import sys
 import tempfile
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import suivi_candidates
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _iso(value):
+    """date -> 'YYYY-MM-DD', anything else -> None."""
+    return value.isoformat() if hasattr(value, 'isoformat') else None
 
 
 def read_config_field(config_path, event_id, field):
@@ -97,8 +107,47 @@ def main():
     run.process_shotgun_csv = lambda path: rows
     run.find_merge_into_files = lambda raw_dir_, config_path, event_id: []
 
+    # The Suivi selector needs the anchors the Suivi table was built from:
+    # which day the last complete row is, and the two event_date_first values
+    # the comparison is aligned on. All three are arguments run.py already
+    # passes to _generate_suivi_v3.
+    #
+    # So OBSERVE rather than change. The wrapper calls through untouched and
+    # records what it saw. Nothing is re-derived, and the alternative - parsing
+    # the rendered French dates back out of the HTML - is not merely fragile:
+    # "Jeu 15 Déc" carries no year, and the daily table spans 232 rows across a
+    # year boundary.
+    #
+    # Bound through the real signature rather than by position, so a new
+    # argument in run.py cannot silently shift what gets captured.
+    anchors = {}
+    _suivi = run._generate_suivi_v3
+
+    def _observe_suivi(*a, **kw):
+        bound = inspect.signature(_suivi).bind(*a, **kw)
+        bound.apply_defaults()
+        arg = bound.arguments
+        cfg, prev = arg.get('event_config') or {}, arg.get('event_config_prev') or {}
+        anchors.update({
+            'cutoff_date': _iso(arg.get('cutoff_date')),
+            'cutoff_cumulative': _iso(arg.get('cutoff_cumulative')),
+            'event_first': _iso(cfg.get('event_date_first')),
+            'prev_first': _iso(prev.get('event_date_first')),
+            'prev_event': prev.get('event_id'),
+        })
+        return _suivi(*a, **kw)
+
+    run._generate_suivi_v3 = _observe_suivi
+
     sys.argv = ['run.py', '--event', args.event]
     run.main()
+
+    if not anchors.get('cutoff_date'):
+        raise SystemExit(
+            '_generate_suivi_v3 was never called, or called without a '
+            'cutoff_date - the Suivi anchors are the one thing that cannot be '
+            'recovered afterwards, so this is a hard failure rather than a '
+            'dashboard with a silently inert selector.')
 
     produced = output_dir / 'dashboard_FINAL.html'
     if not produced.exists():
@@ -107,6 +156,22 @@ def main():
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(produced, out_path)
+
+    # Sidecar for postprocess_html.py: the observed anchors plus the comparison
+    # candidates. Written beside the HTML and consumed in the same build, so it
+    # never needs committing.
+    sidecar = out_path.with_suffix(out_path.suffix + '.suivi.json')
+    try:
+        payload = suivi_candidates.build(args.event, args.config)
+    except SystemExit as exc:
+        print(f"   ⚠ no comparison candidates: {exc}")
+        payload = {'event': args.event, 'candidates': []}
+    payload['anchors'] = anchors
+    sidecar.write_text(json.dumps(payload, separators=(',', ':'),
+                                  ensure_ascii=False), encoding='utf-8')
+    print(f"   ↳ suivi sidecar: {len(payload['candidates'])} candidate(s), "
+          f"{sidecar.stat().st_size / 1024:.0f} KB")
+
     print(f"\n✅ Dashboard written to {out_path} ({out_path.stat().st_size:,} bytes)")
 
     shutil.rmtree(tmp, ignore_errors=True)

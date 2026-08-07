@@ -47,6 +47,7 @@ from pathlib import Path
 # the build, it would fail hours later on a quiet run, silently.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import stamp_footer
+import suivi_selector
 
 # ============================================================================
 # PASS TABLE - read this before adding or reordering a pass
@@ -1662,6 +1663,11 @@ def postprocess(path):
         html, footer_problems, footers = apply_footer(html)
         problems += footer_problems
         d3_stats['footers'] = footers
+
+        sidecar = path.with_suffix(path.suffix + '.suivi.json')
+        html, suivi_problems, suivi_stats = suivi_selector.apply(html, sidecar)
+        problems += suivi_problems
+        d3_stats['suivi'] = suivi_stats
 
     html, auth_problems = add_shared_auth(html)
     problems += auth_problems
