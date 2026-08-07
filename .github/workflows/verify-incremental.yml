@@ -149,14 +149,17 @@ jobs:
           import re
           log = open('incr.log', encoding='utf-8').read()
           appended = re.search(r'appended (\d+) new Shotgun row', log)
-          trip = re.search(r'H3-TRIP event=(\S+) reason=(\S+)', log)
+          trip = re.search(r'H3-TRIP event=(\S+) reason=(\S+)(?: count=(\d+))?', log)
           resumed = 'incremental:' in log
           backdated = os.environ.get('BACKDATE_HOURS', '0') != '0'
           sg_full = ca.get('Shotgun', 0)
 
           print(f"- resumed from a cursor: **{resumed}**")
           if trip:
-              print(f"- H3 guard tripped: **yes**, reason `{trip.group(2)}`")
+              # I2: one row tripping is a different world from forty.
+              n_mod = trip.group(3) or '?'
+              print(f"- H3 guard tripped: **yes**, reason `{trip.group(2)}`, "
+                    f"modified rows: **{n_mod}**")
           else:
               print("- H3 guard tripped: **no**")
           if appended:
