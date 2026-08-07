@@ -840,3 +840,60 @@ or not. Before restructuring markup, grep `verify/` and `scripts/` for the
 strings you are about to destroy. The pass table is necessary, not sufficient.
 
 Recorded in the scope note at the top of `scripts/postprocess_html.py`.
+
+## Trap #4: an aggregate can be correct while a branch is dead
+
+Traps 1–3 were guards that matched the wrong thing. This one is different: the
+**measurement** aggregated the failure away.
+
+The Suivi row tagging tags two grains. On its first run it tagged 264 daily
+rows correctly and **0 weekly rows** — an entire grain silently doing nothing.
+A combined "264 rows tagged" would have read as perfect health, and the
+per-grain split is the only reason it surfaced at all.
+
+> **Report counts per branch, never in aggregate.** An aggregate can be correct
+> while a branch is dead.
+
+The second-order cause is worth its own line, because any pass can have it:
+the section offsets were computed **before** an earlier rewrite shifted every
+index after `#suivi-jour`. Position-based slicing must be recomputed after any
+edit that precedes it, or taken last. Recorded in the pass table.
+
+## The four traps share one rule
+
+| # | what looked right | what was actually happening |
+| --- | --- | --- |
+| 1 | `'sw-wrap' in html` | matched the stylesheet, so every dashboard silently got no nav |
+| 2 | `STAMP_ITEM_RE` matched exactly twice | consumed four items it did not own |
+| 3 | offset transcription markers all present | present inside `_prev_match_dsl`, so a change to `_prev_match_dow` passed |
+| 4 | "264 rows tagged" | one of two grains tagged nothing |
+
+> **A check can pass for the wrong reason. Verify that your guard FIRES, not
+> only that it is present.**
+
+And the corollary: **a marker that is not unique is not a guard.** Scope every
+marker to the smallest region that can contain it, and write the negative test
+that proves it fires.
+
+`verify/check_offset.py` carries four such negative tests — a change inside
+`_prev_match_dow` must fail it, a change to `_prev_match_dsl` must not.
+**Do not "simplify" them away.** They are the only thing standing between a
+stale transcription and a silently wrong comparison.
+
+## The positional data-cur derivation, cross-validated by accident
+
+The strongest evidence in this project, and nobody designed it.
+
+`data-cur` is derived **positionally** — counted backwards from the observed
+`cutoff_date` — because the rendered dates carry no year. The design mock
+arrived at its own `data-cur` values by **parsing those French date strings**.
+Two independent methods, on different inputs, written by different people.
+
+Both produce `data-cur="2025-12-18"` for epk's first daily row.
+
+A second accidental confirmation, same class: selecting `rennes_2025` on epk
+leaves 107 of 264 daily rows as em dashes — and `rennes_2025` has exactly 157
+days of data. 264 − 107 = 157. Every day of the candidate's series lands on
+exactly one row, none lost, none doubled.
+
+Neither check was asked for. Both are worth more than the ones that were.

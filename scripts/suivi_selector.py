@@ -204,6 +204,32 @@ def apply(html, sidecar_path):
         html, n = re.subn(r'</style>', REV_CSS + '</style>', html, count=1)
         if n != 1:
             problems.append('suivi: no </style> to append the revenue rule to')
+
+    # --- the dropdown, the payload and the render script ------------------
+    if data.get('candidates'):
+        html, ok = _ui(html, data)
+        if not ok:
+            problems.append('suivi: could not place the comparison trigger')
+        stats['trigger'] = ok
+
+        # A caption slot under the header, filled in by the render script only
+        # when a non-reference candidate is showing.
+        html = html.replace('<div id="suivi-jour"',
+                            '<div class="cmp-note" id="cmp-note"></div>\n    '
+                            '<div id="suivi-jour"', 1)
+
+        # The payload rides as inert JSON rather than a JS literal, so nothing
+        # in an event name can execute. </script> inside a string would still
+        # close the tag, so it is escaped.
+        blob = json.dumps(data, separators=(',', ':'),
+                          ensure_ascii=False).replace('</', '<\\/')
+        html, n = re.subn(
+            r'</body>',
+            f'<script type="application/json" id="cmp-data">{blob}</script>\n'
+            + RENDER_JS + '\n</body>', html, count=1)
+        if n != 1:
+            problems.append('suivi: no </body> to attach the selector to')
+        stats['candidates'] = len(data['candidates'])
     return html, problems, stats
 
 
@@ -248,3 +274,248 @@ def _inject_revenue(body, left, right):
 
     return (_one(left_html, *left) + '<div class="dtl-center">' + centre
             + '<div class="dtl-right">' + _one(right_html, *right))
+
+
+# ---------------------------------------------------------------- the UI --
+# Every .cmp-* rule already ships in dashboard_v6_7.css, including the mobile
+# ones, so nothing here authors CSS. Three details that cost the design work
+# rounds and are load-bearing rather than cosmetic:
+#
+#   - the trigger must be LAST in .card-controls (the stylesheet gives it
+#     order:2). First, it stranded itself at the left edge on mobile, and the
+#     menu is anchored right:0, so it opened off-screen.
+#   - .card-controls needs the section title on its own line below 720px, or
+#     the dropdown wraps above the Jour/Semaine toggle. Stylesheet handles it,
+#     but only if .toggle-group and .cmp are siblings inside .card-controls.
+#   - the menu is capped at min(280px, 100vw - 34px) and the name ellipsises
+#     at ~15ch, so "Bordeaux Octobre 2026" truncates instead of wrapping.
+
+TOGGLE_RE = re.compile(r'(<div class="toggle-group">.*?</div>)', re.DOTALL)
+
+CHEVRON = ('<svg class="cmp-chev" viewBox="0 0 10 6" fill="none" '
+           'stroke="currentColor" stroke-width="1.6"><path d="M1 1l4 4 4-4"/></svg>')
+
+
+def _menu_html(data):
+    """The grouped dropdown. Only groups with candidates are emitted."""
+    fam = data['name'].rsplit(' ', 1)[0] if data.get('name') else ''
+    out = ['<div class="cmp-menu" id="cmp-menu" role="listbox">']
+    for group, title in GROUP_TITLES:
+        members = [c for c in data['candidates'] if c['group'] == group]
+        if not members:
+            continue
+        out.append(f'<div class="cmp-group">{title.format(family=fam)}</div>')
+        for c in members:
+            ref = '<span class="cmp-ref">référence</span>' if c['reference'] else ''
+            out.append(
+                f'<button class="cmp-item" role="option" data-cmp="{c["id"]}" '
+                f'aria-current="{"true" if c["reference"] else "false"}">'
+                f'<span>{c["name"]}{ref}</span>'
+                f'<span class="cmp-meta">{c["days"]} j</span></button>')
+    out.append('</div>')
+    return ''.join(out)
+
+
+def _ui(html, data):
+    """Wrap the toggle in .card-controls and append the trigger. (html, ok)."""
+    start = html.find('<div id="sec-suivi"')
+    if start < 0:
+        return html, False
+    header_end = html.find('</div>\n', start)
+    m = TOGGLE_RE.search(html, start, start + 3000)
+    if not m:
+        return html, False
+
+    ref = next((c for c in data['candidates'] if c['reference']), None)
+    label = ref['name'] if ref else '—'
+    block = (
+        '<div class="card-controls">' + m.group(1) +
+        '<div class="cmp">'
+        '<button class="cmp-trigger" id="cmp-trigger" aria-haspopup="listbox" '
+        'aria-expanded="false">'
+        '<span class="cmp-eyebrow">vs</span>'
+        f'<span class="cmp-name" id="cmp-current">{label}</span>{CHEVRON}</button>'
+        + _menu_html(data) + '</div></div>'
+    )
+    return html[:m.start(1)] + block + html[m.end(1):], True
+
+
+# The render script. Kept as one IIFE with no globals except the data element.
+#
+# Three rules that are easy to get wrong and silent when you do:
+#   - cumulative figures are prefix-summed over the candidate's FULL series,
+#     never over the rows on screen. A candidate whose campaign started before
+#     the table does has no row for its early days, so summing what is visible
+#     would understate every cumulative on the left.
+#   - a date the candidate's series does not cover renders an em dash. A zero
+#     asserts "no sales that day", which is false.
+#   - the Diff column is rewritten only where it is actually a diff. The today
+#     row's centre says "en cours" and future rows show J-X; both would be
+#     destroyed by a blind rewrite.
+RENDER_JS = """<script>
+(function(){
+  var el = document.getElementById('cmp-data');
+  if(!el) return;
+  var D = JSON.parse(el.textContent);
+  var byId = {}; D.candidates.forEach(function(c){ byId[c.id] = c; });
+  var DAYS = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  var MONTHS = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov','Déc'];
+  var DASH = '—';
+
+  function num(n){ return n.toLocaleString('en-US'); }
+  function eur(v){ return '€' + Math.round(v).toLocaleString('en-US').replace(/,/g,' '); }
+  function iso(d){ return d.toISOString().slice(0,10); }
+  function parse(s){ var p = s.split('-'); return new Date(Date.UTC(+p[0], p[1]-1, +p[2])); }
+  function label(d){ return DAYS[(d.getUTCDay()+6)%7] + ' ' + d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()]; }
+
+  // Prefix sums over the WHOLE series, computed once per candidate.
+  function pfx(c){
+    if(c._p) return c._p;
+    var keys = Object.keys(c.series).sort(), n = 0, r = 0, out = {};
+    keys.forEach(function(k){ n += c.series[k].n; r += c.series[k].rev; out[k] = {n:n, rev:r}; });
+    c._p = out; return out;
+  }
+  // Weekly buckets: weeks before the CANDIDATE's own event date. No offset.
+  // Cumulative runs from the oldest week (highest S-number) downwards, which
+  // is the direction run.py accumulates in, and over the FULL series - not
+  // over the weeks that happen to be on screen.
+  function wks(c){
+    if(c._w) return c._w;
+    var first = parse(c.first), out = {};
+    Object.keys(c.series).forEach(function(k){
+      var w = Math.floor((first - parse(k)) / 604800000);
+      if(w < 1) return;
+      var e = out[w] || (out[w] = {n:0, sg:0, dice:0, rev:0});
+      e.n += c.series[k].n; e.sg += c.series[k].sg;
+      e.dice += c.series[k].dice; e.rev += c.series[k].rev;
+    });
+    var cum = 0;
+    Object.keys(out).map(Number).sort(function(a,b){ return b - a; })
+      .forEach(function(w){ cum += out[w].n; out[w].cum = cum; });
+    c._w = out; return out;
+  }
+
+  var rows = [].slice.call(document.querySelectorAll('#sec-suivi .dtl-row[data-cur], #sec-suivi .dtl-row[data-wk]'));
+  // Snapshot the server-rendered original: returning to the reference restores
+  // it rather than recomputing it, so the default view is always exactly what
+  // run.py produced.
+  rows.forEach(function(r){
+    var l = r.querySelector('.dtl-left'), c = r.querySelector('.dtl-center');
+    if(l) r._l = l.innerHTML;
+    if(c) r._c = c.innerHTML;
+  });
+
+  function setSide(el, entry, cum, text){
+    var d = el.querySelector('.dtl-date'), s = el.querySelector('.dtl-sales'),
+        det = el.querySelector('.dtl-detail'), ac = el.querySelector('.dtl-accum');
+    if(d) d.textContent = text;
+    if(!entry){
+      if(s) s.textContent = DASH;
+      if(det) det.textContent = DASH;
+      if(ac) ac.textContent = DASH;
+      return;
+    }
+    if(s) s.innerHTML = num(entry.n) + ' <span class="dtl-rev">' + eur(entry.rev) + '</span>';
+    if(det) det.textContent = 'SG ' + entry.sg + ' · DICE ' + entry.dice;
+    if(ac && cum) ac.innerHTML = 'Cumulé ' + num(cum.n) + ' · <span class="dtl-rev">' + eur(cum.rev) + '</span>';
+  }
+
+  // The weekly row is a different shape from the daily one: five lines, a
+  // percentage line the daily row does not have, and € in .dtl-accum where the
+  // daily row has "Cumulé N". Reusing setSide here left that percentage line
+  // showing the PREVIOUS candidate's figures under the new candidate's name -
+  // stale numbers presented as current, which is worse than no numbers.
+  function setWeek(el, entry, wk, capacity){
+    var d = el.querySelector('.dtl-date'), s = el.querySelector('.dtl-sales'),
+        det = el.querySelectorAll('.dtl-detail'), ac = el.querySelector('.dtl-accum');
+    if(!entry){
+      if(d) d.textContent = DASH;
+      if(s) s.textContent = DASH;
+      det.forEach(function(x){ x.textContent = DASH; });
+      if(ac) ac.textContent = DASH;
+      return;
+    }
+    if(d) d.textContent = 'S-' + wk;
+    if(s) s.textContent = num(entry.n);
+    if(det[0]) det[0].textContent = 'SG ' + entry.sg + ' · DICE ' + entry.dice;
+    if(det[1]){
+      var wp = capacity ? entry.n / capacity * 100 : 0;
+      var cp = capacity ? entry.cum / capacity * 100 : 0;
+      det[1].innerHTML = wp.toFixed(1) + '%&ensp;·&ensp;' + cp.toFixed(1) + '% cumulé';
+    }
+    if(ac) ac.textContent = '€' + Math.round(entry.rev / 1000) + 'k';
+  }
+
+  function setDiff(row, mine, theirs){
+    var c = row.querySelector('.dtl-center');
+    if(!c) return;
+    var pct = c.querySelector('.dtl-pct'), diff = c.querySelector('.dtl-diff');
+    // Only a real diff cell. "en cours" and "J-28" are not, and rewriting them
+    // would delete information the row exists to show.
+    if(!pct || !/%$/.test(pct.textContent) || !diff) return;
+    if(theirs === null){ diff.textContent = DASH; pct.textContent = ''; return; }
+    var d = mine - theirs;
+    diff.textContent = (d >= 0 ? '+' : '') + num(d);
+    diff.className = 'dtl-diff ' + (d >= 0 ? 'pos' : 'neg');
+    pct.textContent = (theirs > 0 ? ((d / theirs * 100) >= 0 ? '+' : '') + (d / theirs * 100).toFixed(1) : '+0.0') + '%';
+  }
+
+  function render(id){
+    var c = byId[id];
+    if(!c) return;
+    var isRef = !!c.reference, P = pfx(c), W = wks(c);
+    rows.forEach(function(r){
+      var left = r.querySelector('.dtl-left');
+      if(!left) return;
+      if(isRef){
+        left.innerHTML = r._l;
+        if(r._c) r.querySelector('.dtl-center').innerHTML = r._c;
+        return;
+      }
+      var cur = r.getAttribute('data-cur');
+      if(cur){
+        var m = parse(cur); m.setUTCDate(m.getUTCDate() - c.offset);
+        var k = iso(m), e = c.series[k] || null;
+        setSide(left, e, P[k], e ? label(m) : DASH);
+        var mineEl = r.querySelector('.dtl-right .dtl-sales');
+        var mine = mineEl ? parseInt(mineEl.textContent.replace(/[^0-9]/g,''), 10) || 0 : 0;
+        setDiff(r, mine, e ? e.n : null);
+      } else {
+        setWeek(left, W[r.getAttribute('data-wk')] || null,
+                r.getAttribute('data-wk'), c.capacity);
+      }
+    });
+    document.getElementById('cmp-current').textContent = c.name;
+    var note = document.getElementById('cmp-note');
+    if(note){
+      note.textContent = isRef ? '' :
+        c.name + ' — jauge ' + num(c.capacity) + ' places (contre ' + num(D.capacity) +
+        ' ici) · seul ce tableau change, les autres chiffres restent sur ' +
+        (byId[D.reference] ? byId[D.reference].name : 'la référence') + '.';
+    }
+    document.querySelectorAll('.cmp-item').forEach(function(b){
+      b.setAttribute('aria-current', b.getAttribute('data-cmp') === id ? 'true' : 'false');
+    });
+  }
+
+  var menu = document.getElementById('cmp-menu'), trig = document.getElementById('cmp-trigger');
+  trig.addEventListener('click', function(e){
+    e.stopPropagation();
+    var open = menu.classList.toggle('open');
+    trig.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('click', function(e){
+    if(!e.target.closest('.cmp')){ menu.classList.remove('open'); trig.setAttribute('aria-expanded','false'); }
+  });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') menu.classList.remove('open'); });
+  document.querySelectorAll('.cmp-item').forEach(function(b){
+    b.addEventListener('click', function(){
+      render(b.getAttribute('data-cmp'));
+      menu.classList.remove('open');
+      trig.setAttribute('aria-expanded','false');
+    });
+  });
+  // Selection is deliberately not persisted: a remembered comparison someone
+  // forgot about is how a table quietly stops meaning what they think it does.
+})();
+</script>"""
