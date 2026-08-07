@@ -334,3 +334,19 @@ render dashboards. Their assumptions do not describe this repo:
 This has already caused one wrong call (a `data/raw` PII collision that cannot
 happen here). When reasoning about paths, check whether the assumption comes
 from the borrowed tool or from this pipeline.
+
+## Trap: anything new under data/ must be re-admitted to git
+
+The `data/` ignore rules were inherited from `run.py`'s DATA_DIR layout in
+`madameloyal/festiflow`, a repo whose data model does not apply here. That has
+now caused two problems with the same root:
+
+1. The merged CSVs were nearly blocked by a wholesale `data/` ignore.
+2. Every `data/{event}_state.json` cursor was silently discarded - the daily
+   run wrote them, git ignored them, and they vanished with the runner. The
+   CSVs seeded correctly, so nothing looked wrong; incremental simply could
+   never resume.
+
+**Any new file written under `data/` must be explicitly re-admitted in
+`.gitignore` and staged in the commit step, or it disappears with the runner.**
+Current re-admissions: `!data/*_merged.csv`, `!data/*_state.json`.

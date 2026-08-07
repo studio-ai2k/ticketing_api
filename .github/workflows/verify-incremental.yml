@@ -14,6 +14,10 @@ on:
         description: 'event_id to verify'
         required: true
         default: 'rennes_2026'
+      backdate_hours:
+        description: 'Rewind the cursor this many hours so the delta is non-empty (0 = resume from the tip)'
+        required: false
+        default: '0'
 
 jobs:
   verify:
@@ -46,6 +50,51 @@ jobs:
           echo "--- cursor state written:"
           cat "data/${{ inputs.event }}_state.json"
 
+      - name: Rewind the cursor
+        if: inputs.backdate_hours != '0'
+        env:
+          EVENT: ${{ inputs.event }}
+          HOURS: ${{ inputs.backdate_hours }}
+        run: |
+          python - <<'PY'
+          import csv, json, os
+          from datetime import datetime, timedelta, timezone
+
+          event, hours = os.environ['EVENT'], int(os.environ['HOURS'])
+          cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+          naive = cutoff.replace(tzinfo=None)
+
+          # H12: truncate the stored file to what existed at the cutoff. Leaving
+          # the whole file in place and only rewinding the cursor would ask the
+          # API to re-return rows the stored file already holds, and the
+          # comparison would be arithmetic on an inflated base - it can pass
+          # while the cursor is mispositioned.
+          rows = list(csv.DictReader(open('api_output/full.csv', encoding='utf-8')))
+          keep = [r for r in rows
+                  if datetime.fromisoformat(r['order_datetime']) <= naive]
+          with open(f'data/{event}_merged.csv', 'w', newline='', encoding='utf-8') as f:
+              w = csv.DictWriter(f, fieldnames=list(rows[0]))
+              w.writeheader()
+              w.writerows(keep)
+
+          kept_sg = [r for r in keep if r['platform'] == 'Shotgun']
+          max_ordered = max((r['order_datetime'] for r in kept_sg), default=None)
+          # Cursor is {ticket_updated_at}_{ticket_id}; _0 sorts before any real
+          # id at that instant, so nothing at the boundary is skipped.
+          json.dump({
+              'cursor': cutoff.strftime('%Y-%m-%dT%H:%M:%S.000Z') + '_0',
+              'rows': len(kept_sg),
+              'max_ordered_at': max_ordered,
+              'shotgun_event_id': json.load(
+                  open(f'data/{event}_state.json'))['shotgun_event_id'],
+          }, open(f'data/{event}_state.json', 'w'), indent=2, sort_keys=True)
+
+          sg_total = sum(1 for r in rows if r['platform'] == 'Shotgun')
+          print(f"cutoff {naive} | stored {len(kept_sg)} of {sg_total} Shotgun rows"
+                f" | expecting a delta of {sg_total - len(kept_sg)}")
+          PY
+          cat "data/${{ inputs.event }}_state.json"
+
       - name: Incremental fetch (resumes from that cursor)
         env:
           SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
@@ -59,6 +108,8 @@ jobs:
           echo "INCR_SECONDS=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
 
       - name: Compare
+        env:
+          BACKDATE_HOURS: ${{ inputs.backdate_hours }}
         run: |
           {
             echo "### Incremental verification - ${{ inputs.event }}"
@@ -98,22 +149,48 @@ jobs:
           import re
           log = open('incr.log', encoding='utf-8').read()
           appended = re.search(r'appended (\d+) new Shotgun row', log)
-          tripped = 'H3-TRIP' in log
-          print(f"- H3 guard tripped: **{tripped}**")
+          trip = re.search(r'H3-TRIP event=(\S+) reason=(\S+)', log)
+          resumed = 'incremental:' in log
+          backdated = os.environ.get('BACKDATE_HOURS', '0') != '0'
+          sg_full = ca.get('Shotgun', 0)
+
+          print(f"- resumed from a cursor: **{resumed}**")
+          if trip:
+              print(f"- H3 guard tripped: **yes**, reason `{trip.group(2)}`")
+          else:
+              print("- H3 guard tripped: **no**")
           if appended:
               n = int(appended.group(1))
-              print(f"- delta fetched: **{n}** rows "
-                    f"(full Shotgun side is {ca.get('Shotgun',0)})")
-              print(f"- cursor accepted: **{n < ca.get('Shotgun',0)}**")
-          else:
-              print("- delta line absent - incremental did not resume "
-                    "(see the log for why)")
+              print(f"- delta fetched: **{n}** rows (full Shotgun side is {sg_full})")
           print("")
-          print("Verdict: **" + (
-              "PASS - cursor accepted, no rows lost"
-              if sum(lost.values()) == 0 and appended and not tripped
-              else "INVESTIGATE - see above"
-          ) + "**")
+
+          # H13: three outcomes, and two of them are passes. A backdated window
+          # containing a refund makes H9 fire on a row whose ordered_at predates
+          # the cutoff - that is the detector doing its job, and it aborts into
+          # a full refetch, which looks exactly like a cursor failure unless the
+          # reason is reported separately.
+          if not resumed:
+              verdict = "FAIL - did not resume from the cursor at all"
+          elif trip and trip.group(2) == 'modified-rows':
+              verdict = ("PASS (detector) - H9 caught a real modification inside "
+                         "the window and fell back to a full refetch, which is "
+                         "the designed behaviour. Cursor positioning untested "
+                         "this run; re-run over a quieter window to test it.")
+          elif trip:
+              verdict = f"INVESTIGATE - H3 tripped for `{trip.group(2)}`"
+          elif sum(lost.values()) or sum(gained.values()):
+              verdict = ("FAIL - cursor mispositioned: the incremental result is "
+                         "not the same multiset as the full fetch")
+          elif backdated and appended and int(appended.group(1)) == 0:
+              verdict = ("INCONCLUSIVE - backdated but the delta was empty, so "
+                         "no sales fell in the window. Widen backdate_hours.")
+          elif backdated:
+              verdict = ("PASS (positioning) - resumed from a backdated cursor "
+                         "and reproduced the full fetch exactly")
+          else:
+              verdict = ("PASS (accepted) - cursor accepted and no rows lost, "
+                         "but the delta was empty so positioning is untested")
+          print("Verdict: **" + verdict + "**")
           PY
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
