@@ -318,3 +318,19 @@ Worth an hour on its own, independent of the Pages work. Open questions:
 - Does it publish the same post-processed HTML, or the raw run.py output with
   the upload link and the old footer?
 - Whatever access control gets put in front of ai2k.dev does not apply to it.
+
+## run.py and main.py are borrowed build tools
+
+Both were copied in from `madameloyal/festiflow` and are used here only to
+render dashboards. Their assumptions do not describe this repo:
+
+- `run.py`'s `DATA_DIR` layout (`data/raw`, `data/output`, `data/merged`) and
+  `main.py`'s Railway upload flow belong to that other project. **This repo has
+  no Railway deployment and no manual upload path** - the whole pipeline is
+  Actions fetches the APIs, writes CSVs, renders HTML, commits, Pages serves.
+- So `data/` here is free for our own use, and holds the committed merged CSVs
+  that incremental fetching resumes from.
+
+This has already caused one wrong call (a `data/raw` PII collision that cannot
+happen here). When reasoning about paths, check whether the assumption comes
+from the borrowed tool or from this pipeline.

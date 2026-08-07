@@ -530,8 +530,136 @@ def extract_shotgun_tickets(payload):
     return []
 
 
-def fetch_shotgun_pages(token, organizer_id, shotgun_event_id):
-    """Yield raw Shotgun ticket dicts, following pagination.next until exhausted."""
+# Where the incremental state lives, alongside the merged CSV it describes.
+STATE_DIR = Path('data')
+
+# Keys the total might plausibly hide under. Nothing in Shotgun's documented
+# response promises one; if none of these appear, reconciliation falls back to
+# the modification detector instead of pretending it has a number.
+TOTAL_KEYS = ('total', 'total_count', 'totalCount', 'count', 'ticket_count')
+
+
+def record_cursor(probe, ticket):
+    """Track the highest {ticket_updated_at}_{ticket_id} seen this fetch."""
+    updated = str(ticket.get('ticket_updated_at') or '').strip()
+    ticket_id = ticket.get('ticket_id')
+    if not updated or ticket_id in (None, ''):
+        return
+    candidate = (updated, str(ticket_id))
+    if probe.get('max_key') is None or candidate > probe['max_key']:
+        probe['max_key'] = candidate
+        probe['cursor'] = f"{updated}_{ticket_id}"
+
+
+def record_total(probe, payload):
+    """Note a total-count field if the envelope exposes one."""
+    for key in TOTAL_KEYS:
+        value = payload.get(key)
+        # ticket_count is per-page on the pages we have seen, so only trust a
+        # value that exceeds one page - a real total cannot be page-sized.
+        if isinstance(value, int) and value > SHOTGUN_PAGE_SIZE:
+            probe['total'] = value
+            probe['total_key'] = key
+            return
+
+
+def state_path(event_id):
+    return STATE_DIR / f"{event_id}_state.json"
+
+
+def load_state(event_id):
+    """Read the sidecar cursor state, or None if there is none / it is unusable."""
+    path = state_path(event_id)
+    if not path.exists():
+        return None
+    try:
+        with open(path, encoding='utf-8') as f:
+            state = json.load(f)
+    except (OSError, ValueError) as exc:
+        log(f"   ⚠ unreadable state at {path} ({exc}) - falling back to a full fetch")
+        return None
+    if not isinstance(state, dict) or not state.get('cursor'):
+        return None
+    return state
+
+
+def save_state(event_id, cursor, rows, max_ordered_at, shotgun_event_id):
+    """
+    Persist what an incremental resume needs.
+
+    Deliberately a sidecar rather than extra CSV columns: the cursor needs a
+    ticket_id and a timestamp, and the merged CSV is aggregate-only by
+    contract (see assert_merged_schema). One id for the newest ticket is not
+    the same as a per-ticket identity column.
+    """
+    path = state_path(event_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump({
+            'cursor': cursor,
+            'rows': rows,
+            'max_ordered_at': max_ordered_at,
+            'shotgun_event_id': shotgun_event_id,
+        }, f, indent=2, sort_keys=True)
+        f.write('\n')
+    return path
+
+
+def load_stored_rows(csv_path):
+    """
+    Read a previously committed merged CSV back into in-memory rows.
+
+    Returns None when there is nothing usable to resume from, which the caller
+    treats as "do a full fetch" rather than an error.
+    """
+    path = Path(csv_path)
+    if not path.exists():
+        return None
+    rows = []
+    try:
+        with open(path, newline='', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f)
+            if set(reader.fieldnames or []) != set(CSV_FIELDNAMES):
+                log(f"   ⚠ {path} is not the 11-column schema - full fetch")
+                return None
+            for row in reader:
+                dt = parse_shotgun_datetime(row.get('order_datetime'))
+                if dt is None:
+                    continue
+                rows.append({
+                    'order_date': dt.date(),
+                    'order_datetime': dt.replace(microsecond=0),
+                    'ticket_type': (row.get('ticket_type') or '').strip(),
+                    'access_level': (row.get('access_level') or '').strip(),
+                    'attendance_days': parse_attendance_days(row.get('attendance_days')),
+                    'product_name': (row.get('product_name') or '').strip(),
+                    'platform': (row.get('platform') or '').strip(),
+                    'price': float(row.get('price') or 0),
+                    'gross_price': float(row.get('gross_price') or 0),
+                    'quantity': int(float(row.get('quantity') or 1)),
+                    'is_paid': int(float(row.get('is_paid') or 0)),
+                })
+    except (OSError, ValueError) as exc:
+        log(f"   ⚠ could not read {path} ({exc}) - full fetch")
+        return None
+    return rows or None
+
+
+def fetch_shotgun_pages(token, organizer_id, shotgun_event_id, after=None, probe=None):
+    """
+    Yield raw Shotgun ticket dicts, following pagination.next until exhausted.
+
+    `after` resumes from a keyset cursor. Shotgun's own pagination.next carries
+    one and its shape is `{ticket_updated_at}_{ticket_id}`, e.g.
+    `2026-01-06T18:01:05.041Z_89328982` - so it orders by ticket_updated_at,
+    not ordered_at. That is the useful ordering: it surfaces modifications
+    (refunds, cancellations, the resale flip) as well as new sales.
+
+    `probe`, if given, is a dict this fills in as it goes: the highest cursor
+    seen, and any total-count field the envelope turns out to expose. Nothing
+    in the documented response promises a total, so it is discovered rather
+    than assumed.
+    """
     query = urllib.parse.urlencode({
         'token': token,
         'organizer_id': organizer_id,
@@ -544,6 +672,9 @@ def fetch_shotgun_pages(token, organizer_id, shotgun_event_id):
         'include_cohosted_events': '1',
     })
     url = f"{SHOTGUN_API}?{query}"
+
+    if after:
+        url += '&' + urllib.parse.urlencode({'after': after})
 
     page = 0
     seen_urls = set()
@@ -558,7 +689,11 @@ def fetch_shotgun_pages(token, organizer_id, shotgun_event_id):
         tickets = extract_shotgun_tickets(payload)
         log(f"   page {page}: {len(tickets)} tickets")
         for ticket in tickets:
+            if probe is not None:
+                record_cursor(probe, ticket)
             yield ticket
+        if probe is not None and isinstance(payload, dict):
+            record_total(probe, payload)
 
         pagination = payload.get('pagination') if isinstance(payload, dict) else None
         next_url = (pagination or {}).get('next')
