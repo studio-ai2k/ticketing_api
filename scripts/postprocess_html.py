@@ -86,13 +86,13 @@ from pathlib import Path
 #                       .nav-top, so the upload link (1) must already be gone.
 #   1 before 6        - same reason.
 #
-# Deploy 2 (projection restructure) will slot in as pass 5, between
-# apply_redesign and add_shared_auth:
+# Deploy 2 (restructure_projection) is now pass 5, between apply_redesign and
+# add_shared_auth:
 #
-#   consumes: .proj-grid, .q-card, .chart-tabs, #proj-day{N}, #day{N}-chart-a/b,
-#             #proj-logique, canvas ids chartDay{N}S1/S2, the Chart.js
+#   consumes: #sec-projection, .proj-grid, .q-card, .chart-tabs, #proj-day{N},
+#             #proj-logique, window._projBuilders['day{N}S1'], the Chart.js
 #             rgba(96,165,250,.8) literal
-#   emits:    .card wrappers, N new .ac-t / .ac-body accordions, immediate
+#   emits:    .card wrappers, N+1 new .ac-t / .ac-body accordions, immediate
 #             chart construction, #60a5fa
 #
 #   after 4  - required. It emits markup using the .ac-t / .ac-body names that
@@ -102,7 +102,10 @@ from pathlib import Path
 #              the two markup-emitting passes from interleaving, and 6 is the
 #              one that must stay last.
 #   note     - it emits .ac-t elements, so any count assertion on .ac-t has to
-#              run after it: Deploy 1's baseline of 8 becomes 8 + N.
+#              run after it. The markup baseline of 4 becomes 4 + N + 1: one
+#              per day card, plus one for the methodology card. (The spec said
+#              8 + N; 8 counts the four .ac-t selectors inside the stylesheet
+#              as well, and it overlooked the methodology accordion.)
 #
 # ============================================================================
 
@@ -596,6 +599,274 @@ def apply_redesign(html):
     return html, problems, renamed
 
 
+# --------------------------------------------- redesign v6.6, deploy 2 --
+# The projection block goes from "grid of day cards + a row of tabs switching
+# between hidden chart panels" to "one self-contained card per day, each with
+# its own Détails accordion", plus the methodology as a final card.
+#
+# Everything here is move-and-wrap. The .q-card and .q-chart-wrap contents are
+# carried across byte-for-byte; nothing inside them is rewritten.
+
+DIV_TAG_RE = re.compile(r'<div\b[^>]*>|</div>')
+
+# Replaces the per-panel "<day name> - Courbe cumulative (% capacité)"
+# subtitle. The day name is already the q-card's own header, and inside the
+# card it would be said twice.
+DAY_SUBTITLE = (
+    '<div style="font-size:var(--fs-caption);color:var(--text-muted);'
+    'margin-bottom:10px;font-weight:500">Courbe cumulative · % capacité</div>'
+)
+
+DAY_ACCORDION_HEAD = (
+    '<div class="ac-t" onclick="toggleDetails(this)">'
+    '<span>Détails</span><span class="arrow">▼</span></div>'
+)
+
+# The projection line and its own legend swatch are drawn from two different
+# literals. In the reference mock the line is rgba(96,165,250,.8) against a
+# solid #60a5fa swatch, and the spec asks for the alpha to go.
+#
+# This generator does not emit that colour at all - run.py builds the
+# projection line from rgba(251,191,36,.8) against a #fbbf24 swatch, which are
+# the same rgb. So the swap below is a no-op on every dashboard we produce
+# today. It is kept, and counted, because the mock is the design source of
+# truth and the day the palette moves to blue this would otherwise regress
+# silently.
+PROJ_LINE_OLD = 'rgba(96,165,250,.8)'
+PROJ_LINE_NEW = '#60a5fa'
+
+
+def _match_div(html, start):
+    """
+    html[start] opens a <div. Return (start, end) of its matching </div>.
+    Returns (-1, -1) if the document runs out first.
+
+    Safe on these files because no <div appears inside a JS or CSS string -
+    postprocess asserts that before calling anything that relies on it.
+    """
+    depth = 0
+    for m in DIV_TAG_RE.finditer(html, start):
+        if m.group(0)[1] == '/':
+            depth -= 1
+            if depth == 0:
+                return m.start(), m.end()
+        else:
+            depth += 1
+    return -1, -1
+
+
+def _div_inner(html, start):
+    """Contents of the <div at `start`, plus the index just past its </div>."""
+    close_start, close_end = _match_div(html, start)
+    if close_start < 0:
+        return None, -1
+    return html[html.index('>', start) + 1:close_start], close_end
+
+
+def _js_match_brace(js, open_idx):
+    """
+    Index of the '}' matching js[open_idx] == '{', skipping quoted strings.
+    Chart configs contain no regex literals, comments or template literals, so
+    quote-awareness is enough. Returns -1 if unbalanced.
+    """
+    depth = 0
+    quote = None
+    i = open_idx
+    while i < len(js):
+        c = js[i]
+        if quote:
+            if c == '\\':
+                i += 2
+                continue
+            if c == quote:
+                quote = None
+        elif c in '\'"':
+            quote = c
+        elif c == '{':
+            depth += 1
+        elif c == '}':
+            depth -= 1
+            if depth == 0:
+                return i
+        i += 1
+    return -1
+
+
+def _div_ancestor_classes(html, pos):
+    """
+    class attributes of every open <div> enclosing `pos`, outermost first.
+    Used to prove the lazy chart loaders' canvas.closest('.ac-body') still
+    resolves after the restructure - a broken closest() throws nothing and
+    logs nothing, the chart just never draws.
+    """
+    stack = []
+    for m in DIV_TAG_RE.finditer(html, 0):
+        if m.start() >= pos:
+            break
+        if m.group(0)[1] == '/':
+            if stack:
+                stack.pop()
+        else:
+            cls = re.search(r'class="([^"]*)"', m.group(0))
+            stack.append(cls.group(1) if cls else '')
+    return stack
+
+
+def restructure_projection(html):
+    """
+    Deploy 2 of redesign v6.6. Returns (html, problems, stats).
+
+    Every anchor is looked up rather than assumed, and a missing one skips its
+    own rewrite and records a problem instead of half-applying: a partial
+    projection block is worse than an untouched one.
+    """
+    problems = []
+    stats = {}
+
+    open_re = re.compile(r'<div id="sec-projection"[^>]*>\s*<div class="card">')
+    m = open_re.search(html)
+    if not m:
+        return html, ['projection: #sec-projection > .card opener not found'], stats
+    sec_start = m.start()
+    sec_close_start, sec_close_end = _match_div(html, sec_start)
+    if sec_close_start < 0:
+        return html, ['projection: #sec-projection is unbalanced'], stats
+
+    card_start = html.index('<div class="card">', sec_start)
+    body, _ = _div_inner(html, card_start)
+    if body is None:
+        return html, ['projection: the section .card is unbalanced'], stats
+
+    title_m = re.search(r'<div class="section-title">.*?</div>', body, re.DOTALL)
+    if not title_m:
+        problems.append('projection: .section-title not found')
+        return html, problems, stats
+    title = title_m.group(0)
+
+    # --- the day cards, in document order -------------------------------
+    grid_at = body.find('<div class="proj-grid">')
+    if grid_at < 0:
+        problems.append('projection: .proj-grid not found')
+        return html, problems, stats
+    grid_inner, _ = _div_inner(body, grid_at)
+    q_cards = []
+    pos = 0
+    while True:
+        at = grid_inner.find('<div class="q-card">', pos)
+        if at < 0:
+            break
+        close_start, close_end = _match_div(grid_inner, at)
+        if close_start < 0:
+            problems.append('projection: a .q-card is unbalanced')
+            return html, problems, stats
+        q_cards.append(grid_inner[at:close_end])
+        pos = close_end
+
+    # --- the two independent day counts, which must agree ----------------
+    canvas_days = sorted(int(d) for d in
+                         re.findall(r'canvas id="chartDay(\d+)S1"', html))
+    n = len(q_cards)
+    if canvas_days != list(range(n)):
+        problems.append(
+            f'projection: {n} .q-card(s) but chartDay*S1 canvases are '
+            f'{canvas_days} - refusing to restructure')
+        return html, problems, stats
+    stats['days'] = n
+
+    # --- each day's chart panel -----------------------------------------
+    panels = []
+    for i in range(n):
+        at = body.find(f'<div id="proj-day{i}"')
+        if at < 0:
+            problems.append(f'projection: #proj-day{i} not found')
+            return html, problems, stats
+        inner, _ = _div_inner(body, at)
+        if inner is None:
+            problems.append(f'projection: #proj-day{i} is unbalanced')
+            return html, problems, stats
+        # Drop the panel's own subtitle; DAY_SUBTITLE replaces it. Everything
+        # else moves across untouched, which keeps this working for the
+        # {{#HAS_COMPARISON}}-absent branch too, where there are no
+        # .q-chart-wrap elements at all - just a bare .chart-canvas-wrap.
+        inner = inner.lstrip()
+        if inner.startswith('<div class="chart-subtitle">'):
+            _, after = _div_inner(inner, 0)
+            inner = inner[after:]
+        else:
+            problems.append(f'projection: #proj-day{i} has no .chart-subtitle')
+        panels.append(inner.strip())
+
+    # --- the methodology block ------------------------------------------
+    logique_at = body.find('<div id="proj-logique"')
+    if logique_at < 0:
+        problems.append('projection: #proj-logique not found')
+        return html, problems, stats
+    logique_inner, _ = _div_inner(body, logique_at)
+
+    tabs_at = body.find('<div class="chart-tabs">')
+    if tabs_at < 0:
+        problems.append('projection: .chart-tabs not found')
+        return html, problems, stats
+
+    # --- rebuild ---------------------------------------------------------
+    out = [f'<div id="sec-projection" class="section-gap">', title]
+    for i in range(n):
+        out.append(
+            '<div class="card" style="margin-bottom:20px">\n'
+            + q_cards[i] + '\n'
+            + '<div class="divider" style="margin:16px 0 0"></div>\n'
+            + DAY_ACCORDION_HEAD + '\n'
+            + '<div class="ac-body"><div class="ac-inner">\n'
+            + DAY_SUBTITLE + '\n'
+            + panels[i] + '\n'
+            + '</div></div></div>'
+        )
+    out.append(
+        '<div class="card">\n'
+        '<div class="ac-t" onclick="toggleDetails(this)" style="cursor:pointer">\n'
+        '  <span style="font-size:var(--fs-caption);font-weight:600;'
+        'color:var(--text-muted)">Logique de projection</span>\n'
+        '  <span class="arrow">▼</span>\n'
+        '</div>\n'
+        '<div class="ac-body">\n'
+        '  <div class="ac-inner" style="padding-top:12px">\n'
+        f'    {logique_inner.strip()}\n'
+        '  </div>\n'
+        '</div>\n'
+        '</div>'
+    )
+    out.append('</div>')
+    html = html[:sec_start] + '\n'.join(out) + html[sec_close_end:]
+
+    # --- JS: the tabs are gone, so nothing will trigger the lazy builds --
+    built = []
+    for i in range(1, n):
+        prefix = f"window._projBuilders['day{i}S1'] = function(){{"
+        at = html.find(prefix)
+        if at < 0:
+            problems.append(f"projection: no lazy builder for day{i}S1")
+            continue
+        open_brace = at + len(prefix) - 1
+        close_brace = _js_match_brace(html, open_brace)
+        if close_brace < 0 or html[close_brace + 1] != ';':
+            problems.append(f"projection: could not delimit the day{i}S1 builder")
+            continue
+        html = (html[:at]
+                + f'// Day {i} - built immediately (was lazy)\n(function(){{'
+                + html[open_brace + 1:close_brace]
+                + '})();'
+                + html[close_brace + 2:])
+        built.append(i)
+    stats['built_immediately'] = [0] + built
+
+    # day{N}S2 stays lazy on purpose: its .q-chart-wrap is display:none until
+    # switchScenario reveals it, and a Chart built into a display:none parent
+    # measures 0x0 and never recovers.
+    stats['projection_line_recoloured'] = html.count(PROJ_LINE_OLD)
+    html = html.replace(PROJ_LINE_OLD, PROJ_LINE_NEW)
+    return html, problems, stats
+
+
 def add_shared_auth(html):
     """Make one successful login unlock every dashboard. Returns (html, problems)."""
     problems = []
@@ -627,6 +898,66 @@ def add_shared_auth(html):
     return html, problems
 
 
+def _assert_projection(html, stats, div_balance_before, ac_t_before):
+    """Post-conditions for restructure_projection. Returns a list of problems."""
+    problems = []
+    n = stats.get('days')
+    if n is None:
+        return problems  # the pass already reported why it bailed
+
+    for marker, label in (('class="proj-grid"', '.proj-grid'),
+                          ('class="chart-tabs"', '.chart-tabs'),
+                          ('id="proj-day', '#proj-day{N}'),
+                          ('id="proj-logique"', '#proj-logique')):
+        left = html.count(marker)
+        if left:
+            problems.append(f'projection: {left} {label} survived the rewrite')
+
+    q_cards = html.count('class="q-card"')
+    if q_cards != n:
+        problems.append(
+            f'projection: {q_cards} .q-card(s) after the rewrite, expected {n}')
+
+    # One new accordion per day card, plus one for the methodology card.
+    want_ac_t = ac_t_before + n + 1
+    ac_t = html.count('class="ac-t"')
+    if ac_t != want_ac_t:
+        problems.append(
+            f'projection: {ac_t} .ac-t element(s), expected {want_ac_t}')
+
+    if PROJ_LINE_OLD in html:
+        problems.append(f'projection: {PROJ_LINE_OLD} survived the recolour')
+
+    for i in range(n):
+        if f'canvas id="chartDay{i}S1"' not in html:
+            problems.append(f'projection: canvas chartDay{i}S1 is gone')
+        # With no tabs left, anything still parked in _projBuilders is a chart
+        # that will never be built.
+        if f"_projBuilders['day{i}S1']" in html:
+            problems.append(f'projection: day{i}S1 is still lazy but nothing can trigger it')
+        if f"_projBuilders['day{i}S2']" not in html:
+            problems.append(f'projection: day{i}S2 lost its lazy builder')
+
+    after = html.count('<div') - html.count('</div>')
+    if after != div_balance_before:
+        problems.append(
+            f'projection: div balance moved from {div_balance_before} to {after}')
+
+    # The Deploy 1 selectors. These canvases live outside the projection
+    # block, but the restructure moves .ac-body elements around them, and a
+    # closest() that stops resolving fails in total silence.
+    for canvas_id in ('chartVelocity', 'chartVelocity14', 'chartRevenue'):
+        at = html.find(f'<canvas id="{canvas_id}"')
+        if at < 0:
+            continue  # conditional section, genuinely absent on some events
+        if not any('ac-body' in c.split()
+                   for c in _div_ancestor_classes(html, at)):
+            problems.append(
+                f"projection: {canvas_id} has no .ac-body ancestor - its "
+                f"canvas.closest('.ac-body') loader would never fire")
+    return problems
+
+
 def postprocess(path):
     path = Path(path)
     html = path.read_text(encoding='utf-8')
@@ -642,6 +973,21 @@ def postprocess(path):
 
     html, redesign_problems, renamed = apply_redesign(html)
     problems = list(redesign_problems)
+
+    # _match_div walks raw <div>/</div> tags, so a <div inside a JS or CSS
+    # string would silently mis-nest the whole rebuild. Assert it, rather than
+    # assume it - the generator is free to start emitting one.
+    if re.search(r'''['"]<div''', html):
+        problems.append('projection: a quoted "<div" exists - div matching is unsafe')
+        proj_stats = {}
+    else:
+        div_balance_before = html.count('<div') - html.count('</div>')
+        ac_t_before = html.count('class="ac-t"')
+        html, proj_problems, proj_stats = restructure_projection(html)
+        problems += proj_problems
+        problems += _assert_projection(
+            html, proj_stats, div_balance_before, ac_t_before)
+
     html, auth_problems = add_shared_auth(html)
     problems += auth_problems
     # Runs last: it appends the account avatar as the final child of .nav-top,
@@ -662,7 +1008,10 @@ def postprocess(path):
           f"replaced {footer_count} footer label(s), "
           f"relocalised {logo_count} logo hotlink(s), "
           f"shared auth via {AUTH_KEY}, "
-          f"nav shell aligned ({sw_items} session items)")
+          f"nav shell aligned ({sw_items} session items), "
+          f"projection restructured into {proj_stats.get('days', 0)} day card(s), "
+          f"charts built immediately: {proj_stats.get('built_immediately', [])}, "
+          f"projection line recoloured x{proj_stats.get('projection_line_recoloured', 0)}")
 
     if problems:
         for p in problems:

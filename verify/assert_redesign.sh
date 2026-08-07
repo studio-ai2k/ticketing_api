@@ -78,12 +78,51 @@ for f in "${FILES[@]}"; do
 done
 
 # ─────────────────────────────────────────────────────────────
-# DEPLOY 2 ONLY — enable after the markup/JS pass lands.
-# for f in "${FILES[@]}"; do
-#   p="$DIR/$f"
-#   count "rgba(96,165,250,\.8)" "$p" | grep -qx 0 || fail "$f: projection line not solid"
-#   count "chart-tabs" "$p"           | grep -qx 0 || fail "$f: chart tabs not removed"
-# done
+# DEPLOY 2 — projection restructure.
+#
+# Every check here keys on MARKUP, never on a bare class name: the v6.6
+# stylesheet still ships .chart-tabs / .chart-tab / .proj-grid rules, so
+# `grep -c chart-tabs` is 5 on a correctly-restructured file. That is the same
+# trap that made align_nav_shell's "sw-wrap" guard match the stylesheet and
+# silently skip every dashboard.
+echo "── DEPLOY 2"
+for f in "${FILES[@]}"; do
+  p="$DIR/$f"
+  [[ -f "$p" ]] || continue
+
+  for m in 'class="proj-grid"' 'class="chart-tabs"' 'class="chart-tab"' \
+           'id="proj-day' 'id="proj-logique"' 'class="chart-subtitle"'; do
+    n=$(count "$m" "$p")
+    [[ "$n" == "0" ]] && pass "$f: $m gone" || fail "$f: $m survived ($n)"
+  done
+
+  # The projection line and its legend swatch drawn from one literal. This
+  # generator emits amber, not the mock's blue, so the count is 0 either way —
+  # the assertion is here to catch a future palette change regressing it.
+  n=$(count "rgba(96,165,250,\.8)" "$p")
+  [[ "$n" == "0" ]] && pass "$f: projection line solid" || fail "$f: projection line not solid ($n)"
+
+  # Day count, derived twice and required to agree.
+  days=$(count 'class="q-card"' "$p")
+  s1=$(count 'canvas id="chartDay[0-9]*S1"' "$p")
+  [[ "$days" == "$s1" && "$days" -gt 0 ]] \
+    && pass "$f: $days day card(s), $s1 S1 canvas(es)" \
+    || fail "$f: $days .q-card vs $s1 chartDay*S1 canvas"
+
+  # With the tabs gone nothing can trigger a lazy S1 build, so none may remain.
+  n=$(count "_projBuilders\['day[0-9]*S1'\]" "$p")
+  [[ "$n" == "0" ]] && pass "$f: every S1 built immediately" || fail "$f: $n S1 chart(s) still lazy"
+
+  # S2 stays lazy on purpose — its wrapper is display:none until switchScenario.
+  n=$(count "_projBuilders\['day[0-9]*S2'\]" "$p")
+  [[ "$n" == "$days" ]] && pass "$f: $n S2 builder(s) intact" || fail "$f: $n S2 builder(s), want $days"
+
+  # One accordion per day card plus one for the methodology card, on top of
+  # the four the rest of the page already had.
+  want=$(( days + 5 ))
+  n=$(count 'class="ac-t"' "$p")
+  [[ "$n" == "$want" ]] && pass "$f: $n .ac-t" || fail "$f: $n .ac-t, want $want"
+done
 # ─────────────────────────────────────────────────────────────
 
 echo
