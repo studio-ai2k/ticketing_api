@@ -959,8 +959,34 @@ def merge_tickets(dice_tickets, shotgun_tickets):
     return all_tickets
 
 
+def assert_merged_schema(tickets):
+    """
+    Fail loudly if a row carries anything but the 11 aggregate columns.
+
+    These CSVs are committed to a public repo. Every upstream field is mapped
+    explicitly today, so a new key here means Shotgun or DICE started returning
+    something we have not looked at - and the Shotgun ticket payload is full of
+    contact_email, contact_phone, contact_first_name and friends. Cheap to
+    check, and the failure mode it guards against is publishing personal data.
+    """
+    expected = set(CSV_FIELDNAMES)
+    for i, row in enumerate(tickets):
+        keys = set(row)
+        if keys != expected:
+            extra = sorted(keys - expected)
+            missing = sorted(expected - keys)
+            raise RuntimeError(
+                f"merged row {i} does not match the 11-column schema"
+                + (f"; unexpected column(s): {extra}" if extra else '')
+                + (f"; missing column(s): {missing}" if missing else '')
+                + "\nRefusing to write. These CSVs are public - an unexpected "
+                  "column may be personal data."
+            )
+
+
 def save_merged_csv(tickets, output_path):
     """Write the 11-column merged CSV exactly as run.py's save_merged_csv does."""
+    assert_merged_schema(tickets)
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, 'w', newline='', encoding='utf-8') as f:

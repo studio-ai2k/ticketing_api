@@ -1,7 +1,15 @@
 __pycache__/
 *.pyc
-data/
 api_output/
+
+# data/ is run.py's DATA_DIR: data/raw holds the doorlist exports uploaded
+# through Railway, which carry names, emails and phone numbers. Keep the whole
+# tree ignored and re-admit only the merged CSVs at the top level - those are
+# the aggregate-only 11-column files an incremental fetch resumes from, and
+# they contain no contact fields. Never relax this to a bare `!data/` or the
+# raw uploads become committable. (See incident 2026-04-21_PII_EXPOSURE.)
+data/*
+!data/*_merged.csv
 
 # Local post-processing previews. These must not be tracked: a root-level
 # *.html matches both deploy-pages.yml's paths filter and the daily job's

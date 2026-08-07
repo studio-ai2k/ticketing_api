@@ -162,11 +162,19 @@ jobs:
           PY
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
+      - name: Stage the merged CSV for commit
+        run: |
+          mkdir -p data
+          cp "api_output/${{ matrix.event.id }}_merged.csv" \
+             "data/${{ matrix.event.id }}_merged.csv"
+
       - name: Upload dashboard
         uses: actions/upload-artifact@v4
         with:
           name: dashboard-${{ matrix.event.id }}
-          path: ${{ matrix.event.out }}
+          path: |
+            ${{ matrix.event.out }}
+            data/${{ matrix.event.id }}_merged.csv
           if-no-files-found: error
           retention-days: 1
 
@@ -198,8 +206,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- '*.html' ':!dashboard_template.html'
+          # The merged CSVs are the state an incremental fetch resumes from.
+          # Explicit paths only - data/ also holds Railway's raw uploads, which
+          # carry contact details and must never be committed.
+          git add -- 'data/*_merged.csv'
           if git diff --cached --quiet; then
-            echo "No dashboard changed - nothing to commit"
+            echo "Nothing changed - nothing to commit"
             exit 0
           fi
           git commit -m "Auto-update dashboards · $(date -u +%Y-%m-%d)"
