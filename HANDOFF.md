@@ -449,3 +449,31 @@ built is risk, not difficulty: it is a mutation path over live revenue figures,
 and it would want weeks of observation before being trusted to save seconds
 inside a job that is already fast. Revisit if volumes grow or the migration
 changes the picture.
+
+## Publishing only when the data moved
+
+The build skips an event entirely when its freshly fetched CSV is
+byte-identical to the committed one: no rebuild, no staging, no artifact. If
+every event is unchanged the commit job commits nothing and no Pages deploy
+fires.
+
+**Compare the CSV, never the HTML.** The generated HTML changes on every run
+regardless - the footer carries `Données API · HH:MM` and the J-X countdown
+moves daily - so an HTML comparison would never skip anything. Skipping the
+*rebuild* is the point: a rebuild mints a fresh timestamp, which forces a
+commit, which fires a deploy.
+
+Finished events fall out of this for free - their CSV is copied straight from
+`data/`, so it is identical by construction.
+
+**A design change moves no data.** After editing `postprocess_html.py`, the
+stylesheet, or anything else presentational, dispatch the workflow with
+`force_rebuild: true` or nothing will publish. Without it the change looks like
+a deploy failure, which has already been misdiagnosed twice.
+
+Not pursued: reading the merged CSVs client-side instead of pre-rendering. The
+CSV is one row per ticket, so paris_xxl is 3.7 MB against 185 KB of HTML and
+epk 914 KB against 270 KB - the pre-computed page is far smaller than the data
+behind it. It would also mean porting run.py's analytics to JS while run.py
+stays authoritative, and would not reduce deploys, since any commit triggers
+Pages regardless of content.

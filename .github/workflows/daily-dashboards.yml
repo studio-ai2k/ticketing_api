@@ -17,9 +17,21 @@ on:
         description: 'Space-separated event_ids to rebuild (blank = every active event)'
         required: false
         default: ''
+      force_rebuild:
+        description: 'Rebuild and publish even when the data has not changed (use after a design change)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
+
+# A run can outlast its own interval: max-parallel is 1 and runner queues
+# reached 27 minutes on 2026-08-06. Without this, two matrices race on the same
+# files and one commit job lands on another's work.
+concurrency:
+  group: daily-dashboards
+  cancel-in-progress: true
 
 jobs:
   # ---------------------------------------------------------------- plan ----
@@ -196,7 +208,36 @@ jobs:
           echo "::notice::${{ matrix.event.id }} not fetched - event finished, \
           rebuilt from the committed CSV ($(wc -l < "data/${{ matrix.event.id }}_merged.csv") lines)"
 
+      # M1: the HTML changes every run whatever happens - the footer carries a
+      # timestamp and the J-X countdown moves daily - so comparing HTML never
+      # skips anything. The CSV is the honest test. Skipping the *rebuild* is
+      # what matters: a rebuild mints a fresh timestamp, which forces a commit,
+      # which fires a Pages deploy. That is the loop worth breaking.
+      #
+      # Finished events fall out of this for free: their CSV is copied straight
+      # from data/, so it is byte-identical by construction.
+      - name: Has the data changed?
+        id: change
+        run: |
+          NEW="api_output/${{ matrix.event.id }}_merged.csv"
+          OLD="data/${{ matrix.event.id }}_merged.csv"
+          if [ "${{ inputs.force_rebuild }}" = "true" ]; then
+            changed=true; why="forced by force_rebuild"
+          elif [ ! -f "$OLD" ]; then
+            changed=true; why="no stored CSV to compare against"
+          elif cmp -s "$NEW" "$OLD"; then
+            changed=false; why="byte-identical to the stored CSV"
+          else
+            changed=true; why="data differs from the stored CSV"
+          fi
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+          # M4: "nothing sold" and "the job broke" must be distinguishable.
+          echo "::notice::${{ matrix.event.id }} changed=$changed ($why)"
+          echo "- \`${{ matrix.event.id }}\` changed=**$changed** - $why" \
+            >> "$GITHUB_STEP_SUMMARY"
+
       - name: Build dashboard
+        if: steps.change.outputs.changed == 'true'
         run: |
           python scripts/build_dashboard.py \
             --event "${{ matrix.event.id }}" \
@@ -246,12 +287,14 @@ jobs:
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Stage the merged CSV for commit
+        if: steps.change.outputs.changed == 'true'
         run: |
           mkdir -p data
           cp "api_output/${{ matrix.event.id }}_merged.csv" \
              "data/${{ matrix.event.id }}_merged.csv"
 
       - name: Upload dashboard
+        if: steps.change.outputs.changed == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: dashboard-${{ matrix.event.id }}
@@ -277,7 +320,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Every event may have skipped, in which case there is nothing to
+      # download and nothing to commit - that is the quiet-hour path, not a
+      # failure.
       - name: Download built dashboards
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           pattern: dashboard-*
