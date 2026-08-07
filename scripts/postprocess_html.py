@@ -76,6 +76,22 @@ STYLE_BLOCK_RE = re.compile(r'<style>.*?</style>', re.DOTALL)
 FONT_LINK_RE = re.compile(r'[ \t]*<link[^>]*fonts\.(?:googleapis|gstatic)\.com[^>]*>\n?')
 
 # Attribute-scoped so a rename cannot hit the same word inside JS or text.
+# The template hard-codes a few sizes and a dead font in style="..."
+# attributes, which no stylesheet swap can reach. They are the same sub-14px
+# declarations the scale was extended for, and left as literals they sit out
+# the 720px rescale - the very thing being fixed on mobile.
+#
+# The overlay button is held at --fs-caption rather than --fs-micro: micro
+# drops to 11px at 720px, which is under the size a primary call to action
+# should be on a phone. Caption gives 16px/12px instead. That is 2px larger
+# than today on desktop, on one full-width button.
+INLINE_STYLE_FIXES = (
+    ("font-size:10px", "font-size:var(--fs-nano)"),
+    ("font-size:14px", "font-size:var(--fs-caption)"),
+    ("'Outfit',sans-serif", "'DM Sans',sans-serif"),
+    ("'Outfit',system-ui", "'DM Sans',system-ui"),
+)
+
 CLASS_RENAMES = (
     ('details-toggle', 'ac-t'),
     ('details-panel', 'ac-body'),
@@ -303,9 +319,12 @@ NAV_SW_BLOCK_RE = re.compile(
     r'<div class="nav-sw">\s*'
     r'(?P<avatar><div class="nav-sw-av">.*?</div>)\s*'
     r'<div>\s*<div style="display:flex;align-items:center;gap:5px">'
-    r'<span style="font-size:13px;font-weight:600;color:#fff">(?P<name>.*?)</span>'
+    r'<span style="font-size:[^;]+;font-weight:600;color:#fff">(?P<name>.*?)</span>'
     r'<span style="[^"]*background:var\((?P<dot>--[a-z0-9-]+)\)[^"]*"></span></div>\s*'
-    r'<div style="font-size:10px;color:var\(--text-dim\);margin-top:3px">(?P<sub>.*?)</div>\s*'
+    # font-size is matched loosely: the inline-style pass rewrites literal px
+    # values to tokens before this runs, and pinning 10px here made the whole
+    # switcher swap stop matching silently.
+    r'<div style="font-size:[^;]+;color:var\(--text-dim\);margin-top:3px">(?P<sub>.*?)</div>\s*'
     r'</div>\s*<svg .*?</svg>\s*'
     r'<select class="session-sw".*?</select>\s*</div>',
     re.DOTALL,
@@ -422,7 +441,10 @@ def align_nav_shell(html):
     # counts drift apart, one of them has lost its toggle and is dead markup.
     if html.count('data-sw-trigger') - NAV_SHELL_JS.count('data-sw-trigger') != 2:
         problems.append('nav shell: expected exactly 2 [data-sw-trigger] elements')
-    if html.count('class="mod-trigger"') + html.count('mod-trigger" data-sw-trigger') != 1:
+    # Markup-only form. The stylesheet defines .mod-trigger, so any check
+    # keying on the bare class name would match CSS as well as markup - the
+    # exact way the sw-wrap guard broke.
+    if html.count('mod-trigger" data-sw-trigger') != 1:
         problems.append('nav shell: module dropdown trigger missing')
     return html, problems
 
@@ -481,6 +503,24 @@ def apply_redesign(html):
                            lambda m: m.group(1) + '.' + new + m.group(1), html)
         renamed[old] = n
         renamed[old + ' (js selectors)'] = js
+
+    # Only inside style="..." attributes - the stylesheet itself is already
+    # tokenised, and the same strings elsewhere are not ours to touch.
+    inline = 0
+
+    def _fix_inline(m):
+        nonlocal inline
+        chunk = m.group(0)
+        for old, new in INLINE_STYLE_FIXES:
+            if old in chunk:
+                chunk = chunk.replace(old, new)
+                inline += 1
+        return chunk
+
+    html = re.sub(r'style="[^"]*"', _fix_inline, html)
+    # Chart.js sets its default font in script, outside any style attribute.
+    html = html.replace('Chart.defaults.font.family="\'Outfit\',system-ui"',
+                        'Chart.defaults.font.family="\'DM Sans\',system-ui"')
 
     version_count = html.count(VERSION_OLD)
     html = html.replace(VERSION_OLD, VERSION_NEW)

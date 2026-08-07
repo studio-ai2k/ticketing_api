@@ -350,3 +350,19 @@ now caused two problems with the same root:
 **Any new file written under `data/` must be explicitly re-admitted in
 `.gitignore` and staged in the commit step, or it disappears with the runner.**
 Current re-admissions: `!data/*_merged.csv`, `!data/*_state.json`.
+
+## Iterating on presentation costs nothing
+
+`scripts/build_dashboard.py --csv data/{event}_merged.csv` regenerates a
+dashboard from the committed CSV with **zero API calls, in ~1.3 seconds**.
+All six rebuild in about eight. Use it for every presentation change - a
+stylesheet swap, a postprocess edit, a design pass - instead of a full fetch:
+
+    for e in paris_xxl_2026 bordeaux_2026 epk_2026 \
+             bordeaux_oct_2026 geneve_2026 rennes_2026; do
+      python scripts/build_dashboard.py --event $e \
+        --csv data/${e}_merged.csv --out api_output/$e.html
+      python scripts/postprocess_html.py api_output/$e.html
+    done
+
+The data only needs refetching when the *numbers* should change.

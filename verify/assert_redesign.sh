@@ -54,7 +54,8 @@ for f in "${FILES[@]}"; do
   [[ "$n" -gt 0 ]] && pass "reduced-motion block" || fail "reduced-motion block missing"
 
   # ---- 6. mobile nav containment ----
-  n=$(count "html{overflow-x:hidden}" "$p")
+  # corrected stylesheet merges the rule: html,body{overflow-x:hidden;...}
+  n=$(count "html,body{overflow-x:hidden" "$p")
   [[ "$n" -gt 0 ]] && pass "overflow-x contained" || fail "overflow-x:hidden missing"
 
   # ---- 7. footer version tracks the zip version ----

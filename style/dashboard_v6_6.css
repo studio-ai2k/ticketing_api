@@ -39,8 +39,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-html,html{overflow-x:hidden}
-body{overflow-x:hidden;min-height:100%;background:#08080d;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;color:#f0f0f5}
+html,body{overflow-x:hidden;min-height:100%;background:#08080d;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;color:#f0f0f5}
 html{scroll-padding-top:82px;scroll-behavior:smooth}
 
 .db-overlay { position:fixed; inset:0; background:#08080d url('upload.JPG') center center/cover no-repeat; z-index:9999; display:flex; align-items:center; justify-content:center; }
