@@ -41,6 +41,71 @@ import re
 import sys
 from pathlib import Path
 
+# ============================================================================
+# PASS TABLE - read this before adding or reordering a pass
+# ============================================================================
+#
+# Every pass here matches on markup that another pass may have written or
+# destroyed. Two bugs in Deploy 1 came from exactly that and neither was
+# visible by reading the code:
+#
+#   - align_nav_shell guarded on the string "sw-wrap", which the redesign
+#     stylesheet defines. Every file reported "already aligned" and silently
+#     got no nav markup at all.
+#   - apply_redesign rewrites font-size:10px inside the nav block that
+#     align_nav_shell's session-switcher regex matches on, so that swap
+#     stopped applying. The module dropdown landed, the session one did not.
+#
+# So: state what each pass CONSUMES (matches on) and EMITS (writes), and order
+# them so no pass consumes something a later pass emits, or an earlier pass
+# has destroyed. Guards must key on markup, never on a class name, because the
+# stylesheet contains hundreds of class names.
+#
+#  # pass                consumes                        emits
+#  - ------------------  ------------------------------  --------------------
+#  1 upload link         <a class="nm" href="upload...   (removes it)
+#  2 footer label        "Données uploadées" text        "Données API"
+#  3 logo relocalise     madameloyal.github.io src       local src
+#  4 apply_redesign      <style>, font <link>s,          new class names,
+#                        class="...details-toggle...",   var(--fs-*) in
+#                        quoted JS selectors, inline     style attrs, v6.6
+#                        style="" px + Outfit, "v6"
+#  5 add_shared_auth     the auth <script> IIFE          dbAuthGet/dbAuthSet
+#  6 align_nav_shell     data-sw-trigger (guard),        session + module
+#                        <div class="nav-sw">, the       dropdowns, avatar,
+#                        Détails button, </body>         switcher JS
+#
+# Ordering constraints that actually bind:
+#
+#   4 before 5 and 6  - it replaces the whole <style> block, so anything
+#                       injecting into that block must follow it.
+#   4 before 6        - 6's session-switcher regex matches inline font-size
+#                       values that 4 rewrites. 6 now matches them loosely,
+#                       but the order is still the safer guarantee.
+#   6 last            - it appends the account avatar as the final child of
+#                       .nav-top, so the upload link (1) must already be gone.
+#   1 before 6        - same reason.
+#
+# Deploy 2 (projection restructure) will slot in as pass 5, between
+# apply_redesign and add_shared_auth:
+#
+#   consumes: .proj-grid, .q-card, .chart-tabs, #proj-day{N}, #day{N}-chart-a/b,
+#             #proj-logique, canvas ids chartDay{N}S1/S2, the Chart.js
+#             rgba(96,165,250,.8) literal
+#   emits:    .card wrappers, N new .ac-t / .ac-body accordions, immediate
+#             chart construction, #60a5fa
+#
+#   after 4  - required. It emits markup using the .ac-t / .ac-body names that
+#              4 renames into existence, and its emitted style="" attributes
+#              would otherwise be rewritten by 4's inline-style pass.
+#   before 6 - not strictly required (6 touches only the nav), but it keeps
+#              the two markup-emitting passes from interleaving, and 6 is the
+#              one that must stay last.
+#   note     - it emits .ac-t elements, so any count assertion on .ac-t has to
+#              run after it: Deploy 1's baseline of 8 becomes 8 + N.
+#
+# ============================================================================
+
 UPLOAD_LINK_RE = re.compile(
     r'<a class="nm" href="upload\.html[^"]*">.*?Mettre à jour</a>',
     re.DOTALL,
