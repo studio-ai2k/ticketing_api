@@ -540,9 +540,18 @@ RENDER_JS = """<script>
     document.getElementById('cmp-current').textContent = c.name;
     var note = document.getElementById('cmp-note');
     if(note){
+      // Which anchoring rule produced these rows. Two candidates in the same
+      // dropdown can now align differently - a finished one at equal J-X, a
+      // live one at equal campaign day - so the reader has to be able to tell
+      // which rule the row in front of them came from.
+      var fr = function(iso){ var p = iso.split('-'); return p[2] + '/' + p[1]; };
+      var how = c.anchor === 'launch'
+        ? 'comparaison à jour de campagne égal (lancement ' + fr(c.launch) +
+          ' vs ' + fr(D.launch) + ')'
+        : 'comparaison à J-X égal';
       note.textContent = isRef ? '' :
         c.name + ' — jauge ' + num(c.capacity) + ' places (contre ' + num(D.capacity) +
-        ' ici) · seul ce tableau change, les autres chiffres restent sur ' +
+        ' ici) · ' + how + ' · seul ce tableau change, les autres chiffres restent sur ' +
         (byId[D.reference] ? byId[D.reference].name : 'la référence') + '.';
     }
     document.querySelectorAll('.cmp-item').forEach(function(b){

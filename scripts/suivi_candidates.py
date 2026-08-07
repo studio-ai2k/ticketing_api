@@ -39,6 +39,28 @@ candidate needs two anchors, not one:
 
 So every candidate carries BOTH `offset` (daily) and `first` (weekly). Using
 the offset for the weekly grain would silently mis-align every row.
+
+TWO ANCHORS, CHOSEN BY THE CANDIDATE
+------------------------------------
+A finished candidate anchors on its event date: J-X against J-X, which is what
+the reference comparison has always meant.
+
+A LIVE candidate cannot. Its event has not happened, so anchoring on it maps
+recent rows into the candidate's future - epk (5 Sep) against bordeaux_oct
+(16 Oct) gives offset -42, so today's row asks for 18 Sep, a date that does not
+exist yet. Live candidates therefore anchor on LAUNCH: campaign day N against
+campaign day N, with the same weekday snap, so it is still one constant per
+candidate and nothing about the payload model changes.
+
+`first_sale` is derived, not configured: min(order_date) over the candidate's
+own merged CSV.
+
+This does NOT make today's row comparable - a 36-day-old campaign has no
+counterpart to a 127-day-old one's current position under any anchor, and those
+rows stay em-dashed. What it changes is WHERE the covered window sits: on epk,
+launch anchoring lands bordeaux_oct's window at 2026-04-02, epk's own campaign
+day one, instead of 2026-05-21; and it pulls paris_xxl's window out of epk's
+FUTURE rows, where the event anchor had put it.
 """
 
 import argparse
@@ -61,12 +83,16 @@ def signed_mod7(gap):
     return r if r <= 3 else r - 7
 
 
-def daily_offset(current_first, candidate_first):
+def daily_offset(current_anchor, candidate_anchor):
     """
     Days to subtract from a current-side row date to reach the candidate's
     matched date. Constant per pair - see the handoff for why.
+
+    The anchors are event dates for a finished candidate and first-sale dates
+    for a live one; the arithmetic is identical either way, which is why the
+    payload model does not change.
     """
-    gap = (current_first - candidate_first).days
+    gap = (current_anchor - candidate_anchor).days
     return gap - signed_mod7(gap)
 
 
@@ -167,6 +193,12 @@ def build(event_id, config_path, today=None):
     reference = me['compare_to']
     mine = family(event_id)
 
+    own_path_early = series_path(event_id)
+    own_early = aggregate(own_path_early) if own_path_early else {}
+    if not own_early:
+        raise SystemExit(f'{event_id} has no ticket data, so no launch anchor')
+    own_launch = date.fromisoformat(min(own_early))
+
     candidates = []
     for cid, e in sorted(events.items()):
         if cid == event_id or not e['first']:
@@ -179,19 +211,33 @@ def build(event_id, config_path, today=None):
         s = aggregate(path)
         if not s:
             continue
+        is_live = bool(e['last'] and e['last'] >= today)
         if family(cid) == mine:
             group = 'edition'
-        elif e['last'] and e['last'] >= today:
+        elif is_live:
             group = 'live'
         else:
             group = 'past'
+
+        # A live candidate's event has not happened, so an event-date anchor
+        # maps recent rows into its future. Anchor on launch instead.
+        cand_launch = date.fromisoformat(min(s))
+        if is_live:
+            anchor, cur_anchor, mode = cand_launch, own_launch, 'launch'
+        else:
+            anchor, cur_anchor, mode = e['first'], me['first'], 'event'
+
         candidates.append({
             'id': cid,
             'name': e['name'] or cid,
             'group': group,
             'reference': cid == reference,
+            # Which rule produced this offset. The caption says so, because two
+            # candidates in the same dropdown can now align differently.
+            'anchor': mode,
+            'launch': cand_launch.isoformat(),
             # Daily grain: shift the row date by this.
-            'offset': daily_offset(me['first'], e['first']),
+            'offset': daily_offset(cur_anchor, anchor),
             # Weekly grain: re-bucket by weeks before THIS date. Not derivable
             # from `offset` - the two grains align differently.
             'first': e['first'].isoformat(),
@@ -203,11 +249,11 @@ def build(event_id, config_path, today=None):
     # The viewed event's own series ships too. The right-hand column needs it
     # for the revenue figures, and it is never a candidate - you cannot compare
     # an event against itself.
-    own_path = series_path(event_id)
-    own = aggregate(own_path) if own_path else {}
+    own = own_early
 
     return {
         'event': event_id,
+        'launch': own_launch.isoformat(),
         'name': me['name'],
         'first': me['first'].isoformat(),
         'capacity': me['capacity'],

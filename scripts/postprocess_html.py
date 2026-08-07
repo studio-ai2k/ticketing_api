@@ -285,6 +285,47 @@ STYLE_BLOCK_RE = re.compile(r'<style>.*?</style>', re.DOTALL)
 # replacement destroys every templated value in it. Before adding a fourth,
 # check this list.
 OVERLAY_BG_RE = re.compile(r"(\.db-overlay \{[^}]*url\(')([^']*)('\)[^}]*\})")
+
+TEMPLATE_PATH = Path(__file__).resolve().parent.parent / 'dashboard_template.html'
+
+# run.py defaults login_bg_image to this via .get(key, default) - which does
+# NOT fire when the key exists and is empty, so clearing the config value in
+# event_config.csv renders url('') rather than falling back. Clearing it is the
+# documented way to say "use the standard image", so the fallback happens here.
+DEFAULT_LOGIN_BG = 'upload.JPG'
+
+# Every {{PLACEHOLDER}} the template renders inside its <style> block, and what
+# this pass does about it. A placeholder present upstream but missing here
+# fails the build - which is the whole point: a new one added to the template
+# would otherwise vanish into the swap and the page would still look right,
+# because a hardcoded value renders perfectly well.
+STYLE_PLACEHOLDERS = {
+    'LOGIN_BG_IMAGE': 'carried',   # re-injected after the swap, see below
+    'DAY_TAB_ACTIVE_CSS': 'retired',   # Deploy 2 removed .chart-tabs markup
+    'PROJ_GRID_COLS': 'retired',       # Deploy 2 removed .proj-grid markup
+}
+
+# Corrections to the vendored sheet that must SURVIVE a future sheet swap, so
+# they live here rather than in the .css file. Each must match exactly once.
+#
+#   .pill          Deploy 1 renamed yoy-badge -> pill without checking what
+#                  .pill already meant: the BudgetFlow nav badge. Two unrelated
+#                  components ended up sharing a class, and the nav rule's
+#                  margin-left:auto landed on the YoY badge. The nav keeps the
+#                  name (it comes from the nav spec); the YoY family moves.
+#   .scenario-btn  the later rule never set font-weight, so the earlier rule's
+#                  600 applied to every button and .active's own font-weight:600
+#                  was a measured no-op. Lighten the idle state instead of
+#                  dropping the active one, so the weight difference does the
+#                  work it was meant to.
+CSS_FIXUPS = (
+    ('.pill { display: inline-block;', '.yoy-pill { display: inline-block;'),
+    ('.pill.positive {', '.yoy-pill.positive {'),
+    ('.pill.green {', '.yoy-pill.green {'),
+    ('.pill.red {', '.yoy-pill.red {'),
+    ('.scenario-btn { flex: 1; padding: 7px 10px;',
+     '.scenario-btn { flex: 1; font-weight: 500; padding: 7px 10px;'),
+)
 FONT_LINK_RE = re.compile(r'[ \t]*<link[^>]*fonts\.(?:googleapis|gstatic)\.com[^>]*>\n?')
 
 # Attribute-scoped so a rename cannot hit the same word inside JS or text.
@@ -307,7 +348,7 @@ INLINE_STYLE_FIXES = (
 CLASS_RENAMES = (
     ('details-toggle', 'ac-t'),
     ('details-panel', 'ac-body'),
-    ('yoy-badge', 'pill'),
+    ('yoy-badge', 'yoy-pill'),
 )
 
 AUTH_KEY = 'festiflow_auth'
@@ -688,6 +729,12 @@ def apply_redesign(html):
             templated_bg = m.group(2)
 
     css = STYLE_PATH.read_text(encoding='utf-8')
+    for old, new in CSS_FIXUPS:
+        if css.count(old) != 1:
+            problems.append(
+                f'css fixup: {old!r} matched {css.count(old)} time(s), want 1 - '
+                f'the vendored sheet changed shape')
+        css = css.replace(old, new, 1)
     # The package's comment header names the old classes it has no rules for
     # (.details-toggle, .yoy-badge, .session-sw). Left in, those strings ship
     # in every dashboard and every "old class is gone" assertion counts them.
@@ -697,16 +744,18 @@ def apply_redesign(html):
     if style_count != 1:
         problems.append(f"stylesheet swap matched {style_count} <style> blocks (want 1)")
 
-    if templated_bg:
+    if templated_bg is None:
+        problems.append(
+            'login background: no .db-overlay url() in the template <style> - '
+            'the rule the swap has to restore has moved or gone')
+    else:
+        wanted = templated_bg or DEFAULT_LOGIN_BG
         html, bg_count = OVERLAY_BG_RE.subn(
-            lambda m: m.group(1) + templated_bg + m.group(3), html, count=1)
+            lambda m: m.group(1) + wanted + m.group(3), html, count=1)
         if bg_count != 1:
             problems.append(
                 'login background: could not restore the per-event image after '
                 'the stylesheet swap')
-    else:
-        problems.append(
-            'login background: no url() found in the template .db-overlay rule')
 
     # Drop every generated font link, then insert the package's set once in
     # their place. The old line carries Outfit (dead) and JetBrains Mono
@@ -752,6 +801,10 @@ def apply_redesign(html):
     # Chart.js sets its default font in script, outside any style attribute.
     html = html.replace('Chart.defaults.font.family="\'Outfit\',system-ui"',
                         'Chart.defaults.font.family="\'DM Sans\',system-ui"')
+
+    # V1: the template's <style> is not static - it carries per-event
+    # placeholders, and replacing the block wholesale discards them silently.
+    problems += _assert_style_placeholders(html)
 
     version_count = html.count(VERSION_OLD)
     html = html.replace(VERSION_OLD, VERSION_NEW)
@@ -1457,6 +1510,40 @@ def apply_footer(html):
         problems.append(
             f'footer: rebuilt {n} footer(s), expected 2 - the template changed')
     return html, problems, n
+
+
+def _assert_style_placeholders(html):
+    """
+    Every {{PLACEHOLDER}} in the template's <style> must be declared in
+    STYLE_PLACEHOLDERS, and every 'carried' one must survive into the output.
+
+    A wholesale <style> swap replaces a placeholder with whatever constant the
+    vendored sheet was generated with, and the page still renders correctly -
+    so nothing downstream can notice. That is how {{LOGIN_BG_IMAGE}} was dead
+    from Deploy 1 until someone looked at paris_xxl's login screen.
+
+    Note that our shipped stylesheet will KEEP containing a baked
+    url('upload.JPG'), because it is extracted from a generated mock. A future
+    sheet is not clean; the swap must re-inject every time.
+    """
+    problems = []
+    if not TEMPLATE_PATH.exists():
+        return ['style placeholders: dashboard_template.html not found']
+    block = STYLE_BLOCK_RE.search(TEMPLATE_PATH.read_text(encoding='utf-8'))
+    if not block:
+        return ['style placeholders: no <style> block in the template']
+
+    found = set(re.findall(r'\{\{([A-Z0-9_]+)\}\}', block.group(0)))
+    for name in sorted(found - set(STYLE_PLACEHOLDERS)):
+        problems.append(
+            f'style placeholders: {{{{{name}}}}} is rendered inside the '
+            f'template <style> but is not declared in STYLE_PLACEHOLDERS - the '
+            f'stylesheet swap will discard it silently')
+    for name in sorted(set(STYLE_PLACEHOLDERS) - found):
+        problems.append(
+            f'style placeholders: {name} is declared but no longer in the '
+            f'template <style> - remove it from STYLE_PLACEHOLDERS')
+    return problems
 
 
 def add_shared_auth(html):

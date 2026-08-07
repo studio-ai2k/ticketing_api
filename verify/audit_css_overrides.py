@@ -3,7 +3,10 @@
 Find selectors declared more than once in the stylesheet, and report which
 properties the EARLIER declaration leaves in force.
 
-    python verify/audit_css_overrides.py [style/dashboard_v6_8.css]
+    python verify/audit_css_overrides.py [built-dashboard.html]
+
+Defaults to epk.html. Pass a .css file to audit the vendored sheet instead -
+but note that is NOT what ships: postprocess applies CSS_FIXUPS on the way in.
 
 Three real bugs came from this pattern, each visible only by looking at the
 page: .hero-unit (a duplicate pair), .det-link-icon (an !important collision),
@@ -58,8 +61,15 @@ def overridden_by(prop, later):
 
 
 def main():
-    css = Path(sys.argv[1] if len(sys.argv) > 1
-               else REPO / 'style' / 'dashboard_v6_8.css').read_text(encoding='utf-8')
+    target = Path(sys.argv[1] if len(sys.argv) > 1 else REPO / 'epk.html')
+    css = target.read_text(encoding='utf-8')
+    # Point it at a BUILT dashboard, not the vendored sheet. postprocess applies
+    # CSS_FIXUPS on the way in - the .pill rename and the .scenario-btn weight -
+    # so auditing the .css file reports collisions that no longer ship, and
+    # would miss any the fixups introduce.
+    block = re.search(r'<style>(.*?)</style>', css, re.DOTALL)
+    if block:
+        css = block.group(1)
     css = re.sub(r'/\*.*?\*/', '', css, flags=re.DOTALL)
 
     # Track nesting so @media blocks can be reported separately: a media

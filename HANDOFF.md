@@ -1037,3 +1037,89 @@ Current state: 398 selectors, 18 declared twice, **3 classed as redesigns**:
   share one name. The nav rule adds `margin-left: auto`, which lands on the YoY
   badge too. Benign where it sits today, but the collision is real and a rename
   is a design decision, not a build one.
+
+## Trap #7: a wholesale swap of a TEMPLATED block discards the templating
+
+`dashboard_template.html`'s `<style>` block is not static. It renders three
+per-event placeholders, and `apply_redesign` replaces the whole block:
+
+| placeholder | state |
+| --- | --- |
+| `{{LOGIN_BG_IMAGE}}` | live — re-injected after the swap |
+| `{{DAY_TAB_ACTIVE_CSS}}` | retired (Deploy 2 removed `.chart-tabs`) |
+| `{{PROJ_GRID_COLS}}` | retired (Deploy 2 removed `.proj-grid`) |
+
+The swap replaced a placeholder with a **constant**, and the page still
+rendered perfectly — which is why nothing downstream could notice. The
+stylesheet is extracted from a generated mock, so it contains
+`url('upload.JPG')` baked in from whichever event that mock was built for.
+
+**A future stylesheet is not clean.** It will keep containing that constant.
+The swap must re-inject every time; never treat a new sheet as fixed.
+
+`STYLE_PLACEHOLDERS` in `postprocess_html.py` is the registry, and
+`_assert_style_placeholders` fails the build both ways: a placeholder added
+upstream that is not declared here, and one declared here that has vanished
+upstream. Negative-tested in both directions.
+
+Second layer, found by fixing the first: `run.py` defaults the value with
+`.get(key, default)`, which does **not** fire when the key exists and is empty.
+Clearing the config value — the documented way to say "use the standard image"
+— rendered `url('')`. The fallback now lives in `postprocess_html.py`.
+
+## A rename must check what the TARGET name already means
+
+Deploy 1 renamed `yoy-badge` → `pill`. `.pill` was already the BudgetFlow nav
+dropdown's badge, so two unrelated components ended up sharing a class and the
+nav rule's `margin-left: auto` landed on the YoY badge.
+
+The rename was verified only in one direction — that the source name was gone.
+Nobody checked what the destination name already denoted.
+
+> **Before renaming a class, grep the target name.** "The old name is absent" is
+> half the check.
+
+Now `yoy-pill`, applied through `CSS_FIXUPS` in `postprocess_html.py` rather
+than by editing the vendored sheet, so it survives a future sheet swap.
+`verify/audit_css_overrides.py` confirms the collision is gone — it audits a
+**built dashboard**, not the `.css` file, because the fixups are applied on the
+way in.
+
+## Suivi selector: two anchors, chosen by the candidate
+
+A finished candidate anchors on its **event date** — J-X against J-X, the
+reference comparison's original meaning.
+
+A live candidate cannot: its event has not happened, so an event anchor maps
+recent rows into the candidate's *future*. epk (5 Sep) against bordeaux_oct
+(16 Oct) gives offset −42, so today's row asks for 18 September. Live
+candidates therefore anchor on **launch** — campaign day N against campaign day
+N — with the same weekday snap, so it stays one constant per candidate and the
+payload model is unchanged. `first_sale` is derived, not configured:
+`min(order_date)` over the candidate's merged CSV.
+
+**What this does not do.** It does not make today's row comparable, and it does
+not materially change how many rows are covered — coverage is bounded by the
+candidate's series length, not by the anchor. Measured on epk, both anchors
+cover essentially the same number of rows.
+
+**What it does do** is move *where* the covered window sits:
+
+| candidate | event anchor window | launch anchor window |
+| --- | --- | --- |
+| bordeaux_oct_2026 | 2026-05-21 … 06-26 | **2026-04-02** … 05-08 |
+| paris_xxl (if live) | 2026-05-26 … **09-06** | 2026-03-31 … 07-27 |
+| geneve_2026 | 2026-03-25 … 06-26 | 2026-04-01 … 07-03 |
+
+epk's own campaign starts 2026-04-02. Launch anchoring lands the window on
+epk's day one; the event anchor lands it at an arbitrary calendar point, and in
+the paris_xxl case ran it into epk's own *future* rows.
+
+The caption names the rule in use, because two candidates in one dropdown can
+now align differently.
+
+**This partially answers the parked launch-vs-event question.** The
+live-candidate case is solved by candidate-dependent anchoring, with no UI
+control. The general user-facing toggle remains open — and must still not be
+built on `comparison_mode: days_since_launch`, which is dead code that anchors
+on the event **end** despite its name.
