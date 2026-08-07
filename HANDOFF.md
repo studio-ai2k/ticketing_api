@@ -897,3 +897,53 @@ days of data. 264 − 107 = 157. Every day of the candidate's series lands on
 exactly one row, none lost, none doubled.
 
 Neither check was asked for. Both are worth more than the ones that were.
+
+## Trap #5: verify the OUTPUT, not only the round trip
+
+The selector shipped with **every Diff on the page wrong by six orders of
+magnitude**, and three green checks did not notice.
+
+R9 put the revenue span inside `.dtl-sales`:
+
+```html
+<div class="dtl-sales">135<span class="dtl-rev">€7 402</span></div>
+```
+
+The renderer read that element's `textContent` and stripped non-digits, so
+`135` and `€7 402` became the single number **1357402**. Subtract the correctly
+computed 203 and the page showed `+1,357,199` and `+668,570.9%`.
+
+Why the existing checks all passed:
+
+| check | why it was blind |
+| --- | --- |
+| "restore is exact" | restore replays *saved HTML*, so it never enters the renderer |
+| "em dash count" | uncovered rows were genuinely dashed — that path was fine |
+| "no page errors" | `1357402 - 203` is perfectly valid arithmetic |
+
+Traps 1–4 were checks that passed for the wrong reason. This one is different:
+
+> **The check was never in the path.** Round-trip and edge-case assertions can
+> all pass while the primary output is nonsense. Assert what a reader would
+> actually see.
+
+Two rules came out of it, both now enforced:
+
+1. **Never derive a number from the `textContent` of an element that can
+   contain a second number.** Counts travel as `data-n` on `.dtl-sales`,
+   written server-side on every element and re-written by the renderer on every
+   row it touches — a row the renderer writes without `data-n` re-breaks on the
+   next switch.
+2. **`querySelector` on a class that appears more than once is a bug waiting.**
+   The column header was updated via `querySelector('.dtl-col-label')`, and
+   there are three such blocks — past, future and weekly — each with its own
+   suffix (`(même jour)`, `(référence)`, none). Two of them kept contradicting
+   the selector. Now all are updated, suffixes preserved.
+
+`verify/check_selector.js` covers both, and it is proven to fire: reintroducing
+the `textContent` parse fails it (`diff 1914107913 != 1914 - 55`), and
+reintroducing the single-label update fails it (`column header "2023
+(référence)" does not name "Bordeaux 2025"`). It needs playwright, so it is not
+wired into `assert_redesign.sh` — run it by hand after any renderer change.
+
+**Do not remove its negative tests.** Same standing as `check_offset.py`'s.

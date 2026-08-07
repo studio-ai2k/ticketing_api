@@ -73,7 +73,7 @@ for f in "${FILES[@]}"; do
   # Deploy 3 §7 split this: "Festiflow Dashboard v6.7" is no longer one string,
   # the version sits in its own .pgf-ver span. Asserting the old literal would
   # now read 0 on a correct file.
-  n=$(count "Festiflow Dashboard<span class=\"pgf-ver\">v6\.7</span>" "$p")
+  n=$(count "Festiflow Dashboard<span class=\"pgf-ver\">v6\.8</span>" "$p")
   [[ "$n" == "2" ]] && pass "footer v6.7 (x2)" || fail "footer version wrong or wrong count ($n, want 2)"
 
   # ---- 8. nav shell still intact (regression guard) ----

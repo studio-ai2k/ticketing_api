@@ -44,6 +44,11 @@ MONTHS_FR = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin',
              'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
 
 ROW_RE = re.compile(r'<div class="dtl-row([^"]*)"([^>]*)>')
+# The count as an attribute, so nothing ever has to read it back out of text.
+# Once a revenue span sits inside .dtl-sales its textContent is "135€7 402",
+# and stripping non-digits yields 1357402 - which is exactly the bug this
+# attribute exists to make impossible.
+SALES_TAG_RE = re.compile(r'<div class="dtl-sales"((?:(?!data-n=)[^>])*)>(\d[\d,\s]*)</div>')
 SALES_RE = re.compile(r'(<div class="dtl-sales"[^>]*>)(\d[\d,\s]*)(</div>)')
 ACCUM_RE = re.compile(r'(<div class="dtl-accum"[^>]*>)([^<]*)(</div>)')
 
@@ -111,6 +116,23 @@ def _daily_dates(rows, containers, cutoff, cutoff_cum):
     return sorted(out, key=lambda t: t[0])
 
 
+def _tag_counts(html, start, end):
+    """
+    Put data-n on every .dtl-sales in the Suivi block. Runs BEFORE the revenue
+    spans go in, while the element's text is still nothing but the number.
+    """
+    section = html[start:end]
+    n = [0]
+
+    def _tag(m):
+        n[0] += 1
+        value = m.group(2).replace(',', '').replace(' ', '')
+        return f'<div class="dtl-sales"{m.group(1)} data-n="{value}">{m.group(2)}</div>'
+
+    section = SALES_TAG_RE.sub(_tag, section)
+    return html[:start] + section + html[end:], n[0]
+
+
 def _prefix(series):
     """{date: cumulative revenue} over the whole series, in date order."""
     total, out = 0.0, {}
@@ -133,6 +155,12 @@ def apply(html, sidecar_path):
     cutoff = date.fromisoformat(anchors['cutoff_date'])
     cutoff_cum = (date.fromisoformat(anchors['cutoff_cumulative'])
                   if anchors.get('cutoff_cumulative') else None)
+
+    sec = html.find('<div id="sec-suivi"')
+    if sec < 0:
+        return html, ['suivi: #sec-suivi not found'], {}
+    html, tagged = _tag_counts(html, sec, _match_end(html, sec))
+    stats['counts_tagged'] = tagged
 
     jour = html.find('<div id="suivi-jour"')
     sem = html.find('<div id="suivi-semaine"')
@@ -201,7 +229,10 @@ def apply(html, sidecar_path):
     stats['weekly_rows'] = weeks
 
     if edits and REV_CSS.strip() not in html:
-        html, n = re.subn(r'</style>', REV_CSS + '</style>', html, count=1)
+        # Lambda, not a replacement string: everything injected here is
+        # JS and CSS, and re treats a backslash in a replacement as an escape.
+        # A single \s in a client-side regex is otherwise a build failure.
+        html, n = re.subn(r'</style>', lambda _m: REV_CSS + '</style>', html, count=1)
         if n != 1:
             problems.append('suivi: no </style> to append the revenue rule to')
 
@@ -223,10 +254,9 @@ def apply(html, sidecar_path):
         # close the tag, so it is escaped.
         blob = json.dumps(data, separators=(',', ':'),
                           ensure_ascii=False).replace('</', '<\\/')
-        html, n = re.subn(
-            r'</body>',
-            f'<script type="application/json" id="cmp-data">{blob}</script>\n'
-            + RENDER_JS + '\n</body>', html, count=1)
+        tail = (f'<script type="application/json" id="cmp-data">{blob}</script>\n'
+                + RENDER_JS + '\n</body>')
+        html, n = re.subn(r'</body>', lambda _m: tail, html, count=1)
         if n != 1:
             problems.append('suivi: no </body> to attach the selector to')
         stats['candidates'] = len(data['candidates'])
@@ -395,6 +425,18 @@ RENDER_JS = """<script>
     c._w = out; return out;
   }
 
+  // Every left-hand column header, not just the first. There are three blocks
+  // - past, future and weekly - and each carries its own suffix: "(même jour)",
+  // "(référence)", and none at all. querySelector found one and left the other
+  // two contradicting the selector.
+  var labels = [].slice.call(document.querySelectorAll('#sec-suivi .dtl-col-label'))
+    .filter(function(e){ return !e.classList.contains('center') && !e.classList.contains('right'); });
+  labels.forEach(function(e){
+    e._orig = e.textContent;
+    var m = e.textContent.match(/\s*(\(.*\))\s*$/);
+    e._suffix = m ? ' ' + m[1] : '';
+  });
+
   var rows = [].slice.call(document.querySelectorAll('#sec-suivi .dtl-row[data-cur], #sec-suivi .dtl-row[data-wk]'));
   // Snapshot the server-rendered original: returning to the reference restores
   // it rather than recomputing it, so the default view is always exactly what
@@ -410,12 +452,13 @@ RENDER_JS = """<script>
         det = el.querySelector('.dtl-detail'), ac = el.querySelector('.dtl-accum');
     if(d) d.textContent = text;
     if(!entry){
-      if(s) s.textContent = DASH;
+      if(s){ s.setAttribute('data-n', ''); s.textContent = DASH; }
       if(det) det.textContent = DASH;
       if(ac) ac.textContent = DASH;
       return;
     }
-    if(s) s.innerHTML = num(entry.n) + ' <span class="dtl-rev">' + eur(entry.rev) + '</span>';
+    if(s){ s.setAttribute('data-n', entry.n);
+           s.innerHTML = num(entry.n) + ' <span class="dtl-rev">' + eur(entry.rev) + '</span>'; }
     if(det) det.textContent = 'SG ' + entry.sg + ' · DICE ' + entry.dice;
     if(ac && cum) ac.innerHTML = 'Cumulé ' + num(cum.n) + ' · <span class="dtl-rev">' + eur(cum.rev) + '</span>';
   }
@@ -430,13 +473,13 @@ RENDER_JS = """<script>
         det = el.querySelectorAll('.dtl-detail'), ac = el.querySelector('.dtl-accum');
     if(!entry){
       if(d) d.textContent = DASH;
-      if(s) s.textContent = DASH;
+      if(s){ s.setAttribute('data-n', ''); s.textContent = DASH; }
       det.forEach(function(x){ x.textContent = DASH; });
       if(ac) ac.textContent = DASH;
       return;
     }
     if(d) d.textContent = 'S-' + wk;
-    if(s) s.textContent = num(entry.n);
+    if(s){ s.setAttribute('data-n', entry.n); s.textContent = num(entry.n); }
     if(det[0]) det[0].textContent = 'SG ' + entry.sg + ' · DICE ' + entry.dice;
     if(det[1]){
       var wp = capacity ? entry.n / capacity * 100 : 0;
@@ -444,6 +487,16 @@ RENDER_JS = """<script>
       det[1].innerHTML = wp.toFixed(1) + '%&ensp;·&ensp;' + cp.toFixed(1) + '% cumulé';
     }
     if(ac) ac.textContent = '€' + Math.round(entry.rev / 1000) + 'k';
+  }
+
+  // NEVER derive a number from textContent of an element that can hold a
+  // second number. Once the revenue span sits inside .dtl-sales its text is
+  // "135€7 402"; stripping non-digits gave 1357402, and every Diff on the page
+  // was wrong by six orders of magnitude. The count travels as data-n.
+  function count(el){
+    if(!el) return 0;
+    var v = el.getAttribute('data-n');
+    return v === null || v === '' ? 0 : (parseInt(v, 10) || 0);
   }
 
   function setDiff(row, mine, theirs){
@@ -477,14 +530,13 @@ RENDER_JS = """<script>
         var m = parse(cur); m.setUTCDate(m.getUTCDate() - c.offset);
         var k = iso(m), e = c.series[k] || null;
         setSide(left, e, P[k], e ? label(m) : DASH);
-        var mineEl = r.querySelector('.dtl-right .dtl-sales');
-        var mine = mineEl ? parseInt(mineEl.textContent.replace(/[^0-9]/g,''), 10) || 0 : 0;
-        setDiff(r, mine, e ? e.n : null);
+        setDiff(r, count(r.querySelector('.dtl-right .dtl-sales')), e ? e.n : null);
       } else {
         setWeek(left, W[r.getAttribute('data-wk')] || null,
                 r.getAttribute('data-wk'), c.capacity);
       }
     });
+    labels.forEach(function(e){ e.textContent = isRef ? e._orig : c.name + e._suffix; });
     document.getElementById('cmp-current').textContent = c.name;
     var note = document.getElementById('cmp-note');
     if(note){
