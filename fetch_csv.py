@@ -1196,6 +1196,9 @@ def parse_args(argv):
     parser.add_argument('--out', default=None, help='output CSV path (default api_output/{event}_merged.csv)')
     parser.add_argument('--skip-shotgun', action='store_true', help='do not fetch Shotgun')
     parser.add_argument('--skip-dice', action='store_true', help='do not fetch DICE')
+    parser.add_argument('--allow-dice-shrink', action='store_true',
+                        help='publish even when an API DICE fetch returns fewer '
+                             'tickets than the manual export it just retired')
     # NOT used by the daily workflow, deliberately - see the note in
     # HANDOFF.md. It works and is verified; it is simply not worth the risk
     # for the current volumes. Do not assume it is broken because nothing
@@ -1229,10 +1232,28 @@ def main(argv=None):
     # event has a dice_mio_id the API wins and the file is left alone, so the
     # two can never both be counted.
     manual_dice_path = MANUAL_DICE_CSVS.get(args.event)
+    retired_manual_rows = None
     if manual_dice_path and event_config['dice_mio_id']:
         log(f"\n📄 Manual DICE export for {args.event} superseded by "
             f"dice_mio_id {event_config['dice_mio_id']} - ignoring "
             f"{manual_dice_path}")
+        # The handover is the dangerous moment. Adding a dice_mio_id retires a
+        # committed export in favour of an API call, and if that token cannot
+        # reach the event the API returns HTTP 200 with an empty set - valid
+        # token, wrong account, indistinguishable from "no sales". Genève is
+        # 2,912 tickets and ~186k EUR, more than its Shotgun side, and M1 would
+        # not catch it: the CSV changing is exactly what M1 publishes.
+        #
+        # So count what is being retired and hold the replacement to it below.
+        # A non-zero check is not enough - partial access returning three
+        # tickets would pass it while losing 2,909.
+        try:
+            with open(manual_dice_path, newline='', encoding='utf-8-sig') as f:
+                retired_manual_rows = sum(1 for _ in csv.DictReader(f))
+            log(f"   ⚠ {retired_manual_rows} manual row(s) retired - the API "
+                f"fetch must return at least as many")
+        except OSError as exc:
+            log(f"   ⚠ could not read the retired export to size it: {exc}")
         manual_dice_path = None
     log(f"Manual DICE: {manual_dice_path or '(none)'}")
 
@@ -1329,6 +1350,29 @@ def main(argv=None):
 
     if manual_dice_path and not args.skip_dice:
         dice_tickets = dice_tickets + load_manual_dice_tickets(manual_dice_path)
+
+    # The other half of the handover guard. Refuse to publish a DICE side
+    # smaller than the export it just replaced.
+    if retired_manual_rows is not None and not args.skip_dice:
+        if len(dice_tickets) < retired_manual_rows and not args.allow_dice_shrink:
+            raise SystemExit(
+                f"REFUSING TO PUBLISH: the manual DICE export for {args.event} "
+                f"was retired in favour of dice_mio_id "
+                f"{event_config['dice_mio_id']}, but the API returned "
+                f"{len(dice_tickets)} ticket(s) against {retired_manual_rows} "
+                f"in the file it replaced.\n"
+                f"\n"
+                f"A valid token on the wrong account returns HTTP 200 and an "
+                f"empty set, so this looks identical to 'no sales'. Either the "
+                f"token cannot reach this event yet - in which case remove "
+                f"dice_mio_id from event_config.csv until it can - or the drop "
+                f"is real, in which case re-run with --allow-dice-shrink.\n"
+                f"\n"
+                f"This guard retires itself: once the API is authoritative, "
+                f"drop {args.event} from MANUAL_DICE_CSVS and it stops firing."
+            )
+        log(f"\n✅ DICE handover: {len(dice_tickets)} API row(s) against "
+            f"{retired_manual_rows} retired manual row(s)")
 
     tickets = merge_tickets(dice_tickets, shotgun_tickets)
 
