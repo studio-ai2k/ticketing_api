@@ -394,3 +394,58 @@ silently freeze a live event. A missing stored CSV also falls back to fetching.
 Railway upload tool from madameloyal/festiflow with no role in this pipeline.
 That also closes the unaudited `github_push()` route to a second repository -
 the file is gone, so the route is gone.
+
+## Cadence, and why --incremental exists but is not used
+
+The daily job runs **every four hours**, with **full fetches**. `--incremental`
+is built, tested and verified, and deliberately not wired in. It is not broken.
+
+**Actions minutes are free here because the repo is PUBLIC.** GitHub's free
+allowance for private repos (2,000 min/month) does not apply. That makes
+cadence a question of churn and queue exposure rather than cost: every run
+commits the dashboards, and runner queues reached 27 minutes on 2026-08-06, so
+hourly would buy 24 daily chances at contention and 24 commits of churn for
+numbers nobody reads hourly.
+
+**This is a live coupling to the security decision.** If the repo ever goes
+private - the mitigation for the client-side-only password gate - Actions
+minutes start billing per job, rounded up to the minute. At six jobs per run
+(plan + four events + commit) that is ~6 billable minutes per run regardless of
+how fast the fetches are: ~4,300 min/month hourly, ~1,080 at four-hourly. The
+cadence question reopens the moment visibility changes. Leo has deferred the
+security fix to the Festiflow migration (Postgres + proper login), so it stays
+public for now.
+
+Why full fetches rather than incremental, at current volumes:
+
+- J3 already removed ~70% of the fetch volume by not refetching finished events.
+- The four live events are small. Rennes is 33 seconds for a *full* fetch.
+- Abort-to-full-refetch is provably correct and has no mutation path that can
+  corrupt a stored file. Incremental's savings are seconds.
+
+## Option not taken: correcting a modification in place
+
+If incremental is ever wired in, the expensive part is that a modification
+(refund, cancellation, resale) aborts the whole event to a full refetch. It
+does not have to.
+
+A stored row is not *identified* by its ticket, it is **derived** from it by
+`process_shotgun_ticket`, and a status change does not touch any input to that
+derivation - `ordered_at`, `deal_sub_category`, `deal_price` and the fee fields
+are all unchanged by a refund. So:
+
+1. Run the modified raw row through `process_shotgun_ticket` **bypassing the
+   status filter**. That reconstructs the exact 11-column row currently in the
+   stored CSV.
+2. Remove **one** matching row (multiset removal - two identical tickets are
+   interchangeable, so removing either is correct).
+3. If no exact match is found, fall back to a full refetch.
+
+A resale needs no special case: the original returns as `resold` (remove one)
+and its replacement arrives `valid` in the same delta (append). Net zero.
+
+Roughly 25 lines, no schema change, no identity column. The reason it was not
+built is risk, not difficulty: it is a mutation path over live revenue figures,
+and it would want weeks of observation before being trusted to save seconds
+inside a job that is already fast. Revisit if volumes grow or the migration
+changes the picture.

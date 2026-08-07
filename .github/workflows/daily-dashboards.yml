@@ -1,9 +1,16 @@
 name: Daily dashboards
 
-# 06:00 UTC = 08:00 Paris. Manual trigger kept for on-demand refreshes.
+# Every four hours: 00/04/08/12/16/20 UTC = 02/06/10/14/18/22 Paris.
+#
+# Actions minutes are free here because the repo is public, so cadence is not
+# a cost question - it is about churn and queue exposure. Each run commits the
+# dashboards, and runner queues reached 27 minutes on 2026-08-06, so hourly
+# would buy 24 daily chances at contention and 24 commits of churn for numbers
+# nobody reads hourly. Six snapshots a day is plenty for trend-watching, and
+# every live event fetches in under two minutes.
 on:
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '0 */4 * * *'
   workflow_dispatch:
     inputs:
       events:

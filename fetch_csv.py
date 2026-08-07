@@ -1196,8 +1196,13 @@ def parse_args(argv):
     parser.add_argument('--out', default=None, help='output CSV path (default api_output/{event}_merged.csv)')
     parser.add_argument('--skip-shotgun', action='store_true', help='do not fetch Shotgun')
     parser.add_argument('--skip-dice', action='store_true', help='do not fetch DICE')
+    # NOT used by the daily workflow, deliberately - see the note in
+    # HANDOFF.md. It works and is verified; it is simply not worth the risk
+    # for the current volumes. Do not assume it is broken because nothing
+    # calls it.
     parser.add_argument('--incremental', action='store_true',
-                        help='resume Shotgun from the stored cursor; DICE is always full')
+                        help='resume Shotgun from the stored cursor; DICE is always full '
+                             '(built and verified, but the daily job runs full fetches)')
     parser.add_argument('--full', action='store_true',
                         help='force a full fetch even if incremental state exists')
     parser.add_argument('--state-csv', default=None,
