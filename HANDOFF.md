@@ -1184,3 +1184,41 @@ The pattern is worth keeping in every spec that quotes a measurement: state the
 number, state how it was measured, and say explicitly that a disagreement means
 the spec is probably wrong. A number quoted without its method is an assertion;
 quoted with one, it is a test.
+
+## Open items
+
+Carried forward, not fixed. Each needs a decision or an input we do not have.
+
+| # | item | blocked on |
+| --- | --- | --- |
+| O1 | **`deal_service_fee` and the ~2% gross overshoot are probably one bug** — see below | Shotgun docs or a payout statement |
+| O2 | DICE timestamps are UTC, Shotgun's are Europe/Paris — a 2h skew across platforms in every dated series | a decision on which to normalise to |
+| O3 | `dice_url` form is wrong on the platform cards | Leo |
+| O4 | `geneve_2026 dice_mio_id` deliberately not added — data-loss risk | Leo (A6) |
+| O5 | General user-facing launch-vs-event anchor toggle | not specced |
+| O6 | Archive data inventory — what exists for finished editions | not started |
+
+### O1 — the fee assumption and the 2% overshoot
+
+`gross_price` for Shotgun is computed as `(deal_price + deal_user_service_fee)
+/ 100`. That is a *choice*: the payload also carries `deal_service_fee`, an
+order of magnitude larger (9500 face → `deal_service_fee` 950, i.e. 10.0% of
+face; `deal_user_service_fee` 287, 3.0%), and nothing in the payload says which
+of the two the buyer actually pays. If some or all of `deal_service_fee` is
+buyer-borne, every Shotgun `gross_price` we have written is too low.
+
+Separately, our Shotgun gross has been running **~2% over** the reference for as
+long as anyone has looked. Two unexplained things about the same two fields is
+one unexplained thing, most likely: the split between `deal_service_fee` and
+`deal_user_service_fee` is not what the code assumes, and the residual shows up
+as a percentage drift rather than an obvious break.
+
+Worth pursuing on its own, independently of the Campagne page. It is not
+answerable from the API — see P6 in `docs/PLATFORM_FIELD_INVENTORY.md`. It needs
+either Shotgun's own documentation of the two fields or one reconciliation
+against a real payout statement, and one such statement settles both halves at
+once.
+
+**Do not "fix" this by changing the formula on a guess.** `gross_price` feeds
+every revenue figure and every comparison on the dashboard; a wrong correction
+is worse than a known 2%.

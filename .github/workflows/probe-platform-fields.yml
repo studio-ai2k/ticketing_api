@@ -1,0 +1,101 @@
+name: Probe platform fields
+
+# Manual-only. Answers the six questions docs/PLATFORM_FIELD_INVENTORY.md marks
+# [probe] - the ones dice_schema.json cannot settle, because that dump records
+# object types and field names only and has no enum values, no input-object
+# fields and no field arguments.
+#
+# Read-only. Selects Fan.optInPartners alone and never any other Fan field, and
+# reduces every personal-scale figure to a count before printing, because this
+# log is public.
+on:
+  workflow_dispatch:
+    inputs:
+      event:
+        description: 'numeric DICE event id (600413 = rennes_2026)'
+        required: true
+        default: '600413'
+      introspect:
+        description: 'also dump enum values, input fields and field args'
+        type: boolean
+        default: true
+
+jobs:
+  probe:
+    name: field inventory
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Probe
+        env:
+          DICE_TOKEN: ${{ secrets.DICE_TOKEN }}
+        run: |
+          python scripts/probe_dice_fields.py "${{ inputs.event }}" \
+            ${{ inputs.introspect && '--introspect' || '' }} 2>&1 | tee probe.log
+
+      - name: Summarise
+        if: always()
+        run: |
+          {
+            echo '### DICE field probe - event ${{ inputs.event }}'
+            echo ''
+            echo '```'
+            cat probe.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dice-field-probe-${{ inputs.event }}
+          path: |
+            probe.log
+            api_output/dice_schema_full.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  shotgun:
+    name: shotgun key union
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # X3: shotgun_schema.json is one ticket from one event. This takes the
+      # first page from every active Shotgun event and reports the union of
+      # keys, so "44" stops being a sample of one. Prints key names and null
+      # rates only - never a value, several of these are personal.
+      - name: Probe
+        env:
+          SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
+          SHOTGUN_TOKEN_SONORA: ${{ secrets.SHOTGUN_TOKEN_SONORA }}
+          SHOTGUN_ORGANIZER_ID_SONORA: ${{ secrets.SHOTGUN_ORGANIZER_ID_SONORA }}
+        run: python scripts/probe_shotgun_fields.py 2>&1 | tee shotgun_probe.log
+
+      - name: Summarise
+        if: always()
+        run: |
+          {
+            echo '### Shotgun key union'
+            echo ''
+            echo '```'
+            cat shotgun_probe.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shotgun-field-probe
+          path: shotgun_probe.log
+          retention-days: 7

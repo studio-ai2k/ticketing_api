@@ -13,11 +13,88 @@ Three different strengths, marked throughout:
 | **[measured]** | checked against our own committed data just now |
 | **[probe]** | not answerable from either dump — needs a live call |
 
-The Shotgun sample is 44 fields on one ticket. The DICE dump gives types and
-field names but **no values and no semantics** — which is exactly the gap that
-makes several answers below "probe" rather than "yes".
+### Confidence, per platform — and neither is complete
 
----
+**Shotgun: one sample, one endpoint, completeness UNKNOWN.**
+44 fields observed on *one ticket* from *one event* via *one endpoint*. That
+proves those 44 exist. It does not prove they are all there is. Fields that
+only populate for a structurally different event — seated, tabled, bundled —
+would not appear: `ticket_seating` is `null` in the sample but is plainly a
+real concept. **Treat 44 as provisional.** See X3 below for what would settle
+it.
+
+**DICE: complete for object types and field names. NOT complete otherwise.**
+This is a correction to the assumption that introspection is complete by
+construction — it is complete for what the introspection *query* asked for, and
+this one asked for one dimension out of four:
+
+| dimension | in `dice_schema.json`? |
+| --- | --- |
+| object types and their field names/types | **yes** — 53 objects |
+| enum **values** | **no** — 5 enums named, zero values |
+| input-object **fields** | **no** — 15 inputs named, zero fields |
+| field **arguments** | **no** |
+
+The proof it matters: `viewer.orders(first:, after:, where: {eventId: {eq:}})`
+runs in production every day, and **not one of those arguments appears in the
+dump.** Reading the dump alone, you would conclude `viewer.orders` takes no
+arguments and cannot be filtered.
+
+Named but empty: `EventCostCurrency`, `EventImageType`, `EventState`,
+`PriceTierTypes`, `TicketFeeCategory` (this one blocks Q4), and fifteen input
+objects including `OrderWhereInput`, `ReturnWhereInput` and
+`TicketTransferWhereInput`.
+
+That last pair is load-bearing for X2: their existence is how we know
+`viewer.returns` and `viewer.ticketTransfers` are event-scopeable the same way
+orders is, even though the dump shows them taking no arguments.
+
+### X3 — Shotgun endpoint enumeration: not discoverable from here
+
+The question is whether `/tickets` is the whole API or the only door we happen
+to have a key to. Two ways to settle it, and the honest answer on both is
+**no, not from this container.**
+
+**1. Is anything served that lists the endpoints?** Unanswerable here.
+`api.shotgun.live` and `developers.shotgun.live` are both blocked by this
+environment's network policy — `curl` returns `000`, a connection that never
+opened, not a 404 that would have told us something. So even a negative result
+is unavailable: we cannot distinguish "Shotgun serves no index" from "we could
+not ask". This is not a Shotgun property, it is ours, and it has one fix —
+**ask from an Actions runner**, which is where every live fetch already runs.
+`scripts/probe_shotgun_fields.py::probe_discovery` does exactly that against
+nine candidate paths (`/`, `/openapi.json`, `/swagger.json`,
+`/.well-known/openapi.json`, `/docs`, `/v1/`, `/events`, `/orders`, `/deals`)
+and prints the status code for each. A 401 or 403 is the interesting answer: it
+means the path exists and our token is merely not scoped for it. A 404 across
+all nine means `/tickets` is very likely all there is.
+
+**2. Is 44 the ceiling on a ticket?** Answerable, and cheaply — this is the
+half that does not need Shotgun to volunteer anything. `shotgun_schema.json`
+records one ticket from one event, which proves those 44 keys exist and proves
+nothing about the rest. But we have **six active events across two organizer
+accounts**, structurally unalike (multi-day festivals, a one-night event, two
+countries). Taking the first page from each and unioning the keys turns one
+sample into ~600 tickets from six events. `probe_fields` reports:
+
+- the **union** — any key beyond the 44 means 44 was never the ceiling;
+- the **intersection** — a key present on some events and absent from others is
+  the more likely shape, and tells us which fields are conditional;
+- the **null rate per key** — of the 44, which are actually populated. A field
+  that is 100% null everywhere is documented, not available.
+
+It prints key names and null *rates* only, never a value: eleven of the 44 are
+personal and this log is public.
+
+**What each outcome licenses.** If the union is 44, that is *evidence* the 44
+are the shape — not proof, since six events of ours may all be structurally
+alike in the way that matters (none is seated or tabled, which is precisely the
+case `ticket_seating` hints at). If the union exceeds 44, the inventory below is
+incomplete and needs rerunning before anything is built on it.
+
+**Until that probe runs, treat 44 as provisional, not complete.** No claim in
+the table below turns on a field we have not seen; the risk is entirely of
+omission — a Campagne metric we could have built and did not know was there.
 
 ## The table
 
@@ -49,8 +126,7 @@ it away. NEVER-REQUESTED = available but our query does not ask for it.
 | buyer-borne fee | `deal_user_service_fee` | `TicketFee{category,dice,promoter}` | FETCHED / NEVER-REQUESTED | both, differently | |
 | producer cost | `deal_producer_cost` = `0` | `TicketFee.promoter` | DROPPED / NEVER-REQUESTED | both, differently | |
 | VAT | `deal_vat_rate` = `0.055` | — | DROPPED | **Shotgun-only** | no DICE equivalent in the dump |
-| refund / cancel | `ticket_status`, `ticket_canceled_at` | `Return{returnedAt, reason}`, `Order.returns` | FETCHED (status) / NEVER-REQUESTED | both | DICE gives a **reason**; Shotgun does not |
-| fee adjustment | — | `Adjustment{feesChange, processedAt, reason}` | n/a | DICE-only | |
+| refund / cancel | `ticket_status`, `ticket_canceled_at` | `Return`, `Order.returns` | FETCHED (status) / NEVER-REQUESTED | both, **different shape** | Shotgun: a status change with no reason. DICE: an object — see the refund row below and X2 |
 | **newsletter opt-in** | `contact_newsletter_optin` **[sample]** | `Fan.optInPartners` **[schema]** | DROPPED / NEVER-REQUESTED | both, **different consent** | see Q5 |
 | attendance scan | `ticket_scanned_at` **[sample]**, `ticket_scan_code` | **no equivalent** | DROPPED | **Shotgun-only** | see Q6 — `claimedAt` is not this |
 | ticket activation | — | `Ticket.claimedAt` | NEVER-REQUESTED | DICE-only | see Q6 |
@@ -60,6 +136,77 @@ it away. NEVER-REQUESTED = available but our query does not ask for it.
 | survey answers | — | `Ticket.fanSurveyAnswers` | n/a | DICE-only | **do not fetch** — PII |
 | currency | `currency` = `"eur"` | `Event.currency` | DROPPED | both | |
 | capacity | — | `Event.totalTicketAllocationQty` | n/a | DICE-only | **stays from config**, per your constraint |
+| **refund object** | — (only `ticket_status` + `ticket_canceled_at`) | `Return { id, order, ticket, ticketId, reason, returnedAt }` **[schema]** | NEVER-REQUESTED | **DICE-only as an object** | top-level `viewer.returns`; see X2 |
+| **fee adjustment** | — | `Adjustment { feesChange: TicketFee, processedAt, reason, ticket }` **[schema]** | NEVER-REQUESTED | **DICE-only** | `feesChange` is a full `TicketFee`, so it decomposes dice/promoter — bears on Q4 |
+| **ticket transfer** | — | `TicketTransfer { id, orders, tickets, transferredAt }` **[schema]** | NEVER-REQUESTED | **DICE-only** | top-level `viewer.ticketTransfers`. Resale/gifting between fans |
+| **allocation pool** | — | `TicketPool { id, name, allocation }` **[schema]** | NEVER-REQUESTED | **DICE-only** | `TicketType.ticketPoolId` joins to it — shared allocation across ticket types |
+| add-on product | — | `Product { id, name, description, faceValue, totalAllocationQty, ticketTypes, archived }` | NEVER-REQUESTED | DICE-only | |
+| add-on variant | — | `Variant { id, name, size, sku }` | NEVER-REQUESTED | DICE-only | size/sku implies merch |
+| add-on purchase | — | `Extra { id, code, product, variant, holder, fullPrice, total, commission, diceCommission, fees, ticket, hasSeparateAccessBarcode }` | NEVER-REQUESTED | DICE-only | top-level `viewer.extras`; **revenue we cannot currently see** |
+| seat | `ticket_seating` (`null` in sample) | `Seat { name }` | DROPPED / NEVER-REQUESTED | both, thin | DICE's `Seat` is a single `name` string |
+
+### X2 — what the four unopened types change
+
+**`Return` is the one that matters, and it bears on the modification detector.**
+
+The H9 detector exists because a Shotgun refund is an *absence*: the ticket
+stops coming back, and nothing marks the event. There is no refund row to find,
+so the detector compares `ordered_at` against a stored maximum to notice that
+something behind the cursor moved.
+
+On DICE a refund is neither an absence nor a marked row — it is a **first-class
+object with its own timestamp and a reason**, in a top-level collection that can
+be polled independently of the orders it refers to.
+
+Whether that is worth acting on: **not for correctness.** DICE is refetched
+wholesale every run, never incrementally, so nothing about DICE can drift the
+way the Shotgun cursor can — H10 already asserts the merged DICE count equals
+this run's fetch. The detector is a Shotgun problem and stays one.
+
+It is worth it for **explanation**. `viewer.returns` scoped to an event gives a
+refund curve with reasons, on the platform where we currently have neither.
+Shotgun gives `ticket_canceled_at` and a status, and no reason at all. If the
+Campagne page ever asks "why did week 3 stall", DICE can answer and Shotgun
+cannot.
+
+`Adjustment.feesChange` is a full `TicketFee`, so post-hoc fee corrections
+decompose dice/promoter the same way the original fees do — directly relevant
+to Q4, and a candidate explanation for revenue drift that currently looks like
+our arithmetic.
+
+`TicketTransfer` is resale/gifting between fans. No Shotgun equivalent
+(`ticket_status: 'resold'` is a different thing — a returned ticket resold by
+the platform, not a fan-to-fan transfer). Probably not a campaign metric, but
+it is a population of tickets whose holder is not the buyer, which matters if
+opt-in rate is ever computed per ticket rather than per order.
+
+`TicketPool` explains shared allocation: several `TicketType`s can draw on one
+pool via `ticketPoolId`, so summing per-type allocations would double-count.
+Another reason capacity stays from config.
+
+### X4 — the PII boundary, stated explicitly
+
+`Fan` is `{ dob, email, firstName, lastName, phoneNumber, optInPartners }`.
+
+**Exactly one of those six is wanted, and it sits beside five that must never
+be persisted.** GraphQL returns only what is selected, so the rule is:
+
+> Any query that reads opt-in must select `fan { optInPartners }` **alone** —
+> never `fan { ... }` with a second field, never a fragment spread on `Fan`,
+> not even `id`.
+
+`id` matters as much as the rest: a stable per-fan identifier makes every
+aggregate re-identifiable by joining across events, which is the whole thing
+the aggregate-at-fetch-time rule exists to prevent.
+
+`scripts/probe_dice_fields.py` follows this, and it is the reason the opt-in
+query in that script is a separate query rather than another field on the
+orders query — so no future edit can widen the `Fan` selection by accident
+while adding something unrelated to the order.
+
+The Shotgun side has no such control. It sends eleven personal fields on every
+ticket whether asked or not; `assert_merged_schema()` is the only thing between
+them and a committed file.
 
 ### PII, present and deliberately dropped
 
@@ -276,10 +423,18 @@ already make; none touch PII.
 | P4 | `Event.onSaleDatetime` / `announceDatetime` actual values | same probe, add both — settles the Q3 mapping |
 | P5 | May the Collaborateur token read `Fan { optInPartners }`? | same probe; if it errors, Q5 is Shotgun-only |
 | P6 | Is `deal_service_fee` promoter-borne or buyer-borne? | **not a probe** — Shotgun's REST payload has no more to give. Needs Shotgun's docs or a reconciliation against a payout statement |
+| X2 | Do `viewer.returns` / `viewer.ticketTransfers` return anything, and what does a `Return.reason` look like? | same probe run — `scripts/probe_dice_fields.py` |
+| X1 | The three introspection dimensions the dump is missing (enum values, input fields, field args) | same probe, `--introspect`; writes `api_output/dice_schema_full.json` |
+| X3a | Does Shotgun serve any index, spec or second endpoint? | `scripts/probe_shotgun_fields.py` — **must run in Actions**, the host is blocked from the dev container |
+| X3b | Is 44 the ceiling on a ticket? | same script — key union/intersection + null rates across all six active events |
 
-P1–P5 are one probe run against one event. P6 is the one that matters most for
-Q4 and cannot be answered from the API at all.
+P1–P5, X1 and X2 are one DICE probe run against one event. X3a/X3b are a
+separate Shotgun job in the same workflow, read-only, one page per event. P6 is
+the one that matters most for Q4 and cannot be answered from either API.
 
-**Recommendation:** authorise a single DICE probe covering P1–P5, on
-`rennes_2026` (live, DICE-majority, 2,245 DICE tickets). P6 needs Leo and a
-payout statement, and it closes the 2% item as a side effect.
+Both live in `.github/workflows/probe-platform-fields.yml`
+(`workflow_dispatch`, jobs `probe` and `shotgun`).
+
+**Recommendation:** authorise the probe run on `rennes_2026` (live,
+DICE-majority, 2,245 DICE tickets). P6 needs Leo and a payout statement, and it
+closes the 2% item as a side effect.
