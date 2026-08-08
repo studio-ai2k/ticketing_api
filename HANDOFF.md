@@ -1212,7 +1212,8 @@ Carried forward, not fixed. Each needs a decision or an input we do not have.
 
 | # | item | blocked on |
 | --- | --- | --- |
-| O1 | **The spec and the code use different `gross_price` formulas** — 97.87 vs 107.37 on the spec's own example. See `docs/O1_FEE_DECISION.md` for the ask and the decision table | **one payout line from Leo** |
+| O1 | **Half closed 2026-08-08.** DICE is proved against a payout statement, to one ticket in 9,327. The spec/code conflict is now Shotgun-only: is 13,03% buyer-facing? See `docs/O1_FEE_DECISION.md` | **a SHOTGUN payout statement** — Leo has no access, so Episode or Sonora |
+| O9 | **The revenue disclaimer is wrong for DICE** and possibly right for Shotgun — a copy decision, raised not fixed. `docs/O1_FEE_DECISION.md` §CC2 | O1, then a copy call |
 | O2 | ~~a 2h DICE/Shotgun skew~~ **— measured 2026-08-08, and there is no cross-platform skew.** Both streams share a clock; that clock is UTC | a decision on displaying Paris local |
 | O7 | Shotgun `GET /events` exists (400, not 404) and nobody has called it | a decision — it may carry the capacity/phase metadata `/tickets` lacks |
 | O8 | Whether DICE `viewer.orders` already nets out returns (28 on `rennes_2026`) | a reconciliation |

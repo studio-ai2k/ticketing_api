@@ -46,6 +46,7 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_footer_tz.py` | 3 |
 | `check_spec_example.py` | 4 |
 | `check_suivi_window.py` | 1 (and its own first version failed step 2) |
+| `check_payout_reconciliation.py` | 3 |
 
 ---
 
@@ -117,6 +118,20 @@ the VISIBLE_DAYS slice and carried those same 7 stragglers — six zero rows plu
 one 7 summed to 7, which is not zero. Excluding that row is what makes the check
 mean anything. Trap #5's family again, in a check written to catch a different
 bug. **Do not simplify the `dated` filter away.**
+
+## After any change to fee or price handling in `fetch_csv.py`
+
+    python3 verify/check_payout_reconciliation.py
+
+Holds the DICE side of `gross_price` to the `bordeaux_2026` payout statement it
+was proved against — 9,327 paid, 624 936,39 brut TTC, 38 214,52 commissions,
+and the five tiers verbatim. Tolerance is exactly one known ticket; a second is
+a finding, not noise.
+
+These are **the only figures in this project validated against a document
+someone outside it produced.** Settling O1 will mean editing
+`process_shotgun_ticket`, three lines from the DICE path, so this exists to make
+sure the fixed point survives that edit.
 
 ## After any stylesheet swap
 

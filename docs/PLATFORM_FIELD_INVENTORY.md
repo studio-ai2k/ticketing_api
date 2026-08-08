@@ -240,6 +240,58 @@ the larger `deal_service_fee` (10.0%), our Shotgun gross would be too *low*.
 Which way the 2% runs therefore discriminates between the two hypotheses, and
 that measurement should be step one on O1 — before anyone touches the formula.
 
+### P2 follow-up — confirmed against a payout statement, 2026-08-08
+
+Leo produced a *reddition de comptes* for `bordeaux_2026` (DICE). It reconciles
+against our CSV to **one ticket out of 9,327**, and it names the semantics the
+probe could only infer:
+
+```
+PRIX HT       43,19     excluding VAT
+PRIX TTC      45,57     <- our `price`.  face value, VAT 5,5% INCLUDED
++ commission   3,43     DICE booking fee
+buyer pays    49,00     <- our `gross_price`
+```
+
+All five tiers verbatim — 45,57 / 50,42 / 55,28 / 60,13 / 64,99 — and the VAT
+split to the cent (624 936,39 / 1,055 = 592 356,77 HT + 32 579,62 VAT).
+
+Three things this settles that the probe alone could not:
+
+1. **`price` is TTC, not HT.** The probe showed `fullPrice` and `total` and
+   their difference; it could not say which side of VAT `fullPrice` sits on.
+   It is TTC. Anything computing a net-of-VAT figure must divide by 1,055.
+2. **The promoter bears nothing.** `COMMISSION DU PROMOTEUR 0,00`,
+   `RÉTROCESSION 0%`, `PAIEMENT AU PROMOTEUR` = the full TTC total. The
+   `promoter: 0` the probe saw on every `TicketFee` is the real commercial
+   arrangement, not an artefact of the sample.
+3. **5,5% is the VAT rate**, and it equals Shotgun's `deal_vat_rate` — so if
+   the Shotgun ~2% overshoot is VAT-related, this is the number.
+
+Pinned by `verify/check_payout_reconciliation.py`.
+
+### P1 follow-up — the phase taxonomy is real, and named
+
+The statement carries the phase names we had been reconstructing from price
+steps alone:
+
+| tier | name |
+| --- | --- |
+| Phase 1 | Super Early Bird |
+| Phase 2 | Early Bird |
+| Phase 3 | Regular |
+| Phase 4 | Advanced ticket |
+| — | Derniers tickets |
+
+This validates the derivation in P1. The ladders we infer by cutting the sales
+sequence at the cumulative allocation are **real phases with real names**, not
+an artefact of reading price changes as boundaries. A Campagne phases axis can
+therefore carry these labels rather than "PHASE 1 / PHASE 2", and the two
+sources agree on what they are.
+
+Note the fifth: "Derniers tickets" has no phase number, which fits the
+`allocation=None` last tier the probe found (unlimited, no cap).
+
 ### P3 — `salesChannel` is `INTERNET`, and it is not an enum
 
 All 20 sampled orders: `{'INTERNET': 20}`. There is **no `SalesChannel` enum in
