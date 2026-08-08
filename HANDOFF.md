@@ -1204,7 +1204,7 @@ Carried forward, not fixed. Each needs a decision or an input we do not have.
 
 | # | item | blocked on |
 | --- | --- | --- |
-| O1 | **`deal_service_fee` and the ~2% gross overshoot are probably one bug** — see below | Shotgun docs or a payout statement |
+| O1 | **The spec and the code use different `gross_price` formulas** — 97.87 vs 107.37 on the spec's own example. See `docs/O1_FEE_DECISION.md` for the ask and the decision table | **one payout line from Leo** |
 | O2 | ~~a 2h DICE/Shotgun skew~~ **— measured 2026-08-08, and there is no cross-platform skew.** Both streams share a clock; that clock is UTC | a decision on displaying Paris local |
 | O7 | Shotgun `GET /events` exists (400, not 404) and nobody has called it | a decision — it may carry the capacity/phase metadata `/tickets` lacks |
 | O8 | Whether DICE `viewer.orders` already nets out returns (28 on `rennes_2026`) | a reconciliation |
@@ -1298,3 +1298,108 @@ whose.
 **Do not "fix" this by changing the formula on a guess.** `gross_price` feeds
 every revenue figure and every comparison on the dashboard; a wrong correction
 is worse than a known 2%.
+
+## Trap #9: a spec and its code can both be self-consistent and disagree
+
+`HANDOFF.md`'s column spec says Shotgun `gross_price` is
+`(deal_price + deal_user_service_fee) / 100`, and its worked example says the
+sample ticket produces **97.87**. `fetch_csv.process_shotgun_ticket` adds
+`deal_service_fee` as well and produces **107.37** for that same input.
+
+Both documents were internally consistent. Neither ever failed. Every test
+checked the code against itself, and every reader of the spec checked the spec
+against itself. The disagreement survived the entire life of the project and
+surfaced only because an unrelated question — why `product_name` is never blank
+— was traced through the same function.
+
+**The rule:**
+
+> A specification and its implementation can BOTH be self-consistent and
+> disagree with each other. Nothing fails. Assert the spec against the code, not
+> just the code against itself.
+
+This is a different failure from traps #1–#8. Those were all one artefact being
+checked in the wrong place — the input instead of the output, the round trip
+instead of the result, the vendored sheet instead of the shipped one. This one
+is two artefacts, each correctly checked, that were never checked *against each
+other*. No amount of care inside either would have found it.
+
+**The guard is `verify/check_spec_example.py`.** It parses the worked example
+out of `HANDOFF.md` — it does not copy it, because a copy is a third statement
+of the same fact and free to drift from both — runs it through the real
+function, and compares. While O1 is open it pins the one known delta and fails
+on anything else. Four drift modes were confirmed to exit non-zero: the code
+moving to a third value, someone editing the spec to match the code, the code
+being corrected while the pin is left stale, and the example being removed from
+the doc altogether.
+
+Wire the same shape anywhere a document states a number the code also computes.
+A worked example in a spec is a test that nobody has run yet.
+
+## The two clocks in one footer
+
+`run.py:3986` converts the generation time with `ZoneInfo('Europe/Paris')`.
+`run.py:2048` renders the last-ticket time straight off `order_datetime`, which
+is UTC, with no conversion. Both sit in the same footer, three items apart.
+
+That is why it survived. A footer with two timestamps where one is right does
+not look broken — it looks like a footer. And the error is 1h in winter and 2h
+in summer, so a reader checking it against a remembered sale time disagrees by a
+different amount depending on the season, which reads as their own
+misremembering rather than a bug.
+
+The lesson is not about timezones. **A partial fix is more durable camouflage
+than no fix.** When the same conversion is needed in several places and applied
+in some of them, the ones that got it make the ones that did not look
+deliberate. When you find a conversion, normalisation or guard applied
+somewhere, the next question is where else it should be and is not.
+
+## Day buckets are UTC, and the size of that is closed-form
+
+`order_date` is `date()` of the UTC timestamp on both platforms, and `run.py`
+buckets everything on that column, so daily rows are UTC days. Measured over
+92,527 rows, **3,219 (3.48%)** sit on the wrong Paris day.
+
+The band that moves is exactly:
+
+    rows in UTC hours 22 and 23 during CEST (+2)
+  + rows in UTC hour 23 during CET (+1)
+
+That prediction reproduces the measurement to two decimal places on all six
+events — 3.35, 3.16, 3.56, 8.72, 3.10, 2.77 — so the effect is fully
+characterised, not estimated.
+
+| event | CEST share | moved |
+| --- | ---: | ---: |
+| geneve_2026 | 100% | **8.72%** |
+| epk_2026 | 100% | 3.56% |
+| bordeaux_2026 | 65% | 3.35% |
+| bordeaux_oct_2026 | 100% | 3.16% |
+| paris_xxl_2026 | 0% | 3.10% |
+| rennes_2026 | 100% | 2.77% |
+
+**Why geneve is the outlier — and it is not the DICE share.** Two factors
+multiply, and the platform-mix guess only explains part of one:
+
+1. **Season.** A summer event loses two UTC hours, a winter event one.
+   `paris_xxl_2026` sells entirely in CET, so despite having 8.5% of its rows in
+   UTC hours 22–23 it only moves 3.10% — hour 22 is still 23:00 Paris in winter.
+   `geneve_2026` sells entirely in CEST, so both hours count.
+2. **Geneve's DICE audience genuinely buys late**, and this is specific to
+   geneve rather than to DICE:
+
+   | | hour 22 | hour 23 | moved |
+   | --- | ---: | ---: | ---: |
+   | geneve Shotgun | 2.9% | 2.1% | 4.99% |
+   | geneve DICE | 6.8% | 3.5% | **10.23%** |
+   | rennes DICE | — | — | 2.18% |
+
+   `rennes_2026` is 62% DICE and its DICE rows move at 2.18%. So "DICE-heavy
+   events buy later" is not a general property — geneve's DICE cohort is the
+   outlier, not the platform. Expect this on late-selling summer events, not on
+   DICE-heavy ones as such.
+
+**Held, deliberately.** Converting is a pure relabel — no data lost, fully
+reversible, and the band is deterministic — but it rewrites published daily
+numbers and moves rows between rows of the Suivi table, including across the
+comparison. That is a decision, not a fix.

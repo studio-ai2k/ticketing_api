@@ -28,6 +28,34 @@ every configured pair and 400 random ones. Its transcription guard is scoped to
 `_prev_match_dsl` and a whole-file search passed on a stale copy. **Four
 negative tests; do not simplify them away.**
 
+## Always — the spec against the code
+
+    python3 verify/check_spec_example.py
+
+Runs `HANDOFF.md`'s own worked example through `fetch_csv` and compares. It
+exists because the spec and the code disagreed about `gross_price` for the life
+of the project, both self-consistent, neither ever failing (trap #9).
+
+**It currently reports one PINNED conflict and exits 0.** That is the O1 fee
+question, open with Leo — see `docs/O1_FEE_DECISION.md`. Anything else fails,
+including editing the spec to match the code. When O1 lands, fix whichever side
+is wrong and set `KNOWN_CONFLICT = None`; it becomes strict and stays strict.
+
+Add the same shape wherever a document states a number the code computes.
+
+## After any change to the footer, the stamp, or run.py's footer render
+
+    python3 verify/check_footer_tz.py
+
+`order_datetime` is UTC. Nine checks that the last-ticket time reaches the page
+as Europe/Paris, with real DST — a hardcoded +2 passes June and fails December,
+which is the whole point. Also asserts the workflow stamps with
+`TZ=Europe/Paris`; the runner is UTC and a bare `date +%H:%M` is the same bug
+from our own side.
+
+Three negative tests confirmed firing: unwiring the call, the fixed offset, and
+reverting the workflow. **Do not remove them.**
+
 ## After any stylesheet swap
 
     python3 verify/audit_css_overrides.py
