@@ -25,8 +25,8 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 ### Column specs:
 | Column | Type | Source | Notes |
 |---|---|---|---|
-| `order_date` | `YYYY-MM-DD` | Shotgun: `ordered_at[:10]` / DICE: `claimedAt[:10]` | |
-| `order_datetime` | `YYYY-MM-DD HH:MM:SS` | Shotgun: `ordered_at` / DICE: `claimedAt` | Strip timezone, format to seconds |
+| `order_date` | `YYYY-MM-DD` | Shotgun: `ordered_at[:10]` / DICE: `Order.purchasedAt[:10]` | |
+| `order_datetime` | `YYYY-MM-DD HH:MM:SS` | Shotgun: `ordered_at` / DICE: `Order.purchasedAt` | Strip timezone, format to seconds. **NOT `claimedAt`** - that is wallet activation, null until close to the event (all 2,215 Rennes 2026 tickets came back null). The code has used `purchasedAt` since the orders query replaced the tickets query; this table said `claimedAt` until 2026-08-08. |
 | `ticket_type` | string | Classified from ticket name | One of: day name (`samedi`, `vendredi`, `jeudi`), `2-jours`, `3-jours`, `single_day` |
 | `access_level` | string | Classified from ticket name + price | One of: `regular`, `vip`, `invitation`, `early_entry`, `backstage`, `jeu_concours`, `group_discount` |
 | `attendance_days` | string | Classified from ticket name | Format: `['samedi']` or `['vendredi','samedi']` — Python list repr as string |
