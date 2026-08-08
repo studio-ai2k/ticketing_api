@@ -1403,3 +1403,77 @@ multiply, and the platform-mix guess only explains part of one:
 reversible, and the band is deterministic — but it rewrites published daily
 numbers and moves rows between rows of the Suivi table, including across the
 comparison. That is a decision, not a fix.
+
+## The Suivi window anchors on the last SALE, not on the event
+
+`cutoff_velocity` is `max(order_date) - 1` over all tickets
+(`load_ticket_data`), and `_generate_suivi_v3` shows the last `VISIBLE_DAYS = 7`
+rows ending there. For a live event that is exactly right: the newest sales are
+the interesting ones.
+
+It breaks when one sale lands long after the event. `paris_xxl_2026` had **7
+paid tickets on 2026-03-30** — sixteen days after a 13-14 March event, fifteen
+days after the previous sale. That single day moved the cutoff to 29 March, so
+the seven visible rows were 23-29 March, every one zero on both sides, with 112
+real selling days behind "Voir les 112 jours précédents". The page read as
+empty.
+
+**Three things about this that are easy to get wrong:**
+
+1. **The trigger is not "the event is finished".** `bordeaux_2026` is finished
+   too and was never affected — its last sale falls on its own event days. The
+   trigger is a sale on the far side of a gap. A live event with a stray
+   backdated correction would hit it just the same.
+2. **The rows are not "generated past the last sale".** They stop at a real
+   sale. The dead space is the *gap*, and one ticket beyond it is enough to
+   stretch the window across it.
+3. **"Anchor on the last day with non-zero sales" does not fix it.** 30 March
+   *is* a day with sales. That rule gives 24-30 March: six empty rows and a
+   seven-ticket day. Still an empty table.
+
+**The fix** is `build_dashboard._clamp_cutoff`: `min(cutoff, event_date_last +
+1)`. The `+1` matches run.py's own convention for the future rows ("+1 for
+post-midnight sales") and keeps the 41 tickets sold on 15 March. For a live
+event the event is in the future, so `min` is a no-op — one rule, no
+live/finished branch. Measured across all six events, only `paris_xxl_2026`
+moves: its window becomes 9-15 March with 4,816 sales, and its hidden-days
+button drops 112 → 98. The other five are unchanged.
+
+It lives in the build wrapper because `run.py` is do-not-modify and the bug is
+in run.py's choice of anchor. That widens the wrapper's job from *observe* to
+*observe and clamp one argument*, which is a real change in what that file is
+for and is documented at the top of it.
+
+**The stragglers are not lost.** run.py's "Aujourd'hui" row is driven by
+`cutoff_cumulative`, untouched here, so the 7 tickets still render — the row now
+follows 15 March directly instead of following fourteen blank ones.
+
+### The check for it passed on the broken page first
+
+`verify/check_suivi_window.py` originally summed the last seven rows *including*
+"Aujourd'hui". That row carried the same 7 stragglers, so six zeros plus a seven
+summed to seven, and the check reported the broken page as fine.
+
+This is trap #5's family — verify the thing a reader sees, not a superset of it
+— but it is worth its own note because of *when* it happened: in a check written
+specifically to catch this bug, by someone who had just read the row-generation
+code. Knowing exactly what is wrong is not protection against writing a check
+that cannot see it. **Run a new check against the KNOWN-BROKEN artefact before
+trusting it.** If it does not fail there, it does not work.
+
+### AA3/AA4, checked and not bugs
+
+- The weekly button reads **"Voir les 8 semaines"**, not 112. The daily one
+  reads 112. Each grain counts its own rows (`hidden_weekly` vs `hidden_past`).
+  Each label appears twice per file because each dashboard carries two pages,
+  main and details. `check_suivi_window.py` now asserts the two counts do not
+  coincide.
+- parisxxl having **no "À venir" separator is correct**, and is guarded by
+  `if future_rows:` in run.py. `future_start = cutoff_cumulative + 1` (31 March)
+  is past `future_end = event_date_last + 1` (15 March), so the count goes
+  negative and nothing renders. `bordeaux_2026`, also finished, does get a
+  one-row future block because its arithmetic lands differently. Not a side
+  effect of the range logic — the guard is doing its job.
+- The `Voir les 0 jour restant` buttons are real in the markup but carry
+  `style="display:none"`, set by `SUIVI_BTN_HIDE` when the count is 0. Not
+  visible to a reader.

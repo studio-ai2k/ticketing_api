@@ -56,6 +56,25 @@ from our own side.
 Three negative tests confirmed firing: unwiring the call, the fixed offset, and
 reverting the workflow. **Do not remove them.**
 
+## After any rebuild — the Suivi window
+
+    python3 verify/check_suivi_window.py
+
+Asserts the seven visible daily rows contain sales, and that the daily and
+weekly "voir les N" buttons count their own grain.
+
+`paris_xxl_2026` shipped with all seven visible rows at zero, because 7 paid
+tickets on 2026-03-30 — sixteen days after the event — dragged
+`cutoff_velocity` (`max(order_date) - 1`) past the event and into dead space.
+`build_dashboard._clamp_cutoff` clamps to `event_date_last + 1`.
+
+**The first version of this check passed on the broken page.** It summed the
+last seven rows including run.py's "Aujourd'hui" row, which is appended after
+the VISIBLE_DAYS slice and carried those same 7 stragglers — six zero rows plus
+one 7 summed to 7, which is not zero. Excluding that row is what makes the check
+mean anything. Trap #5's family again, in a check written to catch a different
+bug. **Do not simplify the `dated` filter away.**
+
 ## After any stylesheet swap
 
     python3 verify/audit_css_overrides.py

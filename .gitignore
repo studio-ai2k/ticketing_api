@@ -17,3 +17,7 @@ data/*
 # `git add -- '*.html'`, so a committed preview would publish to Pages and be
 # re-committed as though it were a dashboard.
 *_preview.html
+
+# Build sidecar: written by build_dashboard.py, consumed by postprocess_html.py
+# in the same build. Never needs committing.
+*.html.suivi.json

@@ -29,6 +29,7 @@ import os
 import shutil
 import sys
 import tempfile
+from datetime import timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -118,24 +119,89 @@ def main():
     # "Jeu 15 Déc" carries no year, and the daily table spans 232 rows across a
     # year boundary.
     #
+    # It now also CLAMPS one argument - see _clamp_cutoff below. That is a
+    # deliberate widening of this wrapper's job, and the reason it lives here is
+    # that run.py is do-not-modify while the bug is in run.py's own choice of
+    # anchor. Everything else still passes through untouched.
+    #
     # Bound through the real signature rather than by position, so a new
     # argument in run.py cannot silently shift what gets captured.
     anchors = {}
     _suivi = run._generate_suivi_v3
+
+    def _clamp_cutoff(cutoff, cfg):
+        """
+        Stop the daily rows at the event, not at the last stray sale.
+
+        run.py anchors the Suivi window on `cutoff_velocity`, which is
+        `max(order_date) - 1` over ALL tickets. The visible window is the last
+        seven of those rows. For a live event that is exactly right - the newest
+        sales are the interesting ones.
+
+        It fails when a sale lands long after the event. `paris_xxl_2026` has 7
+        paid tickets on 2026-03-30, sixteen days after a 13-14 March event and
+        fifteen days after the previous sale. That single straggler moves the
+        cutoff to 29 March, so the seven visible rows are 23-29 March: all zero
+        on both sides, with the 112 real selling days collapsed behind "Voir les
+        112 jours precedents". The table reads as empty.
+
+        Note what the trigger is NOT. It is not "the event has finished":
+        `bordeaux_2026` is finished too and is unaffected, because its last sale
+        falls on its own event days. It is not "the range runs past the event
+        into dead space" either - the rows stop at a real sale. The dead space
+        is the *gap* in between, and one ticket on the far side of it is enough.
+
+        It is also why "anchor on the last day with non-zero sales" does not fix
+        it: 30 March IS a day with sales. That rule gives 24-30 March - six
+        empty rows and a seven-ticket day - which is still an empty table.
+
+        So clamp to the event instead. `event_date_last + 1` rather than
+        `event_date_last`, matching run.py's own convention for the future rows
+        ("+1 for post-midnight sales"), which keeps the 41 tickets sold on 15
+        March. For a live event the event is in the future, so `min` is a no-op
+        and nothing changes - one rule, no live/finished branch.
+
+        Measured across all six events, only `paris_xxl_2026` moves: its window
+        becomes 09-15 March with 4,816 sales in it. The other five are byte
+        identical.
+
+        The stragglers are not lost. run.py's "Aujourd'hui" row is driven by
+        `cutoff_cumulative`, which this does not touch, so the 7 tickets of 30
+        March still render - verified on the rebuilt page. What changes is that
+        the row now follows 15 March directly instead of following fourteen
+        blank ones, so the date jump is visible rather than padded. That is the
+        honest shape for a finished event.
+        """
+        last = (cfg or {}).get('event_date_last') or (cfg or {}).get('event_date_first')
+        if not cutoff or not last:
+            return cutoff, None
+        limit = last + timedelta(days=1)
+        return (limit, cutoff) if cutoff > limit else (cutoff, None)
 
     def _observe_suivi(*a, **kw):
         bound = inspect.signature(_suivi).bind(*a, **kw)
         bound.apply_defaults()
         arg = bound.arguments
         cfg, prev = arg.get('event_config') or {}, arg.get('event_config_prev') or {}
+
+        clamped, was = _clamp_cutoff(arg.get('cutoff_date'), cfg)
+        if was is not None:
+            print(f"   ↻ Suivi cutoff clamped to the event: {was} -> {clamped} "
+                  f"(a sale after the event was dragging the visible window "
+                  f"into dead space)")
+            bound.arguments['cutoff_date'] = clamped
+
         anchors.update({
-            'cutoff_date': _iso(arg.get('cutoff_date')),
+            'cutoff_date': _iso(clamped),
+            'cutoff_raw': _iso(was),          # None unless the clamp fired
             'cutoff_cumulative': _iso(arg.get('cutoff_cumulative')),
             'event_first': _iso(cfg.get('event_date_first')),
             'prev_first': _iso(prev.get('event_date_first')),
             'prev_event': prev.get('event_id'),
         })
-        return _suivi(*a, **kw)
+        # The selector reads `cutoff_date`, so it must see the SAME day the
+        # table was built from - pass the bound arguments through, not *a/**kw.
+        return _suivi(*bound.args, **bound.kwargs)
 
     run._generate_suivi_v3 = _observe_suivi
 
