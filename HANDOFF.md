@@ -1123,3 +1123,64 @@ live-candidate case is solved by candidate-dependent anchoring, with no UI
 control. The general user-facing toggle remains open — and must still not be
 built on `comparison_mode: days_since_launch`, which is dead code that anchors
 on the event **end** despite its name.
+
+## Trap #8: `.get(key, default)` does not fire on an empty value
+
+A CSV always provides the key. `row.get('login_bg_image', 'upload.JPG')`
+returns `''` — not the default — when the column exists and is blank. Clearing
+the value, which is the documented way to say "use the standard image",
+rendered `url('')`.
+
+The right pattern is four lines above the wrong one, in the same dict literal:
+
+```python
+'comparison_mode': row.get('comparison_mode', '').strip() or 'j_minus',   # correct
+'login_bg_image':  row.get('login_bg_image', 'upload.JPG'),               # wrong
+```
+
+**Audited across `run.py`, `fetch_csv.py` and every script.** 21 config reads
+carry a non-empty default; measured against the row `run.py` actually reads
+(the first per event, not the blank continuation rows):
+
+| key | blank on active events | verdict |
+| --- | --- | --- |
+| `login_bg_image` | 1 (paris_xxl) | **the one real instance** — fixed in postprocess |
+| `comparison_mode` | 2 | safe — normalised with `.strip() or` at load |
+| `currency`, `brand`, `status` | 0 | never blank on an event-level row |
+
+So: one bug, already fixed, and no others. But the shape is a one-liner that
+produces plausible-looking output, which is the family that keeps costing us.
+
+> **Any config field where blank means "use the default" needs an explicit
+> truthiness check, not `dict.get`.**
+
+## The vendored stylesheet is not what ships
+
+`CSS_FIXUPS` in `postprocess_html.py` runs on the sheet on its way in — the
+`.pill` → `.yoy-pill` rename and the `.scenario-btn` weight live there, not in
+the `.css` file, so they survive a future sheet swap.
+
+Consequence: **anything that reads `style/dashboard_v6_8.css` is reading the
+wrong artefact.** `verify/audit_css_overrides.py` now defaults to a built
+dashboard and extracts its `<style>`; pointing it at the `.css` reports a
+`.pill` collision that no longer ships.
+
+Same class as trap #7 — checking the input to a transformation instead of its
+output.
+
+## Standing pattern for specs: publish the numbers, invite the correction
+
+Three for three now. Each of these was caught before it shipped because the
+instruction was "reproduce this before implementing, and if your numbers differ
+from ours, yours are probably right":
+
+| spec figure | reality |
+| --- | --- |
+| `.ac-t` baseline of 8 | 4 in markup; the other four are stylesheet selectors |
+| `rgba(96,165,250,.8)` N×2 occurrences | zero — the generator emits amber |
+| launch-anchor coverage table | windows move, counts barely do |
+
+The pattern is worth keeping in every spec that quotes a measurement: state the
+number, state how it was measured, and say explicitly that a disagreement means
+the spec is probably wrong. A number quoted without its method is an assertion;
+quoted with one, it is a test.
