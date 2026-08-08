@@ -265,7 +265,11 @@ jobs:
           OUT="${{ matrix.event.out }}"
           if [ "${{ matrix.event.fetch }}" = "true" ]; then
             # Fetched, nothing moved. Bump the check time.
-            python scripts/stamp_footer.py "$OUT" --checked "$(date +%H:%M)"
+            # TZ=Europe/Paris, not bare date: the runner is UTC, so a bare
+            # date stamps a time that reads as Paris and is 1-2h slow
+            # depending on the season. Same class of bug as the last-ticket
+            # time, different cause - this one is our own clock, not run.py's.
+            python scripts/stamp_footer.py "$OUT" --checked "$(TZ=Europe/Paris date +%H:%M)"
           else
             # Finished event: nothing was fetched, so the check stamp must not
             # move. Switch to the frozen label instead, keeping whatever freeze
@@ -274,7 +278,7 @@ jobs:
             # a fetch that never happened.
             prev=$(git show "HEAD:$OUT" 2>/dev/null \
                    | python scripts/stamp_footer.py - --read-frozen || true)
-            python scripts/stamp_footer.py "$OUT" --frozen "${prev:-$(date +%d/%m)}"
+            python scripts/stamp_footer.py "$OUT" --frozen "${prev:-$(TZ=Europe/Paris date +%d/%m)}"
           fi
           if git diff --quiet -- "$OUT"; then
             echo "stamped=false" >> "$GITHUB_OUTPUT"

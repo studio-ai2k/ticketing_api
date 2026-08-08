@@ -90,6 +90,7 @@ def probe_discovery():
 def probe_fields(events):
     print(f'\n{"=" * 68}\nX3b - key union across events\n{"=" * 68}')
     union, per_event, nulls, seen = set(), {}, defaultdict(int), 0
+    subcat_by_status = Counter()
     intersection = None
 
     for eid, sg_id in events:
@@ -122,6 +123,17 @@ def probe_fields(events):
             for k, v in t.items():
                 if v is None:
                     nulls[k] += 1
+            # Y2: deal_sub_category is 13.5% null here but product_name is 0%
+            # blank in the merged CSV, and the fetcher's fallback (deal_title
+            # via classify_ticket) leaves no trace in the 17 distinct values we
+            # actually ship. The standing explanation is that the null rows are
+            # dropped by the ticket_status filter before the fallback can fire.
+            # That is inference until this crosstab prints - a status the
+            # fetcher keeps, with a null sub-category, is the case that would
+            # disprove it.
+            status = str(t.get('ticket_status') or '(none)').strip().lower()
+            subcat_null = t.get('deal_sub_category') in (None, '')
+            subcat_by_status[(status, subcat_null)] += 1
         per_event[eid] = keys
         union |= keys
         intersection = keys if intersection is None else (intersection & keys)
@@ -142,6 +154,22 @@ def probe_fields(events):
               f'event here may be structurally alike.')
     if intersection and union - intersection:
         print(f'\n  keys NOT present on every event: {sorted(union - intersection)}')
+
+    print(f'\n  Y2 - deal_sub_category null, by ticket_status:')
+    kept = {'valid', 'resold'}   # SHOTGUN_VALID_STATUSES, what the fetcher keeps
+    leak = 0
+    for (status, is_null), n in sorted(subcat_by_status.items()):
+        flag = ''
+        if is_null and status in kept:
+            flag = '   <-- KEPT by the fetcher AND null: the fallback fires here'
+            leak += n
+        print(f'      {status:12} sub_category {"NULL" if is_null else "set ":4}  {n:>4}{flag}')
+    if leak:
+        print(f'\n  *** {leak} row(s) reach product_name via the deal_title fallback.')
+        print(f'      product_name is a mix of two concepts. Vagues groups on it.')
+    else:
+        print(f'\n  no kept row has a null sub-category - every null is a status')
+        print(f'      the fetcher drops, so the fallback never fires on shipped data.')
 
     print(f'\n  null rate per key (populated fields are the usable ones):')
     for k in sorted(union):

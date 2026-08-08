@@ -450,6 +450,19 @@ Why full fetches rather than incremental, at current volumes:
 - Abort-to-full-refetch is provably correct and has no mutation path that can
   corrupt a stored file. Incremental's savings are seconds.
 
+**Correction, 2026-08-08 — DICE incremental is possible after all.** This
+decision was taken with DICE recorded as full-fetch-only, and that premise was
+wrong. The field probe (run 31235118312) recovered the input-object fields the
+old introspection dump was missing, and `OrderWhereInput` carries
+**`purchasedAt`** alongside `eventId` and `id` — DICE orders *can* be filtered
+server-side by purchase date. Nothing has been built on it.
+
+**The decision stands, on cost rather than capability.** J3 removed most of the
+volume and the four live events are small; a DICE incremental would save
+seconds it is not worth spending complexity on. But the record should say we
+chose not to, not that we could not — the difference matters the next time
+somebody re-derives this from the handoff.
+
 ## Option not taken: correcting a modification in place
 
 If incremental is ever wired in, the expensive part is that a modification
@@ -1202,7 +1215,57 @@ Carried forward, not fixed. Each needs a decision or an input we do not have.
 
 ### O1 — the fee assumption and the 2% overshoot
 
-`gross_price` for Shotgun is computed as `(deal_price + deal_user_service_fee)
+**Read this first: the code and this document disagree about the formula, and
+have since the start.** The column spec at the top of this file says Shotgun
+`gross_price` is `(deal_price + deal_user_service_fee) / 100`, and its worked
+example says the sample ticket comes out at **97.87**. `fetch_csv.py`
+(`process_shotgun_ticket`) adds **both** fees:
+
+```python
+gross_price = round(
+    cents_to_units(raw.get('deal_price'))
+    + cents_to_units(raw.get('deal_service_fee'))        # <- not in the spec
+    + cents_to_units(raw.get('deal_user_service_fee')),
+    6,
+)
+```
+
+On that same sample ticket the code produces **107.37**, not 97.87. Measured
+over every Shotgun row we hold, the ratio is uniform and unambiguous
+**[measured]**:
+
+| event | paid Shotgun rows | gross / price |
+| --- | ---: | ---: |
+| bordeaux_2026 | 17,409 | 1.1302 |
+| bordeaux_oct_2026 | 7,732 | 1.1294 |
+| epk_2026 | 7,696 | 1.1303 |
+| geneve_2026 | 1,174 | 1.1302 |
+| paris_xxl_2026 | 21,405 | 1.1303 |
+| rennes_2026 | 1,369 | 1.1302 |
+
+13.03% = 10.0% (`deal_service_fee`) + 3.0% (`deal_user_service_fee`). The spec's
+formula would give 1.030. So this is not an ambiguity about which fee the buyer
+bears — **it is two documents making opposite assumptions, and nobody noticing
+for the whole life of the project.** Which one is right is still Leo's question;
+that they conflict is arithmetic.
+
+**This also corrects what was written here on 2026-08-08.** The note below
+argued that DICE's 5.33% buyer-borne fee against Shotgun's 3.0% meant a missing
+`deal_service_fee` would make our gross too *low*, so the overshoot pointed away
+from that hypothesis. That reasoning read the spec instead of the code. We are
+already adding the larger fee. If we ship 13.03% and land only ~2% high, the
+implied truth is nearer **11%** — which says the buyer bears most, but not all,
+of `deal_service_fee`, and points back at exactly the hypothesis the earlier
+note dismissed. VAT (`deal_vat_rate` 0.055) is the obvious candidate for the
+remainder and has not been tested.
+
+**So the first action on O1 is not a measurement of the sign — it is deciding
+which of the two formulas is correct.** The sign argument was built on a premise
+that does not hold.
+
+The original framing follows, for the record.
+
+`gross_price` for Shotgun is documented as `(deal_price + deal_user_service_fee)
 / 100`. That is a *choice*: the payload also carries `deal_service_fee`, an
 order of magnitude larger (9500 face → `deal_service_fee` 950, i.e. 10.0% of
 face; `deal_user_service_fee` 287, 3.0%), and nothing in the payload says which

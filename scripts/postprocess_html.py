@@ -39,7 +39,9 @@ dashboard that no longer remembers its login.
 
 import re
 import sys
+from datetime import date, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 # The footer markup and its matcher live in stamp_footer, because that script
 # has to find them in published HTML long after this one ran. Importing rather
@@ -1475,6 +1477,62 @@ OLD_FOOTER_RE = re.compile(
 )
 
 
+PARIS = ZoneInfo('Europe/Paris')
+UTC = ZoneInfo('UTC')
+
+# run.py:2048 renders the last ticket as last_ticket_dt.strftime('%d/%m · %H:%M')
+# straight off order_datetime, with no conversion. order_datetime is UTC - proved
+# from the DST offset across four campaigns in two seasons, all four on-sales at
+# 19:00 Paris:
+#
+#   paris_xxl_2026  stored 17:59  Dec  CET  +1  ->  18:59
+#   paris_xxl_2025  stored 18:01  Dec  CET  +1  ->  19:01
+#   epk_2026        stored 17:00  Apr  CEST +2  ->  19:00
+#   rennes_2026     stored 17:00  Jun  CEST +2  ->  19:00
+#
+# The stored values differ only by the seasonal offset, which no other
+# explanation produces. So the published footer time is 1h slow in winter and 2h
+# in summer - and being wrong by a DIFFERENT amount per season is why it never
+# looked absurd enough to notice.
+#
+# run.py is do-not-modify, but §7 already lifts this value out and re-emits it,
+# so the conversion goes here, on the way through.
+LAST_TICKET_RE = re.compile(r'^\s*(\d{2})/(\d{2})\s*·\s*(\d{2}):(\d{2})\s*$')
+
+
+def _to_paris(sold, today=None):
+    """
+    'DD/MM · HH:MM' in UTC -> the same format in Europe/Paris.
+
+    Returns the input unchanged if it does not parse - a footer with an
+    unexpected shape is the template having moved, which apply_footer's own
+    count assertion reports; silently mangling it here would be worse.
+
+    The string carries no year, and the year decides the offset, so it is
+    inferred: the most recent year in which that DD/MM has already happened.
+    Every last-ticket timestamp is by definition at or before the build, and the
+    dashboards are rebuilt daily, so the candidate is this year or last.
+    ZoneInfo does the offset, so the CET/CEST switch is real DST, not +1 or +2
+    picked by hand.
+    """
+    m = LAST_TICKET_RE.match(sold or '')
+    if not m:
+        return sold
+    dd, mm, hh, mi = (int(g) for g in m.groups())
+    today = today or datetime.now(PARIS).date()
+    for year in (today.year, today.year - 1):
+        try:
+            naive = datetime(year, mm, dd, hh, mi)
+        except ValueError:
+            continue  # 29/02 in a non-leap year
+        # The value being compared is UTC and `today` is Paris, which is the
+        # safe direction: Paris is ahead, so a UTC timestamp is never in the
+        # future against a Paris date. Only the leap-year skip can fall through.
+        if naive.date() <= today:
+            return naive.replace(tzinfo=UTC).astimezone(PARIS).strftime('%d/%m · %H:%M')
+    return sold
+
+
 def apply_footer(html):
     """
     Deploy 3 §7. Returns (html, problems, count).
@@ -1490,6 +1548,7 @@ def apply_footer(html):
 
     def _rebuild(m):
         holder, sold, checked, version = m.groups()
+        sold = _to_paris(sold)
         cls = 'pg-footer det-footer' if 'det-footer' in holder else 'pg-footer'
         return (
             f'<div class="{cls}">'

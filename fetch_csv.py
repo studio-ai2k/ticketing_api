@@ -1258,8 +1258,12 @@ def main(argv=None):
     log(f"Manual DICE: {manual_dice_path or '(none)'}")
 
     # ---- incremental resume state -------------------------------------
-    # Only Shotgun benefits: it is 20k+ tickets at ~0.8s/page, while a DICE
-    # event is 2-5k and completes in seconds. DICE stays a full fetch.
+    # Shotgun only, and the reason is cost, not capability. Shotgun is 20k+
+    # tickets at ~0.8s/page; a DICE event is 2-5k and completes in seconds, so
+    # there is nothing to save. DICE *can* be filtered server-side -
+    # OrderWhereInput carries purchasedAt alongside eventId and id (measured
+    # 2026-08-08, run 31235118312) - so a DICE incremental is buildable
+    # whenever the volume justifies it. It does not today.
     stored_shotgun = []
     resume_after = None
     resume_since = None
