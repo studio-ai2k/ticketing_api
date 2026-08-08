@@ -289,8 +289,17 @@ an artefact of reading price changes as boundaries. A Campagne phases axis can
 therefore carry these labels rather than "PHASE 1 / PHASE 2", and the two
 sources agree on what they are.
 
-Note the fifth: "Derniers tickets" has no phase number, which fits the
-`allocation=None` last tier the probe found (unlimited, no cap).
+**The general rule, worth stating so a future reader does not read it as a data
+gap:** a numbered phase implies a capped allocation, because the number *is* the
+position in a sequence of caps. An uncapped final tier has no boundary to number
+— there is nothing after it for the count to run up against. So "Derniers
+tickets" carrying no phase number is not missing metadata; it is the correct
+representation of `allocation=None`, which is exactly what the probe found on
+the last tier of every ladder.
+
+Corollary for anything deriving phases: **the last tier will never close.** A
+routine that expects every phase to have an end will either wait forever or
+invent one.
 
 ### P3 — `salesChannel` is `INTERNET`, and it is not an enum
 

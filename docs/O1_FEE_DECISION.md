@@ -188,11 +188,29 @@ fee is entirely buyer-borne, added on top. "Les commissions ... ne sont pas
 déduites" describes a subtraction that never happens, so a reader corrects for
 it mentally and lands lower than the truth.
 
-**2. "valeur faciale" and "prix affiché au client" are not the same number**,
-and the card sums the first. `run.py:1243` does `total_revenue += t['price']`,
-and `price` is TTC face — 45,57 on the worked tier. The price *displayed to the
-customer* is 49,00, which is `gross_price` and is not what the card shows. The
-parenthetical contradicts the clause it is explaining.
+**2. OPEN AMBIGUITY — "prix affiché au client" has two defensible readings and
+the data cannot choose.** I previously called this a second error. That was an
+over-claim; it is unresolved, not wrong.
+
+`run.py:1243` does `total_revenue += t['price']`, so the card sums the 45,57
+TTC face. Whether that matches "le prix affiché au client" depends on *where*
+the client sees a price:
+
+| reading | value | is the card right? |
+| --- | ---: | --- |
+| advertised on the event listing | 45,57 | **yes** — DICE shows the face and adds the booking fee as a separate line at checkout |
+| total at the payment step | 49,00 | **no** — that is `gross_price` |
+
+Both are ordinary meanings of *affiché*. Settling it needs someone to look at
+what DICE and Shotgun actually render at each step of the funnel — a Leo
+question, not a code question, and not answerable from any field we hold.
+
+**Keep it separate from problem 1.** The deduction error is established; this is
+not. Folding them into one rewrite would ship an unverified claim under cover of
+a verified one.
+
+**Whatever it resolves to, two artefacts change together:** this template string
+and the dashboard mock's "prix affiché à l'acheteur".
 
 **What is genuinely not deducted is VAT.** On `bordeaux_2026` that is
 **32 579,62** of 624 936,39, leaving 592 356,77 HT. The promoter remits it. A

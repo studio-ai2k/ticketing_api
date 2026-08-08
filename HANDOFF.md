@@ -1213,6 +1213,8 @@ Carried forward, not fixed. Each needs a decision or an input we do not have.
 | # | item | blocked on |
 | --- | --- | --- |
 | O1 | **Half closed 2026-08-08.** DICE is proved against a payout statement, to one ticket in 9,327. The spec/code conflict is now Shotgun-only: is 13,03% buyer-facing? See `docs/O1_FEE_DECISION.md` | **a SHOTGUN payout statement** — Leo has no access, so Episode or Sonora |
+| O10 | **Days are matched between editions by weekday name, not position** — three dashboards affected. Diagnosed, ruling given, mechanism pending. See DD4 below | a ruling on route 1 vs 2 |
+| O11 | **"prix affiché au client" is ambiguous** — advertised (45,57) or charged (49,00)? Card sums the first. `docs/O1_FEE_DECISION.md` §CC2 | Leo looking at both checkout funnels |
 | O9 | **The revenue disclaimer is wrong for DICE** and possibly right for Shotgun — a copy decision, raised not fixed. `docs/O1_FEE_DECISION.md` §CC2 | O1, then a copy call |
 | O2 | ~~a 2h DICE/Shotgun skew~~ **— measured 2026-08-08, and there is no cross-platform skew.** Both streams share a clock; that clock is UTC | a decision on displaying Paris local |
 | O7 | Shotgun `GET /events` exists (400, not 404) and nobody has called it | a decision — it may carry the capacity/phase metadata `/tickets` lacks |
@@ -1520,3 +1522,125 @@ Where the broken artefact no longer exists — because the fix shipped first —
 reconstruct it: revert the fix, run the check, restore. That is what
 `check_footer_tz.py` and `check_spec_example.py` did, and it is now a required
 step in `verify/CHECKLIST.md` rather than a habit.
+
+## DD4: days are matched between editions by WEEKDAY NAME — confirmed, and wider
+
+Diagnosed against `run.py` and `event_config.csv`, 2026-08-08. **Not yet fixed**
+— the ruling is "match by position, day 1 to day 1", but the mechanism is a real
+decision because `run.py` is do-not-modify. See "how to fix it" below.
+
+### The mechanism, confirmed
+
+```python
+day_name_map = {}
+if comparison_mode == 'days_since_launch' and event_config_prev:
+    ...                                    # position mapping, day 1 -> day 1
+mapped_dn = day_name_map.get(dn, dn)       # j_minus: the SAME French weekday
+```
+
+Position mapping only happens under `days_since_launch`. Measured over
+`event_config.csv`: `comparison_mode` is **`''` on 49 rows and `j_minus` on 4.
+Never `days_since_launch`.** So the map is always empty and every event matches
+on the French weekday string.
+
+**Correction to the reported cause.** The branch is not dead because
+`launch_date` is missing. `launch_date` **is** populated — `run.py:3948-3949`
+derives it from the first sale in the data and assigns it to both configs before
+the dashboard is generated. The `on_sale_date` column being empty is real but
+irrelevant. **The only thing keeping the branch dead is `comparison_mode`.**
+
+That distinction decides the fix. Setting `comparison_mode =
+'days_since_launch'` would enable the position mapping *and* switch
+`_prev_match_dsl` for the Suivi table, `filter_tickets_to_same_point_dsl` for
+the whole comparison, and the `prev_cutoff` computation at `run.py:1869`. That
+is a far larger behaviour change than the ruling asks for. **Do not fix it by
+flipping the mode.**
+
+### It is three sites, not one, with seven consumers
+
+`day_name_map` has exactly one consumer, `_get_prev_day_presence` (Par Jour).
+But the same guard, the same shape and the same bug appear twice more under a
+different name:
+
+| site | name | consumers |
+| --- | --- | --- |
+| `run.py:1921` | `day_name_map` | Par Jour presence |
+| `run.py:2881` | `prev_presence_key_map` | vélocité (2969, 3050), projections (3028) |
+| `run.py:3514` | `prev_presence_key_map` (redefined) | vélocité (3551), projections (3649, 3676), **day capacity (3704)** |
+
+All three test `comparison_mode == 'days_since_launch'` and all three fall back
+to the identity mapping. **A fix must hit all three.** Par Jour matched by
+position while Vélocité is still matched by name would be worse than both being
+wrong the same way — the page would disagree with itself and nothing would say
+so.
+
+### Which days actually lose their comparison
+
+| event | current days | reference days | unmatched |
+| --- | --- | --- | --- |
+| `epk_2026` | samedi, dimanche | vendredi, samedi (epk_2023) | **dimanche** |
+| `bordeaux_2026` | jeudi, vendredi, samedi | vendredi, samedi | **jeudi** |
+| `geneve_2026` | vendredi, samedi | **samedi** (one day) | **vendredi** |
+| `paris_xxl_2026`, `rennes_2026`, `bordeaux_oct_2026` | ven, sam | ven, sam | — |
+
+**Correction: `geneve_2026` loses one day, not both.** `geneve_2025` is a
+single-day event and that day is named `Samedi`, so geneve's samedi matches by
+name and only vendredi falls through. Three of six dashboards are affected, but
+the geneve damage is half what was reported.
+
+EPK is the clearest case of the second failure mode, which is worse than a zero:
+EPK 2023 ran Friday-Saturday, EPK 2026 runs Saturday-Sunday. Sunday has no
+reference at all, **and Saturday silently compares our opening day against their
+closing day** — a number that looks plausible and is meaningless.
+
+### How to fix it, given run.py is do-not-modify
+
+The three blocks are inline inside large functions, so they cannot be
+monkeypatched the way `_generate_suivi_v3` was. Two routes:
+
+1. **Re-key the reference data before run.py reads it.** All three sites end up
+   looking up a *current* day name in a *previous-year* structure —
+   `metrics_prev['day_presence'][dn]` and the per-ticket `presence_<dn>` keys.
+   Renaming the previous edition's day keys into the current edition's names, in
+   positional order, turns every name lookup into a position lookup at all three
+   sites at once, with no run.py change and no `comparison_mode` change.
+   Positional, single point of control, and it cannot desynchronise the three
+   sites because there is only one rename.
+2. **Ask Leo to lift do-not-modify for these three blocks.** Smaller diff,
+   clearer intent, but it forks a borrowed file.
+
+Route 1 is the recommendation. **Not implemented pending the ruling**, because
+it changes what every comparison on three dashboards means, and because the
+ordering key is the open question below.
+
+### Open: what is the ordering key
+
+`event_config.csv` has `day_number`, populated 1..N and consistent with
+`day_date` on every event checked. But `day_date` is the fact and `day_number`
+is an assertion about it. **Recommend ordering by `day_date`** and asserting
+`day_number` agrees — if they ever disagree, that is a config error worth
+failing on rather than silently preferring one.
+
+## DD5: the comparison anchor is consistent in run.py — the 1/2 Sept split is the weekday snap
+
+Audited every site that derives a previous-year anchor. **All ~20 use
+`event_config_prev['event_date_first']`** — Revenus, Vélocité, Présence,
+Projections and the Suivi header alike. No card derives its own. The one
+data-derived date (`run.py:2140`, `prev_dates[0]`) feeds a display label
+("première vente"), not a comparison.
+
+For `epk_2023` that anchor is **2023-09-01, Vendredi** — day 1 in the config, as
+expected.
+
+**But a 1 Sept / 2 Sept split is still explainable, and it is by design.**
+`_prev_match_dow` maps a current date to the previous edition by J-X *and then
+snaps to the same weekday*. epk_2026 is samedi/dimanche against epk_2023's
+vendredi 1 / samedi 2, so a current Saturday snaps onto **2 Sept**, while the
+J-X arithmetic alone would land on 1 Sept. The weekly grain does no snapping —
+it buckets on `(event_date_first - order_date) // 7`, anchored on 1 Sept.
+
+So the daily grain and everything else legitimately reference different dates,
+and the offset between them is the constant proved earlier in this document. If
+the mock shows some cards on 1 Sept and others on 2 Sept, that is reproducible
+from the grain each card uses — it is not evidence of inconsistent anchors, and
+re-anchoring the cards would break the daily comparison rather than fix it.
