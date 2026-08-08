@@ -784,6 +784,14 @@ Waiting on the revenue row layout (S1). Decisions already made:
   fourth that wraps `_generate_suivi_v3` to **observe** — capturing
   `cutoff_date`, `event_config`, `event_config_prev` from the arguments run.py
   itself passes. Nothing is re-derived and `run.py` stays byte-identical.
+
+  > **It is no longer only an observe-wrapper.** Since the Suivi window fix it
+  > also *clamps* `cutoff_date` on the way through (`_clamp_cutoff`). Everything
+  > else still passes untouched, and `run.py` is still byte-identical, but if
+  > you are reading "observe-wrapper" anywhere in this document, read it as
+  > **observe-and-clamp-one-argument**. Adding a second mutation is a decision,
+  > not a continuation — the file is one clamp away from being a fork of
+  > run.py's behaviour maintained at a distance.
 - **`data-cur` positionally, never by parsing.** The rendered dates carry no
   year (`Jeu 15 Déc`) and the daily table spans 232 rows across a year
   boundary, so parsing is ambiguous, not merely fragile. The past rows are a
@@ -1404,7 +1412,15 @@ reversible, and the band is deterministic — but it rewrites published daily
 numbers and moves rows between rows of the Suivi table, including across the
 comparison. That is a decision, not a fix.
 
-## The Suivi window anchors on the last SALE, not on the event
+## Trigger: one sale on the far side of a gap (the Suivi window bug)
+
+**Framed by the trigger, not the symptom, deliberately.** This was first
+reported as a finished-event bug, and a fix built on that frame would have
+branched on whether the event had passed — and missed the actual case. A
+**live** event with a single backdated correction, a late-entered door sale,
+or a resale breaks in exactly the same way, and nobody would be looking. The
+wrong frame is what makes a bug recur somewhere else.
+
 
 `cutoff_velocity` is `max(order_date) - 1` over all tickets
 (`load_ticket_data`), and `_generate_suivi_v3` shows the last `VISIBLE_DAYS = 7`
@@ -1420,10 +1436,11 @@ empty.
 
 **Three things about this that are easy to get wrong:**
 
-1. **The trigger is not "the event is finished".** `bordeaux_2026` is finished
-   too and was never affected — its last sale falls on its own event days. The
-   trigger is a sale on the far side of a gap. A live event with a stray
-   backdated correction would hit it just the same.
+1. **The trigger is a sale on the far side of a gap — nothing else.**
+   `bordeaux_2026` is finished and was never affected, because its last sale
+   falls on its own event days. Being finished is neither necessary nor
+   sufficient. What matters is one sale separated from the rest by more than
+   `VISIBLE_DAYS`, and that can happen to a live event tomorrow.
 2. **The rows are not "generated past the last sale".** They stop at a real
    sale. The dead space is the *gap*, and one ticket beyond it is enough to
    stretch the window across it.
@@ -1448,18 +1465,7 @@ for and is documented at the top of it.
 `cutoff_cumulative`, untouched here, so the 7 tickets still render — the row now
 follows 15 March directly instead of following fourteen blank ones.
 
-### The check for it passed on the broken page first
-
-`verify/check_suivi_window.py` originally summed the last seven rows *including*
-"Aujourd'hui". That row carried the same 7 stragglers, so six zeros plus a seven
-summed to seven, and the check reported the broken page as fine.
-
-This is trap #5's family — verify the thing a reader sees, not a superset of it
-— but it is worth its own note because of *when* it happened: in a check written
-specifically to catch this bug, by someone who had just read the row-generation
-code. Knowing exactly what is wrong is not protection against writing a check
-that cannot see it. **Run a new check against the KNOWN-BROKEN artefact before
-trusting it.** If it does not fail there, it does not work.
+### The check written for it passed on it — see trap #10
 
 ### AA3/AA4, checked and not bugs
 
@@ -1477,3 +1483,39 @@ trusting it.** If it does not fail there, it does not work.
 - The `Voir les 0 jour restant` buttons are real in the markup but carry
   `style="display:none"`, set by `SUIVI_BTN_HIDE` when the count is 0. Not
   visible to a reader.
+
+## Trap #10: a check written for a known bug, which passed on that bug
+
+`verify/check_suivi_window.py` was written for one purpose: catch the Suivi
+window showing seven empty rows on `paris_xxl_2026`. Its first version summed
+the last seven rows of the daily table. It reported the broken page as **fine**.
+
+The reason is that run.py appends its "Aujourd'hui" row *after* the
+`VISIBLE_DAYS` slice, and drives it from `cutoff_cumulative`. On paris_xxl that
+row carried the very 7 straggler tickets that caused the bug. Six zeros plus a
+seven is seven, and seven is not zero, so the assertion held.
+
+**This one does not have the usual excuse.** Traps #1–#8 are all explicable as
+not knowing enough — the wrong artefact was checked, or a branch was dead, or a
+default did not fire, and in each case the author did not yet understand the
+system well enough to see it. This check was written *minutes after* reading the
+row-generation code that causes the bug, by someone who could state the cause in
+one sentence and did. Understanding the bug completely is not protection against
+writing a check that cannot see it, because the two are different skills: one is
+about the system, the other is about the check's own blind spots.
+
+**The rule, and it is a step rather than a lesson:**
+
+> Run a new check against the KNOWN-BROKEN artefact before trusting it. If it
+> does not fail there, it does not work.
+
+It is cheap in a way the earlier traps' remedies were not. There is no need to
+reason about what the check might miss — the broken artefact already exists at
+the moment the check is written, because that is why the check is being written.
+Running it there costs one command and converts "I believe this check works"
+into "this check has caught the thing once".
+
+Where the broken artefact no longer exists — because the fix shipped first —
+reconstruct it: revert the fix, run the check, restore. That is what
+`check_footer_tz.py` and `check_spec_example.py` did, and it is now a required
+step in `verify/CHECKLIST.md` rather than a habit.

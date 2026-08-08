@@ -78,8 +78,9 @@ def main(argv):
         # The "Aujourd'hui" row is NOT part of it. run.py appends that row after
         # the VISIBLE_DAYS slice and drives it from `cutoff_cumulative`, so on
         # paris_xxl it carried the 7 straggler tickets and made a window of six
-        # zero rows sum to 7. This check passed on the broken page until that
-        # row was excluded - the same shape of mistake as trap #5.
+        # zero rows sum to 7. This check PASSED ON THE BROKEN PAGE until that
+        # row was excluded. That is trap #10, and this line is the whole fix -
+        # do not simplify it away.
         dated = [r for r in rows if 'ujourd' not in r[0]]
         window = dated[-VISIBLE:]
         total = 0

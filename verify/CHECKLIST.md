@@ -6,6 +6,49 @@ after the change described, not on every build.
 
     bash verify/assert_redesign.sh .          # always, all six dashboards
 
+---
+
+## BEFORE adding any check to this file — make it fail
+
+**Every new guard ships with evidence that it failed on the artefact it was
+written for.** Not "I reasoned that it would fail". Ran it, saw it fail, saw the
+message name the right thing.
+
+    1. write the check
+    2. run it against the BROKEN artefact       <- it MUST exit non-zero
+    3. fix the bug (or restore the fix)
+    4. run it again                             <- it MUST exit zero
+    5. record steps 2 and 4 in the commit message
+
+If the fix already shipped and the broken artefact is gone, reconstruct it:
+revert the fix, run the check, restore. If a check has several independent
+claims, break each one separately — a check can be right about three things and
+blind on the fourth, and only the fourth matters.
+
+**This is a step, not advice, because it has already caught a check that its own
+author was certain about.** `check_suivi_window.py` was written specifically to
+catch seven empty Suivi rows on parisxxl, minutes after reading the code that
+caused them — and its first version passed on that page, because run.py's
+"Aujourd'hui" row is appended after the visible slice and carried the very
+tickets that caused the bug. Trap #10 in `HANDOFF.md`.
+
+Understanding a bug completely is not protection against writing a check that
+cannot see it. Those are different skills. This step is the cheap one, and it is
+cheap precisely when it matters: the broken artefact exists at the moment you
+write the check, because that is why you are writing it.
+
+Checks in this file that have passed step 2, with the failure modes exercised:
+
+| check | drift modes confirmed failing |
+| --- | ---: |
+| `check_selector.js` | 2 |
+| `check_offset.py` | 4 |
+| `check_footer_tz.py` | 3 |
+| `check_spec_example.py` | 4 |
+| `check_suivi_window.py` | 1 (and its own first version failed step 2) |
+
+---
+
 ## After any change to the Suivi renderer
 
     NODE_PATH=<dir with playwright> node verify/check_selector.js epk.html
