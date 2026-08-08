@@ -51,6 +51,10 @@ orders is, even though the dump shows them taking no arguments.
 
 ### X3 — Shotgun endpoint enumeration: not discoverable from here
 
+**This section is what we knew before the probe ran; the answers are in
+"Probe results" immediately below. Kept because the reasoning about what each
+outcome would license is what makes the result readable.**
+
 The question is whether `/tickets` is the whole API or the only door we happen
 to have a key to. Two ways to settle it, and the honest answer on both is
 **no, not from this container.**
@@ -96,6 +100,224 @@ incomplete and needs rerunning before anything is built on it.
 the table below turns on a field we have not seen; the risk is entirely of
 omission — a Campagne metric we could have built and did not know was there.
 
+---
+
+## Probe results — run 31235118312, 2026-08-08
+
+Both jobs ran green. Everything below is **[probe]** promoted to **[measured]**,
+and four claims in this document changed as a result. Marked **⚠** where a
+probe contradicted what was written here before.
+
+### X3a — Shotgun *does* have a second endpoint
+
+Nine paths, and the interesting thing is that they did **not** all answer the
+same way:
+
+| path | status |
+| --- | --- |
+| `/events` | **400** |
+| `/` | 429 |
+| `/openapi.json`, `/swagger.json`, `/.well-known/openapi.json`, `/docs`, `/v1/`, `/orders`, `/deals` | 404 |
+
+**⚠ `GET /events` returns 400, not 404.** A 400 is a route that exists and
+rejected the request — almost certainly for the same missing
+`token`/`organizer_id` that `/tickets` requires. Seven sibling paths return 404
+from the same host in the same run, so this is not the host answering 400 to
+everything. **`/tickets` is not the whole API.** Nothing was fetched from
+`/events` — the probe sends no credentials to discovery paths — so what it
+returns is unknown, but an event-level endpoint would plausibly carry capacity,
+tier and phase metadata that the per-ticket payload does not, which is exactly
+the gap Q1 describes on the Shotgun side.
+
+The 429 on `/` is not evidence of anything; it is a rate limit, and the probe
+made ten requests in a few seconds.
+
+**No index, spec or documentation is served.** So the endpoint list stays
+guesswork — but it is now guesswork with one confirmed hit.
+
+### X3b — 44 is the shape, across 600 tickets
+
+First page of all six active events, both organizer accounts:
+
+```
+paris_xxl_2026 / bordeaux_2026 / epk_2026 /
+bordeaux_oct_2026 / geneve_2026 / rennes_2026 …… 100 tickets, 44 keys each
+tickets inspected  600
+UNION              44
+INTERSECTION       44
+```
+
+Union equals intersection equals 44. **No event has a key another lacks, and
+nothing appears beyond the sampled 44.** That is much stronger than one ticket
+from one event — though still not proof, since none of our six is seated or
+tabled, which is the case `ticket_seating` hints at. Combined with X3a it now
+reads: *the ticket payload is fixed at 44; whatever else Shotgun knows lives at
+another endpoint, not in a conditional field here.*
+
+Five keys are 100% null across all 600: `ticket_seating`, `ticket_scanned_at`,
+`ticket_canceled_at`, `event_canceled_at`, `contact_company_name`. Documented,
+not available.
+
+**One number that matters for the Campagne page:** `deal_sub_category` is
+**13.5% null**, and it is the source of `product_name`. Any Shotgun
+product-level breakdown silently drops an eighth of its rows unless it falls
+back to `deal_title`.
+
+### P1 / Q1 — ⚠ phases are allocation-driven, and `PriceTier.time` is not the boundary
+
+`PriceTierTypes` has exactly two values: **`allocation`** and **`time`**. Every
+tiered ticket type on `rennes_2026` is `priceTierType='allocation'`, and
+`PriceTier.time` is `None` on all twelve tiers. So `time` is populated only for
+time-scheduled ladders, which we do not use — **there is no phase boundary
+datetime to read.** Q1 below said `time` was "probably when the tier
+activates"; that is right about the field and wrong about its usefulness to us.
+
+What we get instead is better. Allocations reproduce **exactly** in our own
+committed CSV **[measured]**:
+
+| ticket type | tier | DICE allocation | rows at that price | window |
+| --- | --- | ---: | ---: | --- |
+| PASS VENDREDI | PHASE 1 | 100 | **100** | 17:00:18 → 17:55:00 |
+| PASS VENDREDI | PHASE 2 | 1000 | 557 | 17:55:00 → … |
+| PASS SAMEDI | PHASE 1 | 100 | **100** | 17:00:17 → 20:57:08 |
+| PASS SAMEDI | PHASE 2 | 1000 | 692 | 17:03:14 → … |
+| PASS 2 JOURS | PHASE 1 | 300 | **300** | 17:00:14 → 13 Jul |
+| PASS 2 JOURS | PHASE 2 | 1000 | 496 | 18:05:31 → … |
+
+Three exact hits on three allocations. **Phase boundaries are computable
+without any new field** — cut the per-ticket-type sales sequence at the
+cumulative allocation.
+
+Two cautions, both real:
+
+1. **Ladders are per ticket type, and they do not run in step.** VENDREDI
+   handed over cleanly at 17:55:00. SAMEDI's PHASE 2 opened at 17:03 while
+   PHASE 1 still had four hours of sales left. Aggregate the six ladders into
+   one "phase" axis and you get overlapping phases that never existed.
+2. **PASS 2 JOURS PHASE 1 sold from 2 June to 13 July, alongside PHASE 2 from
+   the first night.** A six-week overlap is far too long for a checkout hold.
+   The likely explanation is returns — 28 on this event — freeing a PHASE 1
+   slot that the next buyer takes at the old price. That the count is *exactly*
+   300 rather than more suggests returned tickets are already netted out of
+   `viewer.orders`, which would be good news, but it is inference: **the check
+   is to reconcile `viewer.orders.totalCount` against the same event's
+   returns.**
+
+Also worth recording: for a tiered ticket type, `faceValue`, `price` and
+`totalTicketAllocationQty` on the **type** are all `0`. The real numbers live on
+the tiers. Anything reading the type-level price for a tiered product reads
+zero.
+
+### P2 / Q4 — ⚠ DICE's fee arithmetic is exact, which moves O1 onto Shotgun
+
+One real ticket, in cents:
+
+```
+fullPrice 8877   total 9350   commission 0   diceCommission 473
+fees  [{BOOKING, dice 200, promoter 0}, {PROCESSING, dice 273, promoter 0}]
+```
+
+Two identities hold exactly: **`Σ fees.dice = diceCommission`** (200 + 273 =
+473) and **`fullPrice + diceCommission = total`** (8877 + 473 = 9350). Every
+`promoter` is 0, and `commission` is 0.
+
+`TicketFeeCategory` has 18 values — `ADDITIONAL_PROMOTER`, `BOOKING`,
+`BOX_OFFICE`, `CHARITY_DONATION`, `DEPOSIT`, `EXTRA_CHARGE`, `FACILITY`,
+`FOOD_AND_BEVERAGE`, `MEET_AND_GREET`, `PAID_WAITING_LIST`, `FULFILMENT`,
+`PRESALE`, `PROCESSING`, `SALES_TAX`, `TIER_DIFF`, `VENDOR`, `VENUE`,
+`VENUE_LEVY` — of which only `BOOKING` and `PROCESSING` occur on our event
+(50 of each across the sample).
+
+**This closes half of Q4 and narrows O1.** The DICE side of `gross_price`
+(`total / 100`) is now *proven* correct rather than assumed — the decomposition
+is complete and adds up. Whatever the ~2% is, it is Shotgun-side. That is a
+smaller search than "one of two platforms".
+
+It also weakens my own earlier suspicion, in the direction nobody expected:
+DICE's buyer-borne fee here is **5.33%** of face, while Shotgun's
+`deal_user_service_fee` is **3.0%**. If Shotgun's buyer-borne fee were really
+the larger `deal_service_fee` (10.0%), our Shotgun gross would be too *low*.
+Which way the 2% runs therefore discriminates between the two hypotheses, and
+that measurement should be step one on O1 — before anyone touches the formula.
+
+### P3 — `salesChannel` is `INTERNET`, and it is not an enum
+
+All 20 sampled orders: `{'INTERNET': 20}`. There is **no `SalesChannel` enum in
+the schema** — the field is a plain `String`, so the value set is open and
+cannot be enumerated. `INTERNET` is the only value we have ever seen. Fine as a
+parity partner for `deal_channel`, but do not build a fixed set of channel
+buckets from it.
+
+### P4 / Q3 — the mapping is confirmed on both sides now
+
+```
+announceDatetime    2026-05-25T11:00:00Z
+onSaleDatetime      2026-06-02T17:00:00Z   ← on sale
+first DICE sale     2026-06-02 17:00:14      +14s   [measured]
+first Shotgun sale  2026-06-02 17:00:25      +25s   [measured]
+offSaleDatetime     2026-11-08T02:00:00Z
+```
+
+`event_launched_at` ↔ `onSaleDatetime` and `event_published_at` ↔
+`announceDatetime` are now measured on both sides, not inferred from one.
+
+**⚠ And this bears on O2, the suspected 2h DICE/Shotgun skew.** DICE's
+`onSaleDatetime` is 17:00:00**Z**, and *both* platforms' first stored sale lands
+within 25 seconds of it. An hour-of-day histogram over all 3,614 rows agrees:
+both peak at hour 17 and trough at 01–06. **There is no cross-platform skew in
+the stored data — the two streams share a clock.** What is true is that the
+shared clock is UTC, so any hour-of-day reading on the dashboard is 2h early in
+summer, for *both* platforms equally. That is a display/localisation bug, not a
+parity break, and materially smaller than O2 currently claims.
+
+### P5 / Q5 — readable, and 15%
+
+`Fan { optInPartners }` is readable by the Collaborateur token. Tally over 20
+orders: **3 true, 17 false**. The query selected `optInPartners` alone, in its
+own query — no other `Fan` field was requested, and only the tally reached the
+log. Q5 is therefore a genuine two-platform metric, subject to the caveat below
+that the two consents are not the same consent.
+
+### X2 — returns and transfers are real, and not small
+
+| collection | totalCount on `rennes_2026` |
+| --- | ---: |
+| `viewer.returns` | **28** |
+| `viewer.ticketTransfers` | **107** |
+| `viewer.orders` | 1,634 |
+
+`Return.reason` is a free string with observed values `accident` (9), `other`
+(6), `wrong_tickets` (4), `event_rescheduled` (1). Three returns are timestamped
+17:02:36 — **two and a half minutes after on-sale** — which is what a
+launch-night misclick looks like.
+
+`WhereInput` shapes, from the introspection the old dump was missing:
+
+```
+OrderWhereInput            [eventId, id, purchasedAt]
+ReturnWhereInput           [eventId, id, returnedAt]
+TicketTransferWhereInput   [eventId, id, transferredAt]
+```
+
+All three are event-scopeable, as predicted. **`OrderWhereInput.purchasedAt` is
+an unexpected bonus:** DICE orders can be filtered server-side by purchase date,
+which is the missing half of incremental fetching on the DICE side. Nothing has
+been built on it — noting it where it will be found.
+
+`api_output/dice_schema_full.json` (49 KB) now carries enum values, input fields
+and field arguments, retiring the whole "the dump does not say" class. It is an
+Actions artifact on run 31235118312, not committed.
+
+### Still open after the probe
+
+- **P6 / O1** — which Shotgun fee the buyer bears. Unchanged: not in the API.
+  Now half-narrowed, since the DICE side is proven.
+- **What `GET /events` returns.** Needs an authenticated call — a decision to
+  make, not a probe to bolt on.
+- **Whether `viewer.orders` excludes returned tickets.** Inference only.
+
+---
+
 ## The table
 
 FETCHED = in the 11-column merged CSV today. DROPPED = we receive it and throw
@@ -103,7 +325,7 @@ it away. NEVER-REQUESTED = available but our query does not ask for it.
 
 | concept | Shotgun field | DICE field | status | parity | notes |
 | --- | --- | --- | --- | --- | --- |
-| purchase time | `ordered_at` **[sample]** | `Order.purchasedAt` **[schema]** | FETCHED both | both | Shotgun to the microsecond, DICE to the second. Shotgun naive Paris, DICE UTC — the 2h skew is a known open item |
+| purchase time | `ordered_at` **[sample]** | `Order.purchasedAt` **[schema]** | FETCHED both | both | Shotgun to the microsecond, DICE to the second. both stored on the same clock, and it is UTC — see P4 in the probe results; there is no cross-platform skew, but hour-of-day reads 2h early for both |
 | ticket identity | `ticket_id` | `Ticket.id` | FETCHED (Shotgun only, for the cursor) | both | |
 | order identity | `order_id` | `Order.id` | DROPPED / NEVER-REQUESTED | both | would give basket size; DICE also has `Order.quantity` |
 | face value | `deal_price` (cents) | `Ticket.fullPrice` (cents) | FETCHED both | both | |
@@ -243,6 +465,12 @@ plus a per-ticket link to its tier. That is strictly more than Shotgun.
 It is probably when the tier activates, but "probably" is how the `.ac-t`
 baseline happened. **[probe]**
 
+**Answered — and the answer changes the verdict below.** `PriceTierTypes` is
+`{allocation, time}`; all our ladders are `allocation`, so `time` is null
+everywhere and there is no boundary datetime to fetch. The boundaries are
+instead *derivable*, and the allocations reproduce exactly in our own data. See
+P1 in the probe results — including the two ways a naive phase axis goes wrong.
+
 **Verdict:** worth widening the fetch, and DICE is where the value is. Two
 fields on the existing DICE query (`priceTier { name price allocation time }`)
 and one on Shotgun (`deal_title`) would replace the product-name-suffix
@@ -262,7 +490,9 @@ answer different questions.
 **You are right to be suspicious.** Treat `deal_channel` ↔ `salesChannel` as
 the parity pair, and `utm_*` as Shotgun-only. One honest column.
 
-`salesChannel`'s actual value set is unknown **[probe]**.
+`salesChannel`'s actual value set is **`INTERNET` on all 20 sampled orders, and
+the field is a plain `String` with no enum** — so the set is open and cannot be
+enumerated. See P3.
 
 **Coverage makes this worse than it looks — see the warning below.**
 
@@ -283,9 +513,9 @@ Mapping: `event_launched_at` ↔ `Event.onSaleDatetime`;
 `event_published_at` ↔ `Event.announceDatetime`; `event_created_at` has no DICE
 equivalent and you do not want it.
 
-The DICE side of that mapping is by name and type only — no value observed
-**[probe]** — but the Shotgun half is now nailed down, and it is the half that
-carries the on-sale anchor for 5 of 6 live events.
+**The DICE side is now measured too** — `onSaleDatetime` 2026-06-02T17:00:00Z
+against a first DICE sale 14 seconds later, on `rennes_2026`. Both halves of the
+mapping are confirmed against real values. See P4.
 
 ### Q4 — Fees. They do **not** decompose the same way, and one side is incomplete.
 
@@ -306,6 +536,9 @@ Two problems for a comparable net-to-producer:
    the handoff since the start**. Those are probably the same bug.
 2. **`TicketFeeCategory`'s enum values are missing from the dump.** Without
    them you cannot know which categories are promoter-borne. **[probe]**
+   — **now recovered: 18 values, of which only `BOOKING` and `PROCESSING` occur
+   on our events, both wholly DICE-borne. The DICE decomposition is exact and
+   complete. See P2.**
 
 **Verdict: do not drop the disclaimer yet.** A comparable net is *plausible* —
 DICE clearly supports it, and Shotgun probably does — but it currently rests on
@@ -324,8 +557,8 @@ channel-means-two-things error you flagged, in a field where getting it wrong
 has consent implications.
 
 **On PII:** GraphQL selects, so `Fan { optInPartners }` returns that boolean
-and nothing else — no email, no dob, no name. Structurally safe. Whether the
-Collaborateur token may read `Fan` at all is **[probe]**.
+and nothing else — no email, no dob, no name. Structurally safe. **The token can
+read it** — 3 true / 17 false over 20 orders on `rennes_2026`. See P5.
 
 Aggregate at fetch time to a single rate per event, exactly as you say.
 
@@ -410,31 +643,29 @@ six-event one — worth knowing before it is specced as a headline card.
 
 ---
 
-## What needs a live probe
+## What needed a live probe — status
 
-None of these are answerable from the dumps. All are additive to queries we
-already make; none touch PII.
+All but one ran on 2026-08-08, run 31235118312. Answers are in "Probe results"
+near the top of this document.
 
-| # | question | probe |
+| # | question | status |
 | --- | --- | --- |
-| P1 | What does `PriceTier.time` mean, and are tiers populated for our events? | `probe-dice-event.yml`, add `ticketTypes { name priceTiers { name price allocation time } }` |
-| P2 | `TicketFeeCategory` enum values, and a real `fees` array | `probe-dice-event.yml`, add `tickets { fees { category dice promoter } commission diceCommission }` on one order |
-| P3 | `Order.salesChannel` value set | same probe, add `salesChannel` |
-| P4 | `Event.onSaleDatetime` / `announceDatetime` actual values | same probe, add both — settles the Q3 mapping |
-| P5 | May the Collaborateur token read `Fan { optInPartners }`? | same probe; if it errors, Q5 is Shotgun-only |
-| P6 | Is `deal_service_fee` promoter-borne or buyer-borne? | **not a probe** — Shotgun's REST payload has no more to give. Needs Shotgun's docs or a reconciliation against a payout statement |
-| X2 | Do `viewer.returns` / `viewer.ticketTransfers` return anything, and what does a `Return.reason` look like? | same probe run — `scripts/probe_dice_fields.py` |
-| X1 | The three introspection dimensions the dump is missing (enum values, input fields, field args) | same probe, `--introspect`; writes `api_output/dice_schema_full.json` |
-| X3a | Does Shotgun serve any index, spec or second endpoint? | `scripts/probe_shotgun_fields.py` — **must run in Actions**, the host is blocked from the dev container |
-| X3b | Is 44 the ceiling on a ticket? | same script — key union/intersection + null rates across all six active events |
+| P1 | What does `PriceTier.time` mean, and are tiers populated for our events? | **answered** — `time` is null; our ladders are allocation-typed |
+| P2 | `TicketFeeCategory` enum values, and a real `fees` array | **answered** — 18 values; `BOOKING` + `PROCESSING`; arithmetic exact |
+| P3 | `Order.salesChannel` value set | **answered** — `INTERNET`; a `String`, not an enum, so the set is open |
+| P4 | `Event.onSaleDatetime` / `announceDatetime` actual values | **answered** — Q3 mapping now measured on both sides |
+| P5 | May the Collaborateur token read `Fan { optInPartners }`? | **answered** — yes; 3/20 true |
+| P6 | Is `deal_service_fee` promoter-borne or buyer-borne? | **still open** — not a probe. Needs Shotgun's docs or a payout statement. Tracked as O1 in `HANDOFF.md` |
+| X1 | The three introspection dimensions the dump is missing | **answered** — `api_output/dice_schema_full.json`, 49 KB, run artifact |
+| X2 | Do `viewer.returns` / `viewer.ticketTransfers` return anything? | **answered** — 28 and 107 on `rennes_2026` |
+| X3a | Does Shotgun serve any index, spec or second endpoint? | **answered, and it found something** — no index, but `GET /events` returns 400 where seven siblings return 404 |
+| X3b | Is 44 the ceiling on a ticket? | **answered** — union = intersection = 44 across 600 tickets, 6 events |
 
-P1–P5, X1 and X2 are one DICE probe run against one event. X3a/X3b are a
-separate Shotgun job in the same workflow, read-only, one page per event. P6 is
-the one that matters most for Q4 and cannot be answered from either API.
+Reproduce with `.github/workflows/probe-platform-fields.yml`
+(`workflow_dispatch`, jobs `probe` and `shotgun`). Read-only; one page per
+event; no value from a personal field ever reaches the log.
 
-Both live in `.github/workflows/probe-platform-fields.yml`
-(`workflow_dispatch`, jobs `probe` and `shotgun`).
-
-**Recommendation:** authorise the probe run on `rennes_2026` (live,
-DICE-majority, 2,245 DICE tickets). P6 needs Leo and a payout statement, and it
-closes the 2% item as a side effect.
+**What is left.** P6 needs Leo and a payout statement. Beyond it, the probe
+opened two new questions worth a decision rather than a script: what `GET
+/events` actually returns, and whether `viewer.orders` already nets out the 28
+returns.

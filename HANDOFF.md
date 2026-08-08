@@ -1192,7 +1192,9 @@ Carried forward, not fixed. Each needs a decision or an input we do not have.
 | # | item | blocked on |
 | --- | --- | --- |
 | O1 | **`deal_service_fee` and the ~2% gross overshoot are probably one bug** — see below | Shotgun docs or a payout statement |
-| O2 | DICE timestamps are UTC, Shotgun's are Europe/Paris — a 2h skew across platforms in every dated series | a decision on which to normalise to |
+| O2 | ~~a 2h DICE/Shotgun skew~~ **— measured 2026-08-08, and there is no cross-platform skew.** Both streams share a clock; that clock is UTC | a decision on displaying Paris local |
+| O7 | Shotgun `GET /events` exists (400, not 404) and nobody has called it | a decision — it may carry the capacity/phase metadata `/tickets` lacks |
+| O8 | Whether DICE `viewer.orders` already nets out returns (28 on `rennes_2026`) | a reconciliation |
 | O3 | `dice_url` form is wrong on the platform cards | Leo |
 | O4 | `geneve_2026 dice_mio_id` deliberately not added — data-loss risk | Leo (A6) |
 | O5 | General user-facing launch-vs-event anchor toggle | not specced |
@@ -1218,6 +1220,17 @@ answerable from the API — see P6 in `docs/PLATFORM_FIELD_INVENTORY.md`. It nee
 either Shotgun's own documentation of the two fields or one reconciliation
 against a real payout statement, and one such statement settles both halves at
 once.
+
+**Narrowed on 2026-08-08 by the field probe, in two ways.** First, DICE's
+decomposition is now proven exact — `fullPrice + Σ fees.dice = total`, to the
+cent, with every `promoter` share zero — so the DICE half of `gross_price` is
+right and the 2% is Shotgun-side. Second, and against the hypothesis above:
+DICE's buyer-borne fee runs at 5.33% of face where Shotgun's
+`deal_user_service_fee` is 3.0%. If the buyer really bore the larger
+`deal_service_fee` (10.0%), our Shotgun gross would be too *low*, not too high.
+**So the sign of the 2% discriminates between the two explanations, and
+measuring it is step one** — before anyone reasons further about which fee is
+whose.
 
 **Do not "fix" this by changing the formula on a guess.** `gross_price` feeds
 every revenue figure and every comparison on the dashboard; a wrong correction
