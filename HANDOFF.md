@@ -1794,3 +1794,56 @@ object flows through it.**
 `samedi` is overwritten by `vendredi`'s value before its own is read. Build a
 fresh dict; never rename in place. Same family as the `re.sub` backslash bug —
 an operation that consumes the thing it is also producing into.
+
+## The failures that survive review are the ones that WORK
+
+Traps #10, #11 and #12 are the same fact seen from three sides, and the fact is
+worth stating on its own:
+
+| # | what it was | it survived because |
+| --- | --- | --- |
+| #10 | a **check** written for a known bug | it passed |
+| #11 | a **fixture** in the acceptance criteria | it rendered |
+| #12 | a **guard** against a division by zero | it prevented the crash |
+
+None of them failed. Each did the thing it was written to do — and each did it
+at something other than the thing that mattered. A check that errors, a fixture
+that throws, a guard that lets the exception through: all three would have been
+found on the first run.
+
+**Review looks for things that are broken. These are not broken.** They pass,
+render and return. So the question review has to ask is not "does this work?"
+but **"if this were wrong, what would look different?"** — and when the honest
+answer is *nothing*, that is the finding.
+
+Practically: for any check, fixture or guard, name the artefact it would fail
+on and go run it there (`verify/CHECKLIST.md`'s standing step). For a guard
+specifically, ask what its fallback *means* — a fallback that renders as an
+ordinary value is trap #12 waiting.
+
+## The redesign replaces the body; the passes patch regions. That is a real gap.
+
+Every deploy so far has patched REGIONS of run.py's markup and asserted the
+surrounding structure was unchanged. The redesign replaces the entire page body,
+so "assert the surroundings" has no referent. Three consequences found by
+inspection, recorded before the payload work starts:
+
+1. **`apply_redesign` swaps the single `<style>` block wholesale.** There is no
+   inline-style rewriter — `CLASS_RENAMES` rewrites three `class=` attributes and
+   nothing touches `style=`. The real collision is the `<style>` block itself:
+   the redesign needs its CSS in the same one place `apply_redesign` overwrites.
+   Ordering is the whole answer, and it must be decided, not discovered.
+2. **The `.sw-*` dropdown JS is document-delegated, not nav-scoped** — the
+   handler is `document.addEventListener('click', …)` finding triggers via
+   `e.target.closest('[data-sw-trigger]')`, and `closeAll()` is
+   `document.querySelectorAll('.sw-wrap.open')`. Page content gets it free.
+   **But the mock ships its own copy of that JS**, and two identical
+   document-level handlers do not merely duplicate work: the first opens the
+   wrap, the second then sees `wasOpen === true` and closes it. `stopPropagation`
+   does not stop a sibling listener on the same element. **The dropdown would
+   never open.** Inject the mock's body JS wholesale and this ships.
+3. **`refday` is never null anywhere in the mock**, so §5.6's "a reference with
+   fewer days must degrade honestly" has never actually been rendered. Bordeaux's
+   Jeudi is the first null, and the quarantined fixture avoided the case by
+   inventing `jeudi ref 1640`. The one path the spec singles out as needing care
+   is the one with no coverage at all.
