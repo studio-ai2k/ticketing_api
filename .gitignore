@@ -21,3 +21,8 @@ data/*
 # Build sidecar: written by build_dashboard.py, consumed by postprocess_html.py
 # in the same build. Never needs committing.
 *.html.suivi.json
+
+# v2/ is built locally for verification but NOT published. Re-enabling is a
+# deliberate act: delete this rule AND restore the build step in
+# daily-dashboards.yml, after check_v2_gate.py and check_v2_identity.py pass.
+v2/
