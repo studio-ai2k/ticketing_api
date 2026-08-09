@@ -78,6 +78,28 @@ const { chromium } = require('playwright');
     for (const n of names) {
       await p.evaluate(async (nm) => { await pickCmp(nm); }, n);
       await p.waitForTimeout(250);
+      // The WEEKLY column, read the same way. It was outside every selector
+      // this check used - `.sv-l` reaches both grains, but only one grain is
+      // ever rendered, and nothing here had switched it. "45 comparisons, row
+      // for row" was true of the daily column and silent about the other half.
+      const readCol = () => {
+        const rows = [...document.querySelectorAll('#suivi .sv:not(.sv-solo)')];
+        const num = s => s.replace(/[^0-9]/g, '');
+        return rows.map(r => {
+          const l = r.querySelector('.sv-l');
+          if (!l) return null;
+          const d = l.querySelector('.sv-d'), q = l.querySelector('.sv-n');
+          const nn = q ? q.cloneNode(true) : null;
+          if (nn) nn.querySelectorAll('span').forEach(s => s.remove());
+          const txt = nn ? nn.textContent.trim() : '';
+          return [d ? d.textContent.trim() : '', txt === '—' ? '—' : num(txt)];
+        }).filter(Boolean);
+      };
+      await p.evaluate(() => grain('semaine'));
+      await p.waitForTimeout(200);
+      const weekly = await p.evaluate(readCol);
+      await p.evaluate(() => grain('jour'));
+      await p.waitForTimeout(200);
       picks[n] = await p.evaluate(() => {
         const rows = [...document.querySelectorAll('#suivi .sv:not(.sv-solo)')];
         const num = s => s.replace(/[^0-9]/g, '');
@@ -95,6 +117,7 @@ const { chromium } = require('playwright');
           header: (document.querySelector('#suivi .sv-h span') || {}).textContent,
         };
       });
+      picks[n].weekly = weekly;
     }
     out.push({ url, names, picks, errors: errs });
     await ctx.close();
@@ -145,6 +168,46 @@ def expected(event, cand, cutoff, cfg_all):
     return pairs, snap
 
 
+def fwk(a, b):
+    """The mock's own `fwk`, so the comparison is against what it renders."""
+    if a.month == b.month:
+        return f'{a.day}-{b.day} {MOS[b.month - 1]}'
+    return f'{a.day} {MOS[a.month - 1]}-{b.day} {MOS[b.month - 1]}'
+
+
+def expected_weekly(event, cand, cutoff, cfg_all):
+    """The reference column at the WEEKLY grain, from the server.
+
+    Different rule from the daily one, and that is the point of checking it
+    separately: no offset and no weekday snap, each side bucketing by its own
+    (event_date_first - order_date)//7. Using the daily offset here would
+    mis-align every row silently.
+    """
+    cfg, ccfg = cfg_all[event], cfg_all[cand]
+    cur_rows = dp.load_rows(str(ROOT / 'data' / f'{event}_merged.csv'))
+    crows = dp.load_rows(str(build_series.series_path(cand)))
+    cur_n, cur_rev = dp.series(cur_rows)
+    c_n, c_rev = dp.series(crows)
+    cut_rows = run.filter_tickets_to_same_point(
+        [{**r, 'order_date': r['_d']} for r in crows], cutoff,
+        cfg['event_date_first'], ccfg['event_date_first'])
+    c_cut = max((r['order_date'] for r in cut_rows), default=None)
+    cap = sum(d['day_capacity'] for d in cfg['days'])
+    rows = dp.weekly_rows(cur_n, cur_rev, c_n, c_rev, cfg['event_date_first'],
+                          ccfg['event_date_first'], cutoff, c_cut,
+                          (cfg['event_date_first'] - cutoff).days, cap)
+    out = []
+    for r in rows:
+        if r['sb']:
+            sb = date.fromisoformat(r['sb'])
+            eb = date.fromisoformat(r['eb'])
+            label = f"S−{r['w']} · {fwk(sb, eb)}"
+        else:
+            label = '—'
+        out.append((label, str(r['b']) if r['b'] is not None else '—'))
+    return out
+
+
 def main():
     pages = sorted((ROOT / 'v2').glob('*.html'))
     if not pages:
@@ -182,7 +245,7 @@ def main():
         return 1
 
     cfg_all = run.load_event_config(str(ROOT / 'event_config.csv'))
-    failures, snaps = [], []
+    failures, snaps, weeks = [], [], [0]
     import io
     import contextlib
     for row in json.loads(line[2:]):
@@ -221,6 +284,17 @@ def main():
                            f'{g[first_bad] if first_bad < len(g) else "-"} vs '
                            f'{w[first_bad] if first_bad < len(w) else "-"}')
             seen.add(tuple(g[:12]))
+            with contextlib.redirect_stdout(io.StringIO()):
+                wantw = expected_weekly(event, cid, cutoff, cfg_all)
+            gotw = [tuple(x) for x in (got.get('weekly') or [])]
+            if gotw != wantw:
+                i = next((k for k, (x, y) in enumerate(zip(gotw, wantw)) if x != y),
+                         min(len(gotw), len(wantw)))
+                bad.append(f'{label} WEEKLY: {len(gotw)} rendered vs {len(wantw)} '
+                           f'expected; first difference at {i}: '
+                           f'{gotw[i] if i < len(gotw) else "-"} vs '
+                           f'{wantw[i] if i < len(wantw) else "-"}')
+            weeks[0] += 1
         if len(row['picks']) > 1 and len(seen) < 2:
             bad.append('every candidate renders the same rows - the selection '
                        'is not reaching the table')
@@ -230,8 +304,8 @@ def main():
             for x in bad[:4]:
                 print(f'          {x}')
         else:
-            print(f"  ok    {name}: {len(row['picks'])} candidates, each matching "
-                  f"dashboard_payload row for row")
+            print(f"  ok    {name}: {len(row['picks'])} candidates, daily AND "
+                  f"weekly matching dashboard_payload row for row")
 
     nz = [s for s in snaps if s[2]]
     print()
@@ -247,8 +321,9 @@ def main():
     if failures:
         print(f'FAILED: {len(failures)}')
         return 1
-    print(f'{len(snaps)} comparison(s) across {len(pages)} page(s): the client '
-          f'alignment agrees with the server implementation')
+    print(f'{len(snaps)} comparison(s) across {len(pages)} page(s), '
+          f'{weeks[0]} of them checked at BOTH grains: the client alignment '
+          f'agrees with the server implementation')
     return 0
 
 
