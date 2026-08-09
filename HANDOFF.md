@@ -2006,3 +2006,94 @@ contents are not. The footer says so if you read it: `epk` stamps
 — the byte-identical canaries, epk's 3 866 / 6 766 — was measured against 07/08
 data. The comparisons were like-for-like so the conclusions hold, but the
 numbers are as of the 7th, not today.
+
+## Typography is frozen as the mock renders it, with one exception (D9)
+
+Ruling, after a full frontend audit of the six published v2 pages came back
+clean: **what Leo sees rendered IS the target.** Any change that alters the
+rendering is a regression by definition — including a change that makes the CSS
+more internally correct. "More correct" is not the standard; "pixel-identical to
+what Leo approved" is.
+
+Four things in the type stack look like oversights and are **not** to be fixed.
+They are recorded here precisely so that a future pass does not discover them
+afresh and tidy them:
+
+| # | What it looks like | Ruling |
+|---|---|---|
+| (a) | `Space Grotesk` is downloaded on every page at 400/500/600/700 and used by nothing. The browser confirms it: `document.fonts` reports all four faces `unloaded` after a full render. | **Leave it.** It lives in the shared `font_links.html`, which production also uses. Removing it is a production change dressed up as a redesign cleanup. |
+| (b) | `--ff-mono` named `DM Mono` first and DM Mono was never loaded by any page. | **REVERSED — see D9 below.** |
+| (c) | `.fver` hardcodes `'JetBrains Mono', monospace` instead of going through `--ff-mono`. | **Leave the rule as written.** D9 makes the token resolve to the same family, so the inconsistency it recorded disappears without the rule being touched. |
+| (d) | `--ff-display` and `--ff-body` are the same stack, so the display token buys nothing. | **Leave it.** Collapsing them changes nothing today and removes the seam where a display face would go. |
+
+And the thing that makes (a)–(d) matter less than it seems: **Leo approves on
+Apple hardware.** Anything that falls through to a system font renders one way
+for him and another on Windows and Android. Approval on his iPad is approval of
+the Apple render, not of the page everywhere.
+
+### D9 — `--ff-mono` becomes `'JetBrains Mono', monospace`
+
+That last paragraph is what overturned (b). The requirement changed from "do not
+alter the render" to "render identically on every device", and `--ff-mono` was
+the only thing standing in the way:
+
+- `--ff-mono: 'DM Mono', 'SF Mono', monospace` — **DM Mono is never requested by
+  any page.** So the stack fell through to SF Mono on Apple and to whatever
+  generic monospace the device had on Windows and Android.
+- Every other element uses DM Sans or JetBrains Mono. Both download. Both were
+  already consistent everywhere.
+- SF Mono cannot be served — Apple system font, not licensed for web embedding,
+  absent from Google Fonts. So consistency *requires* a webfont, and any webfont
+  necessarily changes how those elements look on Leo's iPad. He accepted that
+  trade.
+
+JetBrains Mono was chosen because it already downloads on every page at
+400/500/600 and already renders in `.fver`: not a new typeface to him, and no
+additional request. DM Mono — the mock's own declared first choice — was
+considered and rejected. It was never actually loaded, so it is an unrealised
+intention rather than something that ever rendered, and adopting it would add a
+font download for six small labels.
+
+Scope is two rules: inline `<code>` in the détails accordions (`.ac-b code`) and
+the data-source keys (`.dsrc-k`). Roughly a dozen elements per page.
+
+**One line to revert if he dislikes it on screen**, which is why it is a token
+change and not a rewrite of the two rules.
+
+### D9 is the first authorised CSS deviation, and the check had to learn the shape
+
+`check_mock_deviations` allowed exactly one class of stylesheet difference:
+`.db-*` rules carried verbatim from production. A *modified* line was a failure
+by construction — correctly, until a ruling authorised one.
+
+`AUTHORISED_CSS` now carries `(id, ruling, locked line, replacement)` and is
+checked **in both directions**, exactly like the mock's HTML hunks: the locked
+line must be gone *and* the replacement present. Half-applied is not passing.
+A ruling-authorised edit that someone later reverts fails as loudly as an
+invented one, which is the whole point of the two-direction rule.
+
+## The check validated the FILE, not the PAGE
+
+Found in the same audit, and the more important of its two findings.
+
+`check_mock_deviations` compared `redesign/style/dashboard_redesign.css` against
+the locked copy. But **no v2 page links that file.** Pass 0 inlines it and then
+rewrites asset paths inside it, so the shipped `<style>` is a *transform* of the
+file. Everything between the two was outside the check's coverage: a future
+transform could have altered any rule and the check would still have printed
+`ok`.
+
+That is the same failure mode as traps #10–#13 — a check that keeps passing
+while its target moves — so it was closed rather than noted.
+
+`check_pages()` now asserts, for every page under `v2/`, that its inlined
+`<style>` equals the file put through **exactly** `build_v2.PAGE_PATHS`. Any
+other difference fails. Negative-tested by editing one rule in one shipped page:
+`.dsrc-k{font-family:sans-serif…}` → exit 1, with the offending line printed.
+
+**`PAGE_PATHS` is imported, never restated.** That is deliberate and it is the
+concrete instance of the cutover problem: `url('../upload.JPG')` is correct one
+directory deep and wrong at the root. When those substitutions become
+location-aware, a second copy of them in the check would go stale and start
+disagreeing with the build — silently, since a stale expectation still produces
+a clean diff against itself. Importing means the check follows the build.

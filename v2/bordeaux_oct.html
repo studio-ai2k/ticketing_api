@@ -33,7 +33,12 @@
   --fs-display: 40px;
   --ff-body: 'DM Sans', -apple-system, sans-serif;
   --ff-display: 'DM Sans', -apple-system, sans-serif;
-  --ff-mono: 'DM Mono', 'SF Mono', monospace;
+  /* D9 - was 'DM Mono','SF Mono',monospace. DM Mono is never loaded by any
+     page, so this resolved to SF Mono on Apple and to whatever generic
+     monospace the device had elsewhere: the only element on the dashboard
+     that rendered differently per platform. JetBrains Mono is already
+     downloaded at 400/500/600 for .fver, so this costs no extra request. */
+  --ff-mono: 'JetBrains Mono', monospace;
   --bg: #08080d;
   --surface: #101017;
   --surface-2: #16161f;
