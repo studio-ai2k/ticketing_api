@@ -35,8 +35,13 @@ import json
 import re
 import subprocess
 import sys
+
+MONTHS_FR = ('janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet',
+             'août', 'septembre', 'octobre', 'novembre', 'décembre')
 import tempfile
 from pathlib import Path
+
+import postprocess_html  # noqa: E402 - for its upload-link matcher
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR / 'scripts'))
@@ -60,7 +65,100 @@ def body_of(html):
     return i + len('</nav>'), j
 
 
-def apply_v2_body(page, payload):
+def event_identity(cfg, ref_cfg, ref_label):
+    """Literals the mock hardcodes because it is a SINGLE-EVENT artefact.
+
+    Pass 0 splices the mock's structure and its IDENTITY with it. bordeaux_oct
+    shipped reading "événement les 5-6 septembre 2026" (epk's dates) and
+    "Elektric Park 2026" (epk's name) - ordinary sentences, no error, nothing to
+    notice. The payload was right; the markup around it was not.
+
+    Every entry is asserted to match exactly once. A miss puts another event's
+    identity on the page, which is the failure this exists to stop, so it must
+    fail the build rather than pass silently.
+    """
+    days = sorted(cfg['days'], key=lambda x: x['day_date'])
+    first, last = days[0]['day_date'], days[-1]['day_date']
+    if first == last:
+        span = f"le {first.day} {MONTHS_FR[first.month - 1]}"
+    elif first.month == last.month:
+        span = f"les {first.day}\u2013{last.day} {MONTHS_FR[first.month - 1]}"
+    else:
+        span = (f"les {first.day} {MONTHS_FR[first.month - 1]}\u2013"
+                f"{last.day} {MONTHS_FR[last.month - 1]}")
+    def _span(c):
+        if not c or not c.get('days'):
+            return '—'
+        dd = sorted(c['days'], key=lambda x: x['day_date'])
+        a, b = dd[0]['day_date'], dd[-1]['day_date']
+        if a == b:
+            return f'{a.day} {MONTHS_FR[a.month - 1]}'
+        if a.month == b.month:
+            return f'{a.day}\u2013{b.day} {MONTHS_FR[a.month - 1]}'
+        return f'{a.day} {MONTHS_FR[a.month - 1]}\u2013{b.day} {MONTHS_FR[b.month - 1]}'
+
+    ref_span = _span(ref_cfg)
+    ref_venue = (ref_cfg or {}).get('venue') or '—'
+    ref_city = (ref_cfg or {}).get('city') or ''
+    ref_cap = f"{(ref_cfg or {}).get('total_capacity', 0):,}".replace(',', '\u202f') or '—'
+    name = cfg.get('event_name', '').strip()
+    brand = (cfg.get('brand') or name).strip()
+    base = name.split(' 20')[0].strip() or name
+    return [
+        ('événement les 5\u20136 septembre ${YC}', f'événement {span} ${{YC}}'),
+        ('Elektric Park ${YC}', f'{base} ${{YC}}'),
+        ('Elektric Park ${YR}', f'{(ref_label or base).split(" 20")[0]} ${{YR}}'),
+        ("'comparaison à jour de semaine identique · vs Elektric Park 2023'",
+         f"'comparaison à jour de semaine identique · vs {ref_label or '—'}'"),
+        # The selected candidate, not just the menu. Replacing the menu alone
+        # left the Suivi selector defaulting to epk's label on every event.
+        # The Détails "Lieu et dates" row - venue, city AND a second, differently
+        # shaped date literal. Substituting only the vélocité sentence left epk's
+        # venue on every page. Enumerating by eye missed it; the residual-leak
+        # scan below is what found it.
+        ("${row('Lieu','Île des Impressionnistes','Chatou')}\n        "
+         "${row('Dates','5\u20136 septembre ' + YC)}",
+         "${row('Lieu'," + repr(cfg.get('venue', '—') or '—') + ","
+         + repr(cfg.get('city', '') or '') + ")}\n        "
+         "${row('Dates'," + repr(span.replace('les ', '').replace('le ', '')) + " + ' ' + YC)}"),
+        # The REFERENCE edition's Détails block - its own dates, venue and
+        # capacity, all epk_2023's. Three separate hardcoded blocks carry event
+        # identity in this mock; finding them took a residual-leak scan, not
+        # reading. That scan is now verify/check_v2_identity.py.
+        ("${row('Dates','1\u20132 septembre ' + YR)}\n        "
+         "${row('Lieu','Île de Chatou','Chatou')}\n        "
+         "${row('Jauge','35 000')}",
+         "${row('Dates'," + repr(ref_span) + " + ' ' + YR)}\n        "
+         "${row('Lieu'," + repr(ref_venue) + "," + repr(ref_city) + ")}\n        "
+         "${row('Jauge'," + repr(ref_cap) + ")}"),
+        ("let CSEL = 'Elektric Park 2023'",
+         "let CSEL = " + repr(ref_label or '—')),
+        ("{g:'Éditions Elektric Park', items:[{n:'Elektric Park 2023', d:'252 j', ref:true}]}",
+         "{g:'Édition de référence', items:[{n:" + repr(ref_label or '—') + ", d:'', ref:true}]}"),
+    ]
+
+
+# §3: root-relative assets inherited from PRODUCTION chrome, which lives outside
+# the replaced region - so these are applied to the whole page, not the region.
+# /v2/ is one directory deeper, so every relative path resolves one level wrong.
+# The nav logo works only because it happens to be an absolute URL.
+PAGE_PATHS = [
+    ('src="LOGO_ROND_JAUNE.png"', 'src="../LOGO_ROND_JAUNE.png"'),
+    ("url('upload.JPG')", "url('../upload.JPG')"),
+]
+
+
+def strip_placeholders(region):
+    """Remove what must never reach a reader: the mock filename (§4) and the
+    upload link, which points at a page that does not exist under /v2/."""
+    out = region
+    out = re.sub(r'<a[^>]*upload\.html[^>]*>.*?</a>', '', out, flags=re.DOTALL)
+    out = re.sub(r'\s*Voir\s*<code[^>]*>campagne_mock\.html</code>\s*\.?', '', out)
+    out = out.replace('campagne_mock.html', '')
+    return out
+
+
+def apply_v2_body(page, payload, identity=()):
     """Splice the mock's body into a run.py page, carrying the real payload."""
     mock = MOCK.read_text(encoding='utf-8')
     mi, mj = body_of(mock)
@@ -74,13 +172,40 @@ def apply_v2_body(page, payload):
             'The payload is the one thing that must be replaced; a miss here '
             'ships the mock\'s epk figures under another event\'s name.')
 
+    for old, new in identity:
+        if region.count(old) != 1:
+            raise SystemExit(
+                f'pass 0: identity literal {old[:60]!r} matched '
+                f'{region.count(old)} time(s), want 1. The mock is a '
+                'single-event artefact; a miss here ships another event\'s '
+                'name or dates as an ordinary sentence.')
+        region = region.replace(old, new, 1)
+    region = strip_placeholders(region)
+
     pi, pj = body_of(page)
     out = page[:pi] + region + page[pj:]
+
+    # The upload link lives in the NAV, outside the replaced region, so the
+    # region-level strip cannot see it. Production removes it in postprocess
+    # pass 1; v2 does not run postprocess, so it must be removed here - and with
+    # postprocess's own matcher, not a second one that can drift from it.
+    out, ln = postprocess_html.UPLOAD_LINK_RE.subn('', out)
+    if ln != 1:
+        raise SystemExit(
+            f'pass 0: upload link matched {ln} time(s), want 1. It points at '
+            'v2/upload.html, which does not exist.')
 
     css = SHEET.read_text(encoding='utf-8')
     out, sn = STYLE_RE.subn(lambda m: '<style>\n' + css + '\n</style>', out, count=1)
     if sn != 1:
         raise SystemExit(f'pass 0: stylesheet swap matched {sn} <style> blocks (want 1)')
+
+    # AFTER the style swap, not before: the swap re-introduces url('upload.JPG')
+    # from the .db-overlay rule carried across for the gate. Rewriting paths
+    # first left the login background pointing one directory up from nothing.
+    for old, new in PAGE_PATHS:
+        if old in out:
+            out = out.replace(old, new)
     return out
 
 
@@ -118,6 +243,7 @@ def main():
     ref_csv = next((BASE_DIR / 'csv_database' / ref).glob('*_merged.csv'), None) if ref else None
 
     import dashboard_payload
+    import run
     from datetime import datetime
     D = dashboard_payload.build(a.event, a.csv,
                                 datetime.strptime(cutoff, '%Y-%m-%d').date(),
@@ -126,7 +252,11 @@ def main():
 
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(apply_v2_body(base.read_text(encoding='utf-8'), D), encoding='utf-8')
+    cfg_all = run.load_event_config(a.config)
+    ident = event_identity(cfg_all[a.event], cfg_all.get(ref),
+                           (cfg_all.get(ref) or {}).get('event_name', ref))
+    out.write_text(apply_v2_body(base.read_text(encoding='utf-8'), D, ident),
+                   encoding='utf-8')
     print(f'{out}: {out.stat().st_size / 1024:.0f} KB  (cutoff {cutoff}, ref {ref or "none"})')
     return 0
 

@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""
+No v2 page may carry another event's identity.
+
+    python verify/check_v2_identity.py
+
+bordeaux_oct shipped reading "événement les 5-6 septembre 2026" and
+"Elektric Park 2026" — epk's dates and epk's name, on a Bordeaux page. The
+payload was correct throughout. The MOCK is a single-event artefact, and pass 0
+splices its identity along with its structure.
+
+Three separate hardcoded blocks carry event identity, and enumerating them by
+eye missed two of the three. This scan is what found them, so it is the check:
+grep every built page for the mock's own event's literals, and fail on any that
+is not that page's own event.
+
+The `<option>` elements of the nav's session switcher are excluded — that
+switcher legitimately lists every event by name, and its relative hrefs resolve
+correctly from /v2/.
+"""
+
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+
+# Literals belonging to the mock's own event (epk_2026) and its reference.
+MOCK_IDENTITY = ['Elektric Park', 'Île des Impressionnistes', 'Île de Chatou',
+                 'campagne_mock', '5–6 septembre', '1–2 septembre',
+                 '35 000']
+# Paths that break one directory deeper, and a link to a page v2/ has no copy of.
+BAD_PATHS = [r'src="LOGO_ROND_JAUNE\.png"', r"url\('upload\.JPG'\)",
+             r'href="upload\.html']
+# The one page allowed to say "Elektric Park": epk's own.
+# epk is the mock's own event, so its name, both venues and both date
+# spans are legitimately its own. Everything else must still be absent.
+OWN = {'epk.html': ['Elektric Park', 'Île des Impressionnistes',
+                    'Île de Chatou', '5–6 septembre', '1–2 septembre']}
+
+
+def main():
+    pages = sorted((ROOT / 'v2').glob('*.html'))
+    if not pages:
+        print('no v2 pages built - nothing to scan')
+        return 0
+    failures = []
+    for p in pages:
+        html = re.sub(r'<option[^>]*>[^<]*</option>', '', p.read_text(encoding='utf-8'))
+        allowed = OWN.get(p.name, [])
+        hits = [t for t in MOCK_IDENTITY if t not in allowed and t in html]
+        paths = [b for b in BAD_PATHS if re.search(b, html)]
+        if hits or paths:
+            failures.append(p.name)
+            print(f'  FAIL  {p.name}: ' +
+                  '; '.join([f'foreign identity {h!r}' for h in hits] +
+                            [f'unfixed path {b!r}' for b in paths]))
+        else:
+            print(f'  ok    {p.name}')
+    print()
+    if failures:
+        print(f'FAILED: {len(failures)} page(s) carry another event\'s identity '
+              'or a path that breaks under /v2/.')
+        return 1
+    print(f'{len(pages)} page(s) carry only their own event')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

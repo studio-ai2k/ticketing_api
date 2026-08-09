@@ -48,6 +48,8 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_suivi_window.py` | 1 (and its own first version failed step 2) |
 | `check_payout_reconciliation.py` | 3 |
 | `check_mock_deviations.py` | 4 |
+| `check_v2_gate.py` | 1 (the page that actually shipped) |
+| `check_v2_identity.py` | 1 (the page that actually shipped) |
 | `check_fixture_quarantine.py` | 3 |
 
 ---
@@ -134,6 +136,25 @@ These are **the only figures in this project validated against a document
 someone outside it produced.** Settling O1 will mean editing
 `process_shotgun_ticket`, three lines from the DICE path, so this exists to make
 sure the fixed point survives that edit.
+
+## BEFORE PUBLISHING v2/ — both of these, every time
+
+    python3 verify/check_v2_gate.py
+    python3 verify/check_v2_identity.py
+
+v2 shipped once with the password modal rendering as unstyled text and the whole
+dashboard readable beneath it — internal revenue data on a public URL. The
+redesign stylesheet had no `.db-overlay` rule at all. **Every other check was
+green on that page**: no NaN, no undefined, no console error, no horizontal
+scroll.
+
+The gate check loads a page with no auth token and asserts the overlay is fixed,
+opaque, covers the viewport, and is what actually paints at the centre of the
+screen. The identity check greps for the mock's own event's literals, because
+the mock is a single-event artefact and pass 0 splices its identity along with
+its structure — bordeaux_oct shipped showing epk's name, venue and dates.
+
+Both were run against the page that actually shipped and both fail on it.
 
 ## Before any redesign acceptance run
 

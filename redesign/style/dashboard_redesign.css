@@ -638,3 +638,33 @@ button.sw-item{background:none;border:0;width:100%;text-align:left;
   .nav-top::-webkit-scrollbar{display:none}
   .fsep{display:none}.foot .fi{flex:1 0 100%;justify-content:center}
 }
+
+/* ---------------------------------------------------------------
+   AUTH OVERLAY - carried verbatim from style/dashboard_v6_8.css.
+
+   NOT a mock deviation: the locked mock has no auth overlay at all,
+   so these are production chrome it never contained. Pass 0 keeps the
+   overlay markup (it lives before <nav>, outside the replaced region)
+   but the redesign sheet had no rule for it - not even .db-overlay -
+   so the modal rendered in normal flow and the dashboard was readable
+   underneath. The gate was decorative.
+
+   The redesign sheet has SHORT renamed equivalents (.db-m .db-t .db-i
+   ...) which nothing emits; the shipped markup uses the long names.
+   Do not delete these to restore byte-identity with locked.
+
+   EXTRACTED WITH @media BLOCKS MASKED OUT. A rule-level regex over the
+   raw sheet lifts `.db-overlay,.nav,#page-details{display:none!important}
+   out of @media print and hides the nav on every page - the leak this
+   package's own header already records once.
+   --------------------------------------------------------------- */
+.db-overlay{position:fixed; inset:0; background:#08080d url('upload.JPG') center center/cover no-repeat; z-index:9999; display:flex; align-items:center; justify-content:center;}
+.db-overlay::before{content:''; position:fixed; inset:0; background:rgba(4,4,10,0.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);}
+.db-modal{position:relative; z-index:1; background:rgba(12,6,24,0.3); border:1px solid rgba(56,189,248,0.15); border-radius:20px; padding:32px 28px; width:320px; box-shadow:0 32px 80px rgba(0,0,0,0.2); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); text-align:center;}
+.db-modal-logo{width:72px; height:72px; border-radius:50%; object-fit:cover; margin:0 auto 16px; display:block;}
+.db-modal-title{font-family:'DM Sans',sans-serif; font-size:var(--fs-body); font-weight:700; color:#fff; margin-bottom:4px;}
+.db-modal-sub{font-size:var(--fs-tiny); color:#a0a0b0; margin-bottom:24px;}
+.db-pw-field{width:100%; padding:13px 16px; background:linear-gradient(135deg,rgba(56,189,248,0.12),rgba(244,114,182,0.12)); border:1px solid rgba(56,189,248,0.3); border-radius:10px; margin-bottom:10px; cursor:text; position:relative; min-height:46px; display:flex; align-items:center; box-sizing:border-box; text-align:left; transition:border-color 0.2s,box-shadow 0.2s;}
+.db-pw-dots{color:#fff; font-size:var(--fs-body); letter-spacing:4px; line-height:1;}
+.db-pw-placeholder{color:#4a4a6a; font-size:var(--fs-micro); font-family:'DM Sans',sans-serif;}
+.db-pw-error{font-size:var(--fs-caption); color:#e17055; margin-bottom:8px; min-height:14px; text-align:left;}
