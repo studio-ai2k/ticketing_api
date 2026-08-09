@@ -1364,6 +1364,11 @@ function projChart(ch, col, scen, refLabel, cap){
       data-na="${o?abs(o.v):''}" data-nb="${r?abs(r.v):''}" data-jx="${jx}"></rect>`;
   }).join('');
   return `<div class="ck">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:5px">
+      <span class="ck-read"><span class="ck-jx"></span>
+        <span class="ck-va"></span><span class="kc-s ck-na"></span>
+        <span class="kc-s ck-sep"></span>
+        <span class="ck-vb"></span><span class="kc-s ck-nb"></span></span></div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
       ${ticks}${xl}
       ${ch.ref?`<path d="${ln(ch.ref)}" fill="none" stroke="rgba(248,113,113,.55)"
@@ -1380,10 +1385,6 @@ function projChart(ch, col, scen, refLabel, cap){
       <span class="fi"><span class="dot" style="background:#fff"></span><span class="kc-s">Ventes ${YC}</span></span>
       <span class="fi"><span class="sw-dash" style="border-color:${col}"></span><span class="kc-s">${scen==='p1'?'Trajectoire':'× coef.'} ${refLabel}</span></span>
       <span class="fi"><span class="sw-dash" style="border-color:rgba(248,113,113,.55)"></span><span class="kc-s">${refLabel}</span></span>
-      <span class="ck-read"><span class="ck-jx"></span>
-        <span class="ck-va"></span><span class="kc-s ck-na"></span>
-        <span class="kc-s ck-sep"></span>
-        <span class="ck-vb"></span><span class="kc-s ck-nb"></span></span>
     </div></div>`;
 }
 

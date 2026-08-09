@@ -257,6 +257,15 @@ AUTHORISED_CSS += [
 ]
 
 AUTHORISED += [
+    ('C7', 'the projection readout moves ABOVE the chart, top right. Inline '
+           'with the legend it overflowed its container by 40.8px at 393px and '
+           'ran 12.8px past the viewport edge - .ck-key is flex-wrap:nowrap at '
+           'that breakpoint, so it could not wrap and clipped instead. Now 0px '
+           'overflow, 28px inside the edge. The locked mock clips the same way, '
+           'so this is a change request, not a regression',
+     '<div style="display:flex;justify-content:flex-end;margin-bottom:5px">'),
+    ('C7b', 'C7 - the readout leaves .ck-key, which keeps only the legend',
+     '<span class="ck-va"></span><span class="ck-vb"></span></span>'),
     # Covers the fm() hunk in full: D26 removed the string surgery there and
     # D30 rewrote the same line, so one id claims one hunk. D26's ruling text
     # lives in the handoff and in the mock's own comment.
@@ -290,8 +299,6 @@ AUTHORISED += [
     ('D32e', 'D3(a) - the current-side dot hides where our campaign had not '
              'started, rather than parking at 0',
      'the current side can now be absent'),
-    ('D32f', 'D3(b) - the two absolute slots in the projection readout',
-     '<span class="kc-s ck-na"></span>'),
     ('D32g', 'D3(b) - the readout writes them, and the label and separator are '
              'written on HOVER rather than rendered statically: standing in the '
              'markup they read "Tickets ·" with nothing after them',
