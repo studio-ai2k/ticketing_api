@@ -1758,7 +1758,7 @@ function renderSuivi(){
          <button class="scen-b ${isD?'on':''}" onclick="grain('jour')">Jour</button>
          <button class="scen-b ${isD?'':'on'}" onclick="grain('semaine')">Semaine</button></div>
        ${HAS_CMP ? cmpMenu() : ''}</div>
-     ${HAS_CMP ? H('2023 (même jour)','Diff','2026 (actuel)') : H('','','2026 (actuel)')}
+     ${HAS_CMP ? H(YR + ' (même jour)','Diff',YC + ' (actuel)') : H('','',YC + ' (actuel)')}
      <button class="show-more-btn more" onclick="tog('past')" id="b-past">Voir les ${past.length}
        ${isD?'jours précédents':'semaines précédentes'}</button>
      <div class="box" id="past" style="display:none;max-height:400px;overflow-y:auto">
@@ -1766,7 +1766,7 @@ function renderSuivi(){
      <div id="sep-past" style="display:none">${CUT('Précédent')}</div>
      ${now.map(R).join('')}
      ${fut.length ? CUT('À venir') +
-       H('2023 (référence)','J−X','2026 (à venir)') +
+       H(YR + ' (référence)','J−X',YC + ' (à venir)') +
        `<button class="show-more-btn more" onclick="tog('fut')" id="b-fut">Voir les ${fut.length}
           ${isD?'jours restants':'semaines restantes'}</button>
         <div class="box" id="fut" style="display:none;max-height:340px;overflow-y:auto">

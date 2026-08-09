@@ -2224,3 +2224,49 @@ narrowing rather than a hole, every label inside the payload is now checked
 against `event_config.csv`. A mock literal cannot hide there without also being
 a configured event. Same move as the `<nav>` exclusion, and the second time
 this scan has had to separate what the page *says* from what the page *offers*.
+
+## Trap #14: numbers have no fingerprint
+
+`check_v2_identity` greps for the mock's NAMES and DATES — "Elektric Park",
+"Île de Chatou", "5–6 septembre". That is why it found the three hardcoded
+identity blocks, and it is exactly why it could not find `const LG`, where the
+mock's identity was carried as **8 083** and **4 513**.
+
+The general form: a scan can only find a leak that has a distinguishable
+shape. A name is distinguishable. A date is distinguishable. **A number is
+not** — 8 083 is a legal value for any event on any page, and no amount of
+generalising the pattern will change that. There is no version of that check
+which catches this class.
+
+So the defence cannot be a scan. It has to be structural:
+
+> **Every displayed figure must have a traceable source in the payload.**
+
+A literal in the template is the bug, not the thing to detect. That reframes
+what to look for during review: not "is this number wrong" — you cannot tell —
+but "where did this number come from", which you always can.
+
+### The second instance, found the same week
+
+Rendering the weekly table for an unrelated question surfaced the Suivi column
+headers:
+
+```js
+${HAS_CMP ? H('2023 (même jour)','Diff','2026 (actuel)') : …}
+H('2023 (référence)','J−X','2026 (à venir)')
+```
+
+The mock defines `YC` and `YR` from the payload (`D.cur_year`, `D.ref_year`)
+and uses them in nineteen places. These two hardcode the years. So the rennes
+page — 2026 compared against **2025** — headed its reference column
+"2023 (même jour)". Shipped, reviewed by three people, and not on Leo's list of
+thirteen.
+
+Bare years are the purest case of the trap: "2026" was right by coincidence on
+every page, and "2023" was wrong on five of six with nothing to distinguish it
+from a legitimate figure. Fixed by substitution in `event_identity`, alongside
+the other single-event literals, rather than by editing the mock.
+
+**Both instances were found by looking at a rendered page for another reason.**
+Neither was found by a check, and #14 says plainly that neither could have
+been.

@@ -231,6 +231,18 @@ def event_identity(cfg, ref_cfg, ref_label):
          "${row('Dates'," + repr(ref_span) + " + ' ' + YR)}\n        "
          "${row('Lieu'," + repr(ref_venue) + "," + repr(ref_city) + ")}\n        "
          "${row('Jauge'," + repr(ref_cap) + ")}"),
+        # The Suivi column headers. The mock defines YC/YR from the payload and
+        # uses them in 19 places - and hardcodes the years in these two. So the
+        # rennes page (2026 vs 2025) headed its reference column "2023 (même
+        # jour)". Found while rendering the weekly table for a different
+        # question, and invisible to check_v2_identity for the reason that scan
+        # cannot fix: a bare year is a NUMBER, and numbers have no fingerprint.
+        ("${HAS_CMP ? H('2023 (même jour)','Diff','2026 (actuel)') "
+         ": H('','','2026 (actuel)')}",
+         "${HAS_CMP ? H(YR + ' (même jour)','Diff',YC + ' (actuel)') "
+         ": H('','',YC + ' (actuel)')}"),
+        ("H('2023 (référence)','J−X','2026 (à venir)')",
+         "H(YR + ' (référence)','J−X',YC + ' (à venir)')"),
         ("let CSEL = 'Elektric Park 2023'",
          "let CSEL = " + repr(ref_label or '—')),
         ("{g:'Éditions Elektric Park', items:[{n:'Elektric Park 2023', d:'252 j', ref:true}]}",
