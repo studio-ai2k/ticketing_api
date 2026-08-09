@@ -1324,7 +1324,7 @@ function grp(el){
    stops (dashed, day colour), the reference edition (red dashed) and the 100%
    capacity line. The projection SHARES its first point with the actual so the
    two read as one line. */
-function projChart(ch, col, scen, refLabel){
+function projChart(ch, col, scen, refLabel, cap){
   if(!ch || !ch.act || !ch.act.length) return '';
   const W=CKW(), narrow=CKNARROW();
   const H=narrow?180:250, P={t:16,r:10,b:narrow?34:32,l:narrow?50:56};
@@ -1344,12 +1344,24 @@ function projChart(ch, col, scen, refLabel){
   const xl=(narrow?[span,0]:[span,Math.round(span/2),0]).map(j=>
     `<text x="${sx(j)}" y="${H-6}" text-anchor="middle" fill="var(--text-muted)"
       font-size="12" font-family="DM Sans">J−${j}</text>`).join('');
-  const zones = ch.act.concat(proj).map((o,i,arr)=>{
-    const x=sx(o.jx), lo=i?(x+sx(arr[i-1].jx))/2:P.l, hi=i<arr.length-1?(x+sx(arr[i+1].jx))/2:W-P.r;
-    const r=(ch.ref||[]).find(q=>q.jx===o.jx);
+  /* D32 — a hit zone for every jx that is DRAWN, not only those our own
+     campaign reached. Where the comparison edition started earlier its curve
+     is on the plot and was not readable, which is the one thing a hover is
+     for. The union is taken over all three series. */
+  const mine = new Map(ch.act.concat(proj).map(o=>[o.jx,o]));
+  const theirs = new Map((ch.ref||[]).map(o=>[o.jx,o]));
+  const jxs = [...new Set([...mine.keys(), ...theirs.keys()])].sort((a,b)=>b-a);
+  /* the absolute beside the percentage, as its own attribute rather than
+     concatenated into the value: one label, one number, so the tick-shape
+     assertion still means something. */
+  const abs = v => cap ? nf(v/100*cap) : '';
+  const zones = jxs.map((jx,i,arr)=>{
+    const x=sx(jx), lo=i?(x+sx(arr[i-1]))/2:P.l, hi=i<arr.length-1?(x+sx(arr[i+1]))/2:W-P.r;
+    const o=mine.get(jx), r=theirs.get(jx);
     return `<rect x="${Math.min(lo,hi)}" y="0" width="${Math.max(Math.abs(hi-lo),1)}" height="${H}"
-      fill="transparent" data-x="${x}" data-ya="${sy(o.v)}" data-yb="${r?sy(r.v):''}"
-      data-va="${o.v.toFixed(0)}%" data-vb="${r?r.v.toFixed(0)+'%':''}" data-jx="${o.jx}"></rect>`;
+      fill="transparent" data-x="${x}" data-ya="${o?sy(o.v):''}" data-yb="${r?sy(r.v):''}"
+      data-va="${o?o.v.toFixed(0)+'%':''}" data-vb="${r?r.v.toFixed(0)+'%':''}"
+      data-na="${o?abs(o.v):''}" data-nb="${r?abs(r.v):''}" data-jx="${jx}"></rect>`;
   }).join('');
   return `<div class="ck">
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
@@ -1369,7 +1381,9 @@ function projChart(ch, col, scen, refLabel){
       <span class="fi"><span class="sw-dash" style="border-color:${col}"></span><span class="kc-s">${scen==='p1'?'Trajectoire':'× coef.'} ${refLabel}</span></span>
       <span class="fi"><span class="sw-dash" style="border-color:rgba(248,113,113,.55)"></span><span class="kc-s">${refLabel}</span></span>
       <span class="ck-read"><span class="ck-jx"></span>
-        <span class="ck-va"></span><span class="ck-vb"></span></span>
+        <span class="ck-va"></span><span class="kc-s ck-na"></span>
+        <span class="kc-s">·</span>
+        <span class="ck-vb"></span><span class="kc-s ck-nb"></span></span>
     </div></div>`;
 }
 
@@ -1471,7 +1485,7 @@ let PSEL = PX ? PX.default : null;
           <div class="ac-t" onclick="ac(this)" style="margin-top:16px">
             <span>Courbe cumulative</span><span class="arrow">▼</span></div>
           <div class="ac-b"><div class="eyebrow" style="margin:14px 0 12px">% de la capacité</div>
-            ${projChart(p.chart, col, i?'p2':'p1', C.label)}</div>
+            ${projChart(p.chart, col, i?'p2':'p1', C.label, p.cap)}</div>
         </div>`;
       };
       return `<div class="card" style="margin-bottom:12px" data-proj="${idx}">
@@ -1965,8 +1979,12 @@ function rollChart(A, B, fmt, height){
 
      `fmt` is now the COMPACT formatter itself (k), so there is no string to
      operate on and no assumption about where the number sits. */
-  const fm=v=> fmt ? fmt(v)
-    : (v>=1000 ? (v>=10000?Math.round(v/1000):(v/1000).toFixed(1))+'k' : Math.round(v));
+  /* D30 - the non-currency branch built its own "1.7k" with a DOT, on a page
+     where every other number uses a comma. Found by dumping every tick label
+     across the six pages while checking the zero tick; same class as D1 and
+     the same fix - ask Intl, do not hand-roll. */
+  const _NC = new Intl.NumberFormat('fr-FR', {notation:'compact', maximumSignificantDigits:3});
+  const fm=v=> fmt ? fmt(v) : (v>=1000 ? _NC.format(v) : String(Math.round(v)));
   const ticks=[0,max/2,max].map(v=>
     `<line x1="${P.l}" y1="${sy(v)}" x2="${W-P.r}" y2="${sy(v)}" stroke="rgba(255,255,255,.06)"/>
      <text x="${P.l-6}" y="${sy(v)+4}" text-anchor="end" fill="var(--text-muted)"
@@ -1981,7 +1999,8 @@ function rollChart(A, B, fmt, height){
     const b=B.find(q=>q.jx===o.jx);
     return `<rect x="${lo}" y="0" width="${Math.max(hi-lo,1)}" height="${H}" fill="transparent"
       data-x="${x}" data-ya="${sy(o.v)}" data-yb="${b?sy(b.v):''}"
-      data-va="${fm(o.v)}" data-vb="${b?fm(b.v):''}" data-jx="${o.jx}"></rect>`;
+      data-va="${fm(o.v)}" data-vb="${b?fm(b.v):''}" data-jx="${o.jx}"
+      data-w="${o.w!=null?o.w:Math.floor(o.jx/7)}"></rect>`;
   }).join('');
   return `<div class="ck" id="${id}">
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
@@ -2020,14 +2039,25 @@ function applyZone(z){
   const x = z.dataset.x;
   g.querySelector('.ck-line').setAttribute('x1', x);
   g.querySelector('.ck-line').setAttribute('x2', x);
-  const da = g.querySelector('.ck-da'); da.setAttribute('cx', x); da.setAttribute('cy', z.dataset.ya);
+  const da = g.querySelector('.ck-da');
+  /* D32 — the current side can now be absent, on the stretch where only the
+     comparison edition had started. Hide its dot rather than parking it at 0. */
+  if (z.dataset.ya) { da.setAttribute('cx', x); da.setAttribute('cy', z.dataset.ya); da.style.display=''; }
+  else da.style.display = 'none';
   const db = g.querySelector('.ck-db');
   if (z.dataset.yb) { db.setAttribute('cx', x); db.setAttribute('cy', z.dataset.yb); db.style.display=''; }
   else db.style.display = 'none';
-  box.querySelector('.ck-jx').textContent = 'J−' + z.dataset.jx;
-  box.querySelector('.ck-va').textContent = z.dataset.va;
+  /* D31 — a weekly series read under a J−X axis names BOTH scales. The
+     Revenus chart plots one point per week and labelled it J−105, which is a
+     day number for a week bucket. */
+  box.querySelector('.ck-jx').textContent = 'J−' + z.dataset.jx
+    + (z.dataset.w != null ? ' / S−' + z.dataset.w : '');
+  box.querySelector('.ck-va').textContent = z.dataset.va || '—';
   const vb = box.querySelector('.ck-vb');
   if (vb) vb.textContent = z.dataset.vb || '—';
+  const na = box.querySelector('.ck-na'), nb = box.querySelector('.ck-nb');
+  if (na) na.textContent = z.dataset.na ? ' · ' + z.dataset.na : '';
+  if (nb) nb.textContent = z.dataset.nb ? ' · ' + z.dataset.nb : '';
 }
 document.addEventListener('mousemove', e => {
   const z = e.target.closest ? e.target.closest('.ck rect[data-x]') : null;

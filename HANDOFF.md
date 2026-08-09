@@ -2622,3 +2622,44 @@ Production's sheet has no such line: the redesign carried a leftover.
 That is trap #15's own shape pointed at trap #15's fix — a correct declaration
 defeated at a distance. Deleted, so there is exactly one declaration and the D6
 assertion protects something that cannot be silently overruled.
+
+## D2, D3, and the zero tick
+
+**The zero tick was already clean.** Dumped every non-J−x tick label across all
+six pages: `0 €` everywhere, and no `285,7 k€` anywhere — the closest is
+`286 k€`. The `0,0 €` and `593,4 k€` in the record came from the exploratory
+node output printed while choosing between `maximumFractionDigits` and
+`maximumSignificantDigits`; `maximumSignificantDigits:3` shipped, and it gives
+`0 €`. Nothing to suppress.
+
+**But the dump found something else** — the same question asked of every page
+rather than the one in front of me. The non-currency compact branch built its
+own abbreviation:
+
+```js
+(v/1000).toFixed(1) + 'k'      ->  "1.7k"
+```
+
+A **dot** decimal on a page where every other number uses a comma. Same class
+as D1 and the same fix — ask Intl, do not hand-roll — and it now reads
+`1,69 k`. Found only because the check for one thing was run over everything.
+
+**D2** — `rollChart` plots one point per WEEK under a J−X axis and the readout
+announced `J−105`, a day number for a week bucket. The zones carry `data-w` and
+the readout reads `J−91 / S−13`. The projection charts are daily, so they get
+no `S−`, and that is the point of driving it off the attribute rather than off
+the chart type.
+
+**D3(a)** — the hover covered only where OUR campaign had data. On epk,
+**105 of 262 drawn points were unreachable**: the whole stretch where the
+comparison edition had started and we had not. Zones are now built over the
+union of act, proj and ref, and the current-side dot HIDES where we have no
+point rather than parking at 0 — trap #12 again, in a marker instead of a
+number.
+
+**D3(b)** — the absolute beside the percentage, as its own attribute and its
+own element rather than concatenated into the value. That was forced by the
+tick-shape assertion from trap #16: `"81% · 8 100"` is two numbers in one
+label and would have failed it. **The assertion pushed the markup somewhere
+better than the concatenation would have** — separate spans, one number each,
+and the shape rule keeps meaning what it says.

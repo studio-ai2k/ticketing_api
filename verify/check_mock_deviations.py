@@ -238,13 +238,43 @@ AUTHORISED_CSS += [
 ]
 
 AUTHORISED += [
-    ('D26', 'fm() asks the formatter for the compact form instead of editing '
-            'the full one. It stripped trailing digits and appended its own '
-            'abbreviation, correct while eur() ended in digits; D1 moved the '
-            'symbol to the end, so the strip matched nothing and the append '
-            'still ran - "593 421 EUR593k", one figure twice, in a 50px '
-            'gutter. Both of Leo\'s chart reports were this one function',
-     'ASK THE FORMATTER, DO NOT EDIT ITS OUTPUT'),
+    # Covers the fm() hunk in full: D26 removed the string surgery there and
+    # D30 rewrote the same line, so one id claims one hunk. D26's ruling text
+    # lives in the handoff and in the mock's own comment.
+    ('D30', 'fm() asks the formatter instead of editing its output (D26), and '
+            'the non-currency branch built its own "1.7k" with a DOT, on '
+            'a page where every other number uses a comma. Found by dumping '
+            'every tick label across the six pages while checking the zero '
+            'tick - same class as D1, same fix: ask Intl',
+     "const _NC = new Intl.NumberFormat('fr-FR', {notation:'compact'"),
+    ('D31', 'D2 - a weekly series read under a J−X axis names BOTH scales. The '
+            'Revenus chart plots one point per week and labelled it J−105, '
+            'which is a day number for a week bucket',
+     "data-w=\"${o.w!=null?o.w:Math.floor(o.jx/7)}\""),
+    ('D31b', 'D2 - the readout renders J−x / S−w when the week is present, and '
+             'J−x alone when it is not (the projection charts are daily)',
+     "z.dataset.w != null ? ' / S−' + z.dataset.w : ''"),
+    ('D32', 'D3(a) - a hit zone for every jx that is DRAWN. Where the '
+            'comparison edition started earlier its curve was on the plot and '
+            'unreadable, which is the one thing a hover is for. 105 of epk\'s '
+            '262 points were unreachable',
+     'const mine = new Map(ch.act.concat(proj).map'),
+    ('D32b', 'D3(b) - the absolute beside the percentage, as its OWN attribute '
+             'rather than concatenated into the value: one label, one number, '
+             'so the tick-shape assertion still means something',
+     'data-na="${o?abs(o.v):\'\'}"'),
+    ('D32c', 'D3 - projChart takes the day capacity, which is what turns a '
+             'percentage into a ticket count',
+     'function projChart(ch, col, scen, refLabel, cap)'),
+    ('D32d', 'D3 - the projection card passes it',
+     "projChart(p.chart, col, i?'p2':'p1', C.label, p.cap)"),
+    ('D32e', 'D3(a) - the current-side dot hides where our campaign had not '
+             'started, rather than parking at 0',
+     'the current side can now be absent'),
+    ('D32f', 'D3(b) - the two absolute slots in the projection readout',
+     '<span class="kc-s ck-na"></span>'),
+    ('D32g', 'D3(b) - the readout writes them',
+     "na.textContent = z.dataset.na ? ' · ' + z.dataset.na : ''"),
     ('D26b', 'D26 - the revenue chart passes k, the compact formatter, so there '
              'is no string left to operate on',
      'k, not eur: the axis and the readout want the compact form'),
