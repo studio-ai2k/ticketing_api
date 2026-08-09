@@ -189,8 +189,9 @@ D = {
   value. `paris_xxl_2026`: raw 29 March, clamped 15 March. Recomputing
   `max(order_date) − 1` here would put the vélocité windows a fortnight away
   from the Suivi table on the same page.
-- **No warm-up field.** Jeudi is a warm-up in fact and is not modelled: no flag,
-  no config column, no badge, no persisted per-day state. See §5.3.
+- **`presdays.days[*].warmup`** (boolean) — from `event_config.csv`'s
+  `day_is_warmup` column. A configured fact, never inferred from a weekday name.
+  A marked day starts excluded and wears an `échauffement` badge. See §5.3.
 - `presdays.ref` and `projx.*.refday` consume the DD4 mapping and are blocked
   until it lands. They are not to be reimplemented here.
 
@@ -279,37 +280,44 @@ from cases the prose does not name. That gap is the entire argument for route
 (c): a rule you can describe correctly and still implement wrong is a rule you
 should call rather than restate.
 
-**No warm-up badge, and no warm-up concept.** Jeudi is a warm-up in fact; that
-is not modelled in the product. No flag, no config column, no badge, no per-day
-state to persist. **Do not build any.**
+**Warm-up is a CONFIGURED PER-DAY FACT.** This replaces the earlier "no
+warm-up is modelled" paragraph rather than correcting it.
 
-run.py's inference — matching the literal string `'jeudi'` on a 3+ day event —
-is removed. It flags a Thursday that is not a warm-up and misses one held on any
-other weekday. Removing it is what makes "counted everywhere" uniform rather
-than event-specific.
+That paragraph was right about the inference and wrong about the concept. The
+objection was always to the **guess**, not the exclusion: run.py decides a day
+is a warm-up by matching the literal string `'jeudi'` on a 3+ day event, which
+flags a Thursday that is not one and misses a warm-up held on any other weekday.
+Deleting the guess and the concept together is what produced the +17 % default
+jump. The badge returns — it was wrong because the *flag* was inferred, not
+because badges are wrong.
 
-- **All days are counted, everywhere, by default**, including this card's own
-  headline. Bordeaux opens on **40 783 / 44 500 = 91,6 %**.
-- The per-day toggle is a **session-only viewing control**. Switch days off to
-  read the total for the days you want. A quick read, nothing more.
-- It affects **this card's total and capacity only**. Not revenue, not
-  vélocité, not projections, not répartition.
-- Excluding a day removes its capacity as well as its attendance. That is what
-  makes the quick read meaningful.
+- **`bordeaux_2026` Jeudi is marked warm-up in the config. Nothing else is a
+  warm-up unless marked. No weekday matching anywhere, ever.**
+- **The default view honours the mark**, so bordeaux opens on
+  **34 804 / 36 000 = 96,7 %** — identical to production today. The behaviour
+  change shrinks from "bordeaux's attendance moved" to "a guess became a fact".
+- **The toggle still works both ways.** Switch Thursday on for
+  **40 783 / 44 500 = 91,6 %**. The +17 % is now opt-in.
+- A day excluded by default **labels itself** — an `échauffement` badge on the
+  card. Dimming alone reads as a missing day rather than a deliberate one.
+- Everything else about the toggle is unchanged: session-only, this card's
+  total and capacity only, and excluding a day removes its capacity too.
 
-**Deliberate behaviour change, on the corrected figure.** Production shows
-bordeaux at **34 804 / 36 000 = 96,7 %** with Thursday excluded. The redesign
-shows **40 783 / 44 500 = 91,6 %** with all three counted. That is **+5 979
-attendance and −5 points of fill rate** against the live page. Leo has ruled to
-keep it.
+**Where the mark lives: `event_config.csv`, a `day_is_warmup` column.**
+Recommended over a sidecar, and **proven inert rather than assumed so**: every
+reader of that file in this repo uses `csv.DictReader`, so an unknown column is
+invisible to all of them. Verified by building `bordeaux_2026` against a copy of
+the config carrying the column — the output is **byte-identical** to the current
+build. A sidecar would additionally have to cover archived editions, which is a
+larger ask for no benefit.
 
-> An earlier draft put this as 34 266 / 44 500 — a *decrease* of 538 against
-> production, which is why leaving it looked harmless. **The sign was
-> backwards.** 34 266 does not reproduce from any rule; measured with
-> `resolve_attendance` the three days are 5 979 / 15 416 / 19 388 = **40 783**,
-> and 34 804 is exactly Vendredi + Samedi. Capacities confirmed from
-> `event_config.csv`: 8 500 + 18 000 + 18 000 = 44 500, and 36 000 is where
-> production's denominator comes from.
+The payload carries it as `presdays.days[*].warmup` (boolean). It is a fact
+about the day, so it travels with the day.
+
+**The 68 % figure is what the mark describes.** `bordeaux_2026` Jeudi is
+**4 038 free of 5 979 — 68 % non-paying**, against 6 % on Samedi. That is not a
+soft sales day, it is a guest-list night, and it is independent evidence that
+the mark records something real rather than a display preference.
 
 **A day may exceed its capacity, and the card must say so.** `bordeaux_2026`
 Samedi is **19 388 against 18 000 — 107,7 %, +1 388 over**. That is real:
@@ -420,6 +428,30 @@ Across all six `compare_to` pairs the rule changes exactly one page:
 
 **Bordeaux and geneve are regression canaries. If DD4 changes any bordeaux or
 geneve figure, the mapping ran forward.** Assert that.
+
+**EE3 — does the mapping need to run over MAIN days only? Measured: no
+difference, on any current pair.** The concern is real — under position mapping
+our warm-up Thursday could land on `bordeaux_2025`'s real opening night and
+shift every day after it. But `bordeaux_2025` is Vendredi 13 + Samedi 14, two
+days and no warm-up, and **last-day-backward already handles it**: Samedi→Samedi,
+Vendredi→Vendredi, Jeudi→unmatched. Simulated across all six `compare_to` pairs,
+last-day-backward and main-days-only give **identical mappings, zero
+divergence**.
+
+The reason is structural, and it is the thing to assert rather than rely on:
+**bordeaux's warm-up is a LEADING day, and backward alignment consumes from the
+end**, so a leading warm-up falls off naturally as unmatched. The two rules
+coincide exactly while both of these hold:
+
+| assumption | today | breaks if |
+| --- | --- | --- |
+| the reference edition has no warm-up | true on all six pairs | a past edition is marked |
+| every warm-up is a **leading** day | true — bordeaux jeudi is day 1 | a mid-run or trailing warm-up is marked |
+
+**So Route 1 maps over all days with last-day-backward, unchanged — and asserts
+those two shapes, failing loudly if either stops holding.** Do not add a
+main-days-only path for a case that does not exist yet; do add the assertion
+that will catch it arriving.
 
 **Assert the shape, do not assume it.** Both unequal cases here extend at the
 *front* — bordeaux added a Thursday, geneve added a Friday — which is why

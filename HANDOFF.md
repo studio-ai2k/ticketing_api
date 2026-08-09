@@ -1668,3 +1668,18 @@ explicit `+1 388 au-delà de la jauge`; nothing about the width changed.
 Worth checking wherever `Math.min`, `Math.max`, `clamp()` or a `>=` threshold
 sits next to a rendered figure. The width is a display decision. The number is
 not ours to round.
+
+## A clamp answers one of two questions
+
+The canonical form of the lesson above, because it names where to look rather
+than only what is true:
+
+> A clamp answers one of two questions — **"how wide should this box be?"** or
+> **"what is this number?"** It is almost always right for the first and almost
+> always wrong for the second. When one expression does both, split it.
+
+Checkable: grep for `Math.min`, `Math.max`, `clamp()` or any `>=` threshold
+sitting next to a rendered figure. The bordeaux over-capacity day had two — the
+bar width and a `d.now >= d.cap` label — and fixing only the one that was
+reported would have left the card still claiming *complet*, because a second
+element made the same claim from the same comparison.

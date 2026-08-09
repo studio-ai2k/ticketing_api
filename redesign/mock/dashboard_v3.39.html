@@ -640,6 +640,7 @@ button.sw-item{background:none;border:0;width:100%;text-align:left;
   .nav-top::-webkit-scrollbar{display:none}
   .fsep{display:none}.foot .fi{flex:1 0 100%;justify-content:center}
 }
+.pill-warm{display:inline-block;margin-left:8px;padding:2px 7px;border-radius:10px;font-size:var(--fs-micro);font-weight:500;letter-spacing:.02em;color:var(--amber);background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.28)}
 </style>
 </head>
 <body>
@@ -1118,7 +1119,12 @@ const netHT = ttc => ttc / (1 + VAT);
      string 'jeudi' on a 3+ day event, which is wrong for a Thursday that is not
      a warm-up and misses one on any other weekday. Until that is a config field,
      the toggles are the operator's call rather than a guess. */
-  const on = {}; PD.days.forEach(d => on[d.k] = true);
+  // EE1: a day starts excluded only if it is MARKED a warm-up in the config.
+  // `d.warmup` comes from event_config.csv's day_is_warmup column - a fact
+  // about the day, never inferred. run.py's old 'jeudi'-string guess flagged a
+  // Thursday that was not a warm-up and missed one held on any other weekday;
+  // nothing here matches on a weekday name.
+  const on = {}; PD.days.forEach(d => on[d.k] = !d.warmup);
 
   function render(){
     const inc  = PD.days.filter(d => on[d.k]);
@@ -1156,6 +1162,7 @@ const netHT = ttc => ttc / (1 + VAT);
           <div class="rb-top">
             <div class="rb-n"><span class="dot" style="background:${COL[d.k]||'var(--cur)'}"></span>
               ${d.label}</div>
+            ${d.warmup ? '<span class="pill pill-warm">échauffement</span>' : ''}
             <div class="dtog${on[d.k]?' on':''}" onclick="togDay('${d.k}')">
               <div class="dtog-tr"><i></i></div>
               <span class="dtog-l">${on[d.k]?'comptée':'exclue'}</span></div>

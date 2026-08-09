@@ -638,3 +638,13 @@ button.sw-item{background:none;border:0;width:100%;text-align:left;
   .nav-top::-webkit-scrollbar{display:none}
   .fsep{display:none}.foot .fi{flex:1 0 100%;justify-content:center}
 }
+
+/* EE2: a day excluded by default must say why, or it reads as a missing day
+   rather than a deliberate one. Amber to match the over-capacity mark - both
+   are "this day is not the ordinary case". */
+.pill-warm{
+  display:inline-block;margin-left:8px;padding:2px 7px;border-radius:10px;
+  font-size:var(--fs-micro);font-weight:500;letter-spacing:.02em;
+  color:var(--amber);background:rgba(251,191,36,0.10);
+  border:1px solid rgba(251,191,36,0.28);
+}
