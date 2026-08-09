@@ -1881,3 +1881,68 @@ column present but mark cleared → exit 1; both restored → exit 0.
 **A default of `False` would have been the wrong answer, silently** — trap #12
 in a config reader rather than an arithmetic guard. When an input is absent,
 propagate the absence.
+
+## The locked artefact and the working one must have different names
+
+`redesign/mock/dashboard_v3.39.html` stopped being v3.39 the moment the first
+authorised change landed in it. Same filename, different file — and **"the mock
+is absolute" does not name anything once the name has drifted.**
+
+That is how a correct finding got overturned. The warm-up badge was searched for
+in the WORKING mock, found at lines 643 and 1165, and concluded to have been
+there all along. It had not: both lines were added under EE2, and the original
+upload contains no `pill-warm`, no `d.warmup` and no badge markup at all. The
+instinct that it was missing was right, and the artefact that disproved it was
+the wrong artefact.
+
+**The fix is naming, then enforcement.** `redesign/locked/` holds the upload
+byte-identical and is never edited. `verify/check_mock_deviations.py` asserts
+the working copy differs from it in exactly the authorised ways — in **both**
+directions, because a missing authorised deviation is an approved change
+someone reverted, which is quieter than an invention and no less wrong. Four
+failure modes confirmed: an unauthorised hunk, a reverted authorised one, new
+CSS, and the locked reference deleted.
+
+The stylesheet now has zero authorised deviations, which is the strongest form
+this takes: `dashboard_redesign.css` must be byte-identical to locked.
+
+### The mock's COMMENTS carry design decisions, not just its markup
+
+The original mock said, on the warm-up toggle:
+
+> `/* … Until that is a config field, … */`
+
+That is a deliberate deferral, recorded in the artefact. Reading it would have
+said the badge was absent **by choice** rather than by oversight, and the
+correct finding would not have been overturned.
+
+**When an artefact appears to be missing something, check whether it says why.**
+A generated file has no opinions; a hand-authored reference is full of them, and
+they are load-bearing.
+
+## run.py:242 is a chokepoint: no new config column ever reaches `days`
+
+```python
+events[eid]['days'].append({
+    'day_number': …, 'day_name': …, 'day_date': …, 'day_capacity': …,
+})
+```
+
+Four explicit keys. **Any column added to `event_config.csv` is invisible to
+`event_config['days']`, forever, silently.** `day_is_warmup` is simply the first
+one we needed; the next person to add a column will hit exactly this.
+
+The pattern to copy is `build_dashboard.read_warmup_flags()`: read
+`event_config.csv` directly, assert the column is in the header, assert the
+values that matter are present. Do not read a new column off run.py's day dicts
+and do not default it — see trap #12.
+
+And the reason this one nearly shipped is worth keeping attached to it:
+
+> **A guard that reads from the wrong structure does not merely miss the bug —
+> it certifies its absence.**
+
+`_assert_warmup_shapes` read the flag off run.py's dicts and its five unit tests
+passed, because the tests built their own dicts, which carried the key. It would
+have reported every event's warm-up shape as correct, forever, having never seen
+a flag.

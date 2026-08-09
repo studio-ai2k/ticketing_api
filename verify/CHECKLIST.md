@@ -47,6 +47,7 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_spec_example.py` | 4 |
 | `check_suivi_window.py` | 1 (and its own first version failed step 2) |
 | `check_payout_reconciliation.py` | 3 |
+| `check_mock_deviations.py` | 4 |
 | `check_fixture_quarantine.py` | 3 |
 
 ---
@@ -146,6 +147,20 @@ a green acceptance run including it proves nothing about the three-day case.
 Fails while epk's fingerprints remain; passes once `dashboard_payload.py`
 regenerates it to `redesign/FIXTURE_3DAY_TARGET.md`. Deleting it also fails —
 that removes the coverage instead of fixing it.
+
+## Before touching the redesign mock or its stylesheet
+
+    python3 verify/check_mock_deviations.py
+
+The working mock is not the locked one. `redesign/locked/` holds the original
+upload byte-identical and is never edited; this asserts the working copy differs
+from it in exactly the authorised ways — **and no fewer**. An unauthorised hunk
+is an invention and goes back to Leo; a missing one is an approved change
+someone reverted, which is quieter and just as wrong.
+
+The stylesheet has zero authorised deviations: after the `.pill-warm` deletion
+the redesign adds no CSS, so `dashboard_redesign.css` must be byte-identical to
+the locked copy.
 
 ## After any stylesheet swap
 
