@@ -1683,3 +1683,36 @@ sitting next to a rendered figure. The bordeaux over-capacity day had two — th
 bar width and a `d.now >= d.cap` label — and fixing only the one that was
 reported would have left the card still claiming *complet*, because a second
 element made the same claim from the same comparison.
+
+## Trap #11: a fixture that renders cleanly but describes nothing
+
+`redesign/fixtures/fixture_3day.html` was the only fixture exercising the
+three-day case. It rendered without a console error, without a `NaN`, without a
+horizontal scroll — it passed every assertion §6 and §7 define — and it
+described no event that has ever existed. It was epk's payload with bordeaux's
+day names, dates and capacities pasted over it.
+
+The tell was in the payload the whole time: **`presdays.days` summed to 34 266
+while `presdays.paid` said 10 039.** Those two numbers describe the same
+tickets. Nothing checked that they agreed, because a fixture looks like data
+rather than like code, and data is what checks are pointed *at*.
+
+> **A fixture that renders cleanly but describes nothing tests nothing. Assert
+> that a fixture is internally consistent — its own totals must reconcile —
+> before trusting anything it proves.**
+
+Same family as trap #10, one level out: #10 was a *check* that passed for the
+wrong reason, this is *test data* that passed for the wrong reason. Every guard
+in `verify/` points at generated output or at source; none pointed at the
+fixtures, which is why this was the one place with no coverage at all.
+
+The cheap version of the assertion is the one that would have caught it: within
+a fixture, every figure that can be derived two ways must agree both ways. Here,
+`sum(presdays.days[*].now)` against the composition totals, and
+`presdays.paid + presdays.free` against `cur.n + cur.inv`. Neither needs to know
+what the right answer is — only that the fixture agrees with itself.
+
+`verify/check_fixture_quarantine.py` enforces the specific case. The general
+rule belongs in whatever generates fixtures next: **generate them, never
+hand-author them**, because a generated fixture is consistent by construction
+and a hand-authored one is consistent only by luck.

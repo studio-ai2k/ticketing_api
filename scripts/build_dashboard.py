@@ -52,6 +52,140 @@ def read_config_field(config_path, event_id, field):
     return ''
 
 
+# ---------------------------------------------------------------------------
+# DD4 / Route 1 - days are compared by POSITION, not by weekday name
+# ---------------------------------------------------------------------------
+# run.py matches a current day to a reference day by the French weekday string.
+# epk_2026 is samedi+dimanche against epk_2023's vendredi+samedi, so Dimanche
+# has no reference at all and Samedi compares our OPENING night to their CLOSING
+# one - a number that looks plausible and means nothing.
+#
+# The guard that would have mapped by position (`comparison_mode ==
+# 'days_since_launch'`) is dead: comparison_mode is '' on 49 config rows and
+# 'j_minus' on 4, never that. It is not dead for want of a launch_date, which
+# run.py:3948 does populate.
+#
+# THE SAME GUARD APPEARS THREE TIMES - run.py:1921 (`day_name_map`, feeding Par
+# Jour) and run.py:2881 and :3514 (`prev_presence_key_map`, feeding vélocité,
+# projections and day capacity). Seven consumers. A partial fix is worse than
+# none: Par Jour by position while Vélocité is still by name means the page
+# disagrees with itself and nothing says so.
+#
+# So this does not patch the three sites. It re-keys the DATA they all read, in
+# one place, after run.py has finished computing it with the reference's own
+# names. One rename, and the three cannot desynchronise because there is only
+# one of them. run.py stays byte-identical.
+#
+# ALIGNMENT IS FROM THE LAST DAY BACKWARD, not day-1-forward. Forward is wrong
+# whenever the editions have different day counts and would REGRESS a comparison
+# that is correct today:
+#
+#     bordeaux_2026  Jeudi 8 500 | Vendredi 18 000 | Samedi 18 000
+#     bordeaux_2025                Vendredi 18 000 | Samedi 18 000
+#
+# Forward gives Jeudi->Vendredi (wrong day AND wrong capacity), Vendredi->Samedi,
+# and Samedi->nothing, suppressing the projection on the largest day. Backward
+# gives Samedi->Samedi, Vendredi->Vendredi, Jeudi unmatched - which is what name
+# matching already produces. Equal counts are unaffected; forward and backward
+# are then the same mapping.
+#
+# Measured across all six compare_to pairs, this changes exactly one page: epk.
+# bordeaux and geneve reproduce name matching exactly, which makes them
+# REGRESSION CANARIES - if either moves, the mapping ran forward.
+
+
+def _ordered_days(cfg):
+    """Day names, ordered by day_date, asserting day_number agrees.
+
+    day_date is the fact; day_number is an assertion about it. When they
+    disagree that is a config error worth failing on, not a preference to
+    resolve silently.
+    """
+    days = (cfg or {}).get('days') or []
+    if not days:
+        return []
+    by_date = sorted(days, key=lambda x: x['day_date'])
+    if all(str(x.get('day_number') or '').strip().isdigit() for x in days):
+        by_number = sorted(days, key=lambda x: int(x['day_number']))
+        if [x['day_name'] for x in by_date] != [x['day_name'] for x in by_number]:
+            raise SystemExit(
+                'event_config.csv: day_number and day_date disagree on the day '
+                'order for this edition. day_date is the fact; fix day_number.')
+    return [x['day_name'].strip().lower() for x in by_date]
+
+
+def _position_map(cur_days, prev_days):
+    """{reference day name -> current day name}, aligned from the last day back.
+
+    Only pairs that exist on both sides appear. A current day with no
+    counterpart is simply absent from the values, and a reference day with no
+    counterpart is absent from the keys - both then read as "no comparison",
+    which is what §5.6 asks for.
+    """
+    out = {}
+    for i in range(min(len(cur_days), len(prev_days))):
+        out[prev_days[-1 - i]] = cur_days[-1 - i]
+    return out
+
+
+def _assert_warmup_shapes(cur_cfg, prev_cfg, cur_days, prev_days, mapping):
+    """EE3 + GG1. The two rules below coincide TODAY; nothing guarantees it.
+
+    Last-day-backward and a main-days-only mapping give identical results on all
+    six current pairs, because bordeaux's only warm-up is a LEADING day and
+    backward alignment consumes from the end - so a leading warm-up falls off as
+    unmatched without being special-cased. That coincidence holds while:
+
+      (1) no REFERENCE edition marks a warm-up, and
+      (2) every warm-up is a leading day.
+
+    Either failing would silently shift every day after it. Assert, do not
+    assume - that turns a wrong page into a failed build.
+
+    GG1 also applies: the warm-up mark and the mapping both decide whether a day
+    is excluded, by different means. On bordeaux they must AGREE - jeudi is both
+    unmatched and marked. If a marked day is matched, or an unmatched day is
+    unmarked, the page has two mechanisms disagreeing about the same day and
+    that is a finding, not a detail.
+    """
+    def warmups(cfg, names):
+        marked = set()
+        for x in (cfg or {}).get('days') or []:
+            flag = str(x.get('day_is_warmup') or '').strip().lower()
+            if flag in ('1', 'true', 'yes', 'oui'):
+                marked.add(x['day_name'].strip().lower())
+        return [n for n in names if n in marked]
+
+    cur_warm, prev_warm = warmups(cur_cfg, cur_days), warmups(prev_cfg, prev_days)
+
+    if prev_warm:
+        raise SystemExit(
+            f'EE3: the reference edition marks a warm-up ({prev_warm}). '
+            'Backward alignment then maps one of our main days onto it. The '
+            'mapping must run over main days only - see DASHBOARD_REDESIGN_SPEC '
+            'ss5.6. Refusing to publish a silently shifted comparison.')
+
+    for w in cur_warm:
+        if cur_days.index(w) != 0:
+            raise SystemExit(
+                f'EE3: warm-up {w!r} is not the leading day (position '
+                f'{cur_days.index(w) + 1} of {len(cur_days)}). Backward '
+                'alignment only absorbs a LEADING warm-up; a mid-run or '
+                'trailing one shifts every day after it.')
+        if w in mapping.values():
+            raise SystemExit(
+                f'GG1: {w!r} is marked a warm-up AND matched to a reference '
+                f'day. Two mechanisms disagree about whether it is excluded.')
+
+    # GG1, the other direction: an unmatched day that nobody marked is not an
+    # error, but it is worth saying out loud - it is excluded by structure
+    # rather than by decision.
+    unmatched = [n for n in cur_days if n not in mapping.values()]
+    for n in unmatched:
+        note = 'marked warm-up' if n in cur_warm else 'no counterpart in the reference edition'
+        print(f'   · {n}: no reference ({note})')
+
+
 def main():
     parser = argparse.ArgumentParser(description='Build the HTML dashboard from a merged CSV.')
     parser.add_argument('--event', default='rennes_2026')
@@ -204,6 +338,65 @@ def main():
         return _suivi(*bound.args, **bound.kwargs)
 
     run._generate_suivi_v3 = _observe_suivi
+
+    # ---- DD4 / Route 1: re-key the reference edition's day names ----------
+    # run.py calls calculate_metrics(tickets_prev_filtered, event_config_prev)
+    # exactly once, after every reference figure has been computed with the
+    # reference's OWN day names. That is the seam: let it finish, then rename.
+    #
+    # Both artefacts have to move together, or the three consumer sites split:
+    #   metrics_prev['day_presence']   keyed by day name
+    #   every prev ticket's presence_<day>  keys
+    # and the tickets are the FULL list, not the filtered subset - vélocité and
+    # projections read tickets_prev_full, so re-keying only what
+    # calculate_metrics was handed would leave the rest on the old names.
+    _calc = run.calculate_metrics
+    _load = run.load_ticket_data
+    seen_cfgs = []
+    prev_ticket_lists = []
+
+    def _observe_load(rows, event_config=None, **kw):
+        out = _load(rows, event_config=event_config, **kw)
+        seen_cfgs.append(event_config)
+        if len(seen_cfgs) > 1:                      # the reference load
+            prev_ticket_lists.append(out[0] if isinstance(out, tuple) else out)
+        return out
+
+    def _rekey_metrics(tickets, event_config=None, **kw):
+        result = _calc(tickets, event_config, **kw)
+        # The current-year call comes first and must pass through untouched.
+        if not seen_cfgs or event_config is seen_cfgs[0] or len(seen_cfgs) < 2:
+            return result
+        cur_cfg = seen_cfgs[0]
+        cur_days, prev_days = _ordered_days(cur_cfg), _ordered_days(event_config)
+        if not cur_days or not prev_days:
+            return result
+        mapping = _position_map(cur_days, prev_days)
+        _assert_warmup_shapes(cur_cfg, event_config, cur_days, prev_days, mapping)
+        if mapping == {n: n for n in mapping}:
+            print(f'   ↻ day mapping: identical to name matching '
+                  f'({", ".join(f"{k}→{v}" for k, v in mapping.items())})')
+        else:
+            print('   ↻ day mapping RE-KEYED by position (last day backward): '
+                  + ', '.join(f'{k}→{v}' for k, v in mapping.items()))
+
+        # Build fresh dicts rather than renaming in place: on epk the map is
+        # {samedi→dimanche, vendredi→samedi}, so a sequential in-place rename
+        # would overwrite samedi with vendredi's value before reading it.
+        dp = result.get('day_presence')
+        if isinstance(dp, dict):
+            result['day_presence'] = {mapping[k]: v for k, v in dp.items() if k in mapping}
+        for lst in prev_ticket_lists:
+            for t in lst:
+                moved = {f'presence_{mapping[k]}': t[f'presence_{k}']
+                         for k in mapping if f'presence_{k}' in t}
+                for k in prev_days:
+                    t.pop(f'presence_{k}', None)
+                t.update(moved)
+        return result
+
+    run.load_ticket_data = _observe_load
+    run.calculate_metrics = _rekey_metrics
 
     sys.argv = ['run.py', '--event', args.event]
     run.main()
