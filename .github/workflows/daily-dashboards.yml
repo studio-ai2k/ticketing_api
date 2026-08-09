@@ -380,7 +380,19 @@ jobs:
           # The merged CSVs are the state an incremental fetch resumes from.
           # Explicit paths only - data/ also holds Railway's raw uploads, which
           # carry contact details and must never be committed.
-          git add -- 'data/*_merged.csv' 'data/*_state.json'
+          # Split deliberately. A quoted pathspec matching nothing makes
+          # `git add` exit 128 AND stage nothing from that command, and each
+          # run: block is `bash -e`, so combining these aborted the step before
+          # the commit - on every run since the line was written. No
+          # *_state.json has ever existed: the daily job calls fetch_csv.py
+          # without --incremental, and the commit job only sees the artifacts
+          # the build jobs uploaded, which do not include state files.
+          #
+          # `|| true` stays OFF the merged CSVs. Those must always be present -
+          # they are what an incremental fetch resumes from - so a failure there
+          # is real and must not be swallowed.
+          git add -- 'data/*_merged.csv'
+          git add -- 'data/*_state.json' 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "Nothing changed - nothing to commit"
             exit 0

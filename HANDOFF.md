@@ -1946,3 +1946,63 @@ And the reason this one nearly shipped is worth keeping attached to it:
 passed, because the tests built their own dicts, which carried the key. It would
 have reported every event's warm-up shape as correct, forever, having never seen
 a flag.
+
+## Trap #13: a signal that always fires carries no information
+
+"Daily dashboards / Commit dashboards" failed on **every run** for days, in
+about eight seconds, while all six build jobs went green. The cause was one
+line:
+
+```
+git add -- 'data/*_merged.csv' 'data/*_state.json'
+```
+
+A quoted pathspec matching nothing makes `git add` exit 128 **and stage nothing
+from that command**, and each Actions `run:` block is `bash -e` — so the step
+aborted there. The diff check, the commit and the whole push-retry loop below it
+were unreachable and always had been.
+
+No `*_state.json` has ever existed, for two independent reasons: the daily job
+calls `fetch_csv.py` without `--incremental`, and the commit job runs on a
+separate runner that sees only the uploaded artifacts, which never included
+state files. `.gitignore` carries `!data/*_state.json` — an un-ignore rule for a
+file type that has never been produced. The whole path was written for a mode
+the daily job does not use.
+
+**The failure was not that it broke. It was that it kept breaking.** A red
+"Commit dashboards" became the normal state of the board, so a *genuine* commit
+failure — a push race, a permissions change, a real conflict — would have looked
+exactly like the noise and been read the same way: as the usual one.
+
+> **A signal that always fires carries no information.** An alert that has been
+> red for days is not an alert; it is a background colour. The cost is not the
+> broken job, it is the loss of the channel — everything that would have used
+> that signal to reach a human no longer can.
+
+Same family as #10–#12 seen from the operator's side rather than the code's:
+each of those was something that *worked* at the wrong thing, and this is
+something that *reported* at the wrong thing until reporting stopped meaning
+anything.
+
+**Worth checking whenever a job is red:** how long has it been red, and did
+anything change on the day it went red? If the answer is "since it was written",
+the step below it has never run, and that is a separate finding from the error
+message.
+
+### What it actually cost, which was not what it looked like
+
+The obvious reading is "the dashboards are frozen". They were not. The pages on
+`main` were rebuilt by hand during this work as recently as `8c5ca1c`. What
+stopped was the **data**: the last `data/*_merged.csv` commit is `6c772a9`,
+2026-08-07.
+
+So the pages were freshly generated *from two-day-old CSVs* — which is harder to
+notice than a stale page, because the file's commit date looks current while its
+contents are not. The footer says so if you read it: `epk` stamps
+`Dernier billet 07/08 · 09:41` on a page written on the 9th, because the newest
+`order_date` in the CSV is the 7th.
+
+**Consequence to carry forward:** every figure verified during the Route 1 work
+— the byte-identical canaries, epk's 3 866 / 6 766 — was measured against 07/08
+data. The comparisons were like-for-like so the conclusions hold, but the
+numbers are as of the 7th, not today.
