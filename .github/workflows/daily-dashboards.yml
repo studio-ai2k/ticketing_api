@@ -245,13 +245,10 @@ jobs:
             --out "api_output/${{ matrix.event.id }}.html"
           python scripts/postprocess_html.py "api_output/${{ matrix.event.id }}.html"
           cp "api_output/${{ matrix.event.id }}.html" "${{ matrix.event.out }}"
-          # v2/ is the redesign, published alongside production on the same
-          # branch so Leo previews it on real data with the live link untouched.
-          # Derived here rather than from a config column: output_filename is
-          # free text on 22 rows ("Capacity TBD"), so it is not a path source.
-          python scripts/build_v2.py --event "${{ matrix.event.id }}" \
-            --csv "api_output/${{ matrix.event.id }}_merged.csv" \
-            --out "v2/${{ matrix.event.out }}"
+          # v2/ PUBLISHING IS DISABLED. The redesign stylesheet has no
+          # .db-overlay rule, so the password modal rendered in normal flow and
+          # the dashboard was readable underneath it - internal revenue data on
+          # a public URL. Re-enable only when verify/check_v2_gate.py passes.
 
       # N4: M1 skips the rebuild when the CSV is byte-identical, which also
       # freezes the footer's "Données API · HH:MM". That stamp answers "how
@@ -348,7 +345,6 @@ jobs:
           name: dashboard-${{ matrix.event.id }}
           path: |
             ${{ matrix.event.out }}
-            v2/${{ matrix.event.out }}
             data/${{ matrix.event.id }}_merged.csv
           if-no-files-found: error
           retention-days: 1
