@@ -237,16 +237,20 @@ def event_identity(cfg, ref_cfg, ref_label):
         # jour)". Found while rendering the weekly table for a different
         # question, and invisible to check_v2_identity for the reason that scan
         # cannot fix: a bare year is a NUMBER, and numbers have no fingerprint.
+        # CYR, not YR: the header year follows the SELECTED comparison, which
+        # B1 made mutable. YR is the configured reference and stops being the
+        # right answer the moment someone picks another edition.
         ("${HAS_CMP ? H('2023 (même jour)','Diff','2026 (actuel)') "
          ": H('','','2026 (actuel)')}",
-         "${HAS_CMP ? H(YR + ' (même jour)','Diff',YC + ' (actuel)') "
+         "${HAS_CMP ? H(CYR + ' (même jour)','Diff',YC + ' (actuel)') "
          ": H('','',YC + ' (actuel)')}"),
         ("H('2023 (référence)','J−X','2026 (à venir)')",
-         "H(YR + ' (référence)','J−X',YC + ' (à venir)')"),
+         "H(CYR + ' (référence)','J−X',YC + ' (à venir)')"),
         ("let CSEL = 'Elektric Park 2023'",
          "let CSEL = " + repr(ref_label or '—')),
-        ("{g:'Éditions Elektric Park', items:[{n:'Elektric Park 2023', d:'252 j', ref:true}]}",
-         "{g:'Édition de référence', items:[{n:" + repr(ref_label or '—') + ", d:'', ref:true}]}"),
+        # The CANDS group literal used to be substituted here. D12 replaced the
+        # hardcoded menu with one built from D.cands, so there is no literal
+        # left to fix - the identity it carried is now data.
     ]
 
 
@@ -257,6 +261,11 @@ def event_identity(cfg, ref_cfg, ref_label):
 PAGE_PATHS = [
     ('src="LOGO_ROND_JAUNE.png"', 'src="../LOGO_ROND_JAUNE.png"'),
     ("url('upload.JPG')", "url('../upload.JPG')"),
+    # B1's series files. Third asset class to go one directory deep, and the
+    # only one that would fail at RUNTIME rather than at first paint - a broken
+    # image is obvious, a fetch that 404s renders as "comparaison indisponible"
+    # on every pick. Emitted as a root-relative template and rewritten here.
+    ('"series/{id}.json"', '"../series/{id}.json"'),
 ]
 
 
@@ -268,6 +277,13 @@ def strip_placeholders(region):
     out = re.sub(r'\s*Voir\s*<code[^>]*>campagne_mock\.html</code>\s*\.?', '', out)
     out = out.replace('campagne_mock.html', '')
     return out
+
+
+def _family(event_id):
+    """`epk_2026` -> `epk`, `bordeaux_oct_2026` -> `bordeaux_oct`.
+    Same rule as suivi_candidates.family, so the two menus group alike."""
+    parts = event_id.rsplit('_', 1)
+    return parts[0] if len(parts) == 2 and parts[1].isdigit() else event_id
 
 
 def logique_payload(payload):
@@ -402,22 +418,41 @@ def main():
     # replays a reference's remaining curve, and a live edition has not run one
     # yet. Discovered here rather than in the payload so the payload keeps
     # taking explicit paths and stays testable from a fixture.
+    # ONE eligibility rule, shared with build_series, so the projection
+    # selector, the comparison menu and the files on disk cannot drift apart.
+    # They were three lists before: two hardcoded and one computed.
+    import build_series
     cfg_all = run.load_event_config(a.config)
-    extra = []
-    for cid, ccfg in sorted(cfg_all.items()):
-        if cid == a.event or cid == ref or not ccfg.get('days'):
-            continue
-        last = max(d['day_date'] for d in ccfg['days'])
-        if last >= cut:
-            continue
-        path = next((BASE_DIR / 'csv_database' / cid).glob('*_merged.csv'), None)
-        if path:
-            extra.append((cid, str(path)))
+    eligible = [c for c in build_series.eligible(cfg_all, cut) if c != a.event]
+    extra = [(cid, str(build_series.series_path(cid)))
+             for cid in eligible if cid != ref]
 
     D = dashboard_payload.build(a.event, a.csv, cut,
                                 a.config, ref or None,
                                 str(ref_csv) if ref_csv else None,
                                 extra_refs=extra)
+
+    # B1's menu. Built from the SERIES FILES that exist, not from the config:
+    # an entry the reader can pick but not fetch is the failure mode the whole
+    # option was priced to avoid.
+    series_dir = BASE_DIR / 'series'
+    mine = build_series.family(a.event) if hasattr(build_series, 'family') else None
+    cands = []
+    for cid in eligible:
+        f = series_dir / f'{cid}.json'
+        if not f.exists():
+            continue
+        head = json.loads(f.read_text(encoding='utf-8'))
+        cands.append({'id': cid, 'n': head['name'], 'lead': head['lead'],
+                      'g': 'edition' if _family(cid) == _family(a.event) else 'past',
+                      'ref': cid == ref})
+    cands.sort(key=lambda c: (c['g'] != 'edition', not c['ref'], c['n']))
+    D['cands'] = cands
+    D['family'] = _family(a.event).replace('_', ' ').title()
+    D['series_path'] = 'series/{id}.json'
+    if not cands:
+        print('  warning: no series files - the comparison menu will be empty. '
+              'Run scripts/build_series.py first.', file=sys.stderr)
 
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)

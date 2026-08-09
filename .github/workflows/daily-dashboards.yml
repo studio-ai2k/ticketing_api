@@ -245,6 +245,12 @@ jobs:
             --out "api_output/${{ matrix.event.id }}.html"
           python scripts/postprocess_html.py "api_output/${{ matrix.event.id }}.html"
           cp "api_output/${{ matrix.event.id }}.html" "${{ matrix.event.out }}"
+          # B1: one JSON per finished edition, keyed by that edition's own
+          # J-x. Written BEFORE build_v2, which reads their headers to build
+          # the comparison menu - so the menu can only ever list a file that
+          # exists. Cheap enough to redo per event (2.1s for all of them) and
+          # much cheaper than making the ordering conditional.
+          python scripts/build_series.py
           # v2/ - the redesign, published alongside production on the same
           # branch. Path derived here, not from output_filename, which is free
           # text on 22 rows.
@@ -400,6 +406,10 @@ jobs:
           # is real and must not be swallowed.
           git add -- 'data/*_merged.csv'
           git add -- 'data/*_state.json' 2>/dev/null || true
+          # B1's series files. Their own line, and NOT `|| true`: the v2 pages
+          # fetch these by name, so a run that rebuilds the pages without them
+          # ships six dashboards whose every comparison says "indisponible".
+          git add -- 'series/*.json'
           if git diff --cached --quiet; then
             echo "Nothing changed - nothing to commit"
             exit 0

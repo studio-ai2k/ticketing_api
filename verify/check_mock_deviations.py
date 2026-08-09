@@ -104,6 +104,39 @@ AUTHORISED = [
     ('D8', '§5 — headline ring is presence ÷ jauge, not tickets ÷ jauge. Same '
            'element, same geometry, same position; only its input moves',
      'A.pres_tot != null ? A.pres_tot : A.n'),
+    ('D10', 'the weekly % is the JAUGE on both sides, and says so. Two '
+            'denominators under one unlabelled "%" is how the ring went wrong '
+            'and how trap #14 happened',
+     '% de la jauge · ${r.ca}% cumulé'),
+    ('D11', 'B1 — the comparison menu is built from D.cands, which is built '
+            'from the series files that exist. It was a hardcoded list wired '
+            'from a different source than the data behind it',
+     'const CMAP = Object.fromEntries'),
+    ('D12', 'B1 — picking a comparison fetches that edition\'s own series and '
+            'rewrites the reference column. It used to move CSEL and nothing '
+            'else',
+     'async function pickCmp(n)'),
+    ('D13', 'B1 — a failed fetch says so, and says the figures still on screen '
+            'are the previous comparison. Silence is the worst outcome',
+     'Comparaison indisponible'),
+    ('D14', 'a row with no counterpart renders an em-dash, not 1 jan 1970. '
+            '`fday(null)` is the epoch, and it shipped',
+     "r.db ? fday(r.db) : '—'"),
+    ('D15', 'the same for the WEEKLY row - a bucket the reference does not '
+            'have renders an em-dash rather than an S-week over the epoch. Two '
+            'functions, two edits, two entries: one signature covering both '
+            'would have let either be reverted silently',
+     "r.sb ? 'S−'+r.w"),
+    ('D16', 'the projection methodology reads YC/YR instead of 2023/2026. Same '
+            'class as A7, ten literals in one block, found by the year scan on '
+            'its first run',
+     '1. Trajectoire ${YR}'),
+    ('D17', 'D16 continued - the second scenario\'s heading and prose. Three '
+            'hunks, three entries, for the same reason D14 and D15 are two: a '
+            'single signature would let the others be reverted in silence',
+     '2. ${YR} × coef. ${YC}'),
+    ('D18', 'D16 continued - the per-day application block',
+     '→ Trajectoire ${YR} :'),
 ]
 
 

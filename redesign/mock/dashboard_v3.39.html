@@ -1470,16 +1470,16 @@ let PSEL = PX ? PX.default : null;
      <div class="ac-b">
        <div class="eyebrow" style="margin:16px 0 12px">Méthodologie — Deux scénarios de projection</div>
        <div class="meth">
-         <div class="meth-n">1. Trajectoire 2023</div>
-         <div class="meth-t">Réplique exacte des ventes 2023 sur les J−${D.jx} restants. Les ventes
-           journalières observées en 2023 à la même distance de l’événement sont ajoutées au cumul
-           actuel 2026. Aucun ajustement — projection conservatrice basée sur l’historique brut.</div>
+         <div class="meth-n">1. Trajectoire ${YR}</div>
+         <div class="meth-t">Réplique exacte des ventes ${YR} sur les J−${D.jx} restants. Les ventes
+           journalières observées en ${YR} à la même distance de l’événement sont ajoutées au cumul
+           actuel ${YC}. Aucun ajustement — projection conservatrice basée sur l’historique brut.</div>
        </div>
        <div class="meth">
-         <div class="meth-n">2. 2023 × coef. 2026</div>
-         <div class="meth-t">La courbe de ventes 2023 est multipliée par le ratio de vélocité actuelle
-           (2026 vs 2023 à J−${D.jx}). Ce coefficient reflète la dynamique de vente actuelle :
-           un coef. &gt; 1 signifie que 2026 vend plus vite que 2023 au même stade.</div>
+         <div class="meth-n">2. ${YR} × coef. ${YC}</div>
+         <div class="meth-t">La courbe de ventes ${YR} est multipliée par le ratio de vélocité actuelle
+           (${YC} vs ${YR} à J−${D.jx}). Ce coefficient reflète la dynamique de vente actuelle :
+           un coef. &gt; 1 signifie que ${YC} vend plus vite que ${YR} au même stade.</div>
        </div>
        <div class="eyebrow" style="margin:20px 0 10px">Application par journée</div>
        ${days.map(d=>{
@@ -1487,8 +1487,8 @@ let PSEL = PX ? PX.default : null;
          return `<div class="meth">
            <div class="meth-n">${d[0].toUpperCase()+d.slice(1)}:<span class="meth-m">
              vél. 14j = ${o.vel14}/jour · coef. = ×${o.coef}</span></div>
-           <div class="meth-t">→ Trajectoire 2023 : <b>${nf(o.s1.tot)}</b> (${Math.round(o.s1.tot/100)}%)<br>
-             → 2023 × coef. 2026 : <b>${nf(o.s2.tot)}</b> (${Math.round(o.s2.tot/100)}%)</div></div>`;
+           <div class="meth-t">→ Trajectoire ${YR} : <b>${nf(o.s1.tot)}</b> (${Math.round(o.s1.tot/100)}%)<br>
+             → ${YR} × coef. ${YC} : <b>${nf(o.s2.tot)}</b> (${Math.round(o.s2.tot/100)}%)</div></div>`;
        }).join('')}
        <div class="sec-note" style="margin-top:16px;line-height:1.65"><b>Paramètres :</b>
          billets payants uniquement · pass multi-jours = 1 entrée/jour ·
@@ -1507,17 +1507,21 @@ const fwk  = (a,b) => { const x=new Date(a), y=new Date(b);
     : `${x.getDate()} ${MOS[x.getMonth()]}-${y.getDate()} ${MOS[y.getMonth()]}`; };
 let GRAIN = 'jour';
 
-const CANDS = [
-  {g:'Éditions Elektric Park', items:[{n:'Elektric Park 2023', d:'252 j', ref:true}]},
-  {g:'Autres éditions passées', items:[
-    {n:'Bordeaux 2025', d:'179 j'}, {n:'Bordeaux Juin 2026', d:'159 j'},
-    {n:'Genève 2025', d:'104 j'}, {n:'Bordeaux Halloween 2025', d:'205 j'},
-    {n:'Paris XXL 2025', d:'105 j'}, {n:'Paris XXL 2026', d:'105 j'},
-    {n:'Rennes 2025', d:'157 j'}]},
-  {g:'Événements en cours', items:[
-    {n:'Bordeaux Octobre 2026', d:'37 j'}, {n:'Genève 2026', d:'94 j'},
-    {n:'Rennes 2026', d:'67 j'}]}
-];
+/* D11 — the menu is built from the payload, which is built from the files
+   that actually exist. It used to be a hardcoded list: right editions, but a
+   snapshot, and wired from a different source than the data behind it. Two
+   menus from two sources is how they come to disagree. */
+const CANDS = (() => {
+  const gs = {edition:'Éditions ' + (D.family || ''), past:'Autres éditions passées'};
+  const out = [];
+  for (const g of ['edition','past']) {
+    const items = (D.cands || []).filter(c => c.g === g)
+      .map(c => ({n:c.n, d:c.lead + ' j', ref:c.ref, id:c.id}));
+    if (items.length) out.push({g:gs[g], items});
+  }
+  return out;
+})();
+const CMAP = Object.fromEntries((D.cands || []).map(c => [c.n, c]));
 let CSEL = 'Elektric Park 2023';
 function cmpMenu(){
   return `<div class="sw-wrap" style="position:relative">
@@ -1535,7 +1539,107 @@ function cmpMenu(){
           ${it.n===CSEL?`<svg class="sw-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>`:''}</button>`).join('')).join('')}
     </div></div>`;
 }
-function pickCmp(n){ if(window.swCloseAll) window.swCloseAll(); CSEL = n; renderSuivi(); }
+/* D12 — B1. Picking a comparison used to move CSEL and nothing else: the
+   trigger label, the active class, the aria-current and the checkmark all
+   followed, and the rows kept reading one fixed series. The rows now come from
+   the picked edition's own file, fetched once and cached.
+
+   ALIGNMENT — two scalars from this page and nothing more:
+     · same point   run.filter_tickets_to_same_point reduces to
+                    "keep jx_ref >= D.jx". Our D.jx, their own jx.
+     · row pairing  jx_ref = jx_cur − signed_mod7(cur_ev − cand_ev). NOT
+                    jx-to-jx: the snap is ±1 on three of the six live pairs,
+                    and reading jx directly would skew those by one day while
+                    still rendering ordinary numbers.
+   D.cap is used as the percentage denominator, which is this page's own jauge
+   and not an alignment input.
+
+   A failed fetch SAYS SO. "Picked a comparison and nothing happened" is the
+   worst outcome and it is the same degrade-honestly rule as a null refday. */
+const SERIES = {};
+const smod7 = g => { const m = ((g % 7) + 7) % 7; return m > 3 ? m - 7 : m; };
+const dnum = iso => Math.round(new Date(iso + 'T00:00:00Z').getTime() / 86400000);
+let CYR = YR, CMPERR = null;
+
+async function loadSeries(id){
+  if (SERIES[id] !== undefined) return SERIES[id];
+  try {
+    const r = await fetch(D.series_path.replace('{id}', id), {cache:'no-cache'});
+    SERIES[id] = r.ok ? await r.json() : null;
+  } catch (e) { SERIES[id] = null; }
+  return SERIES[id];
+}
+
+function applySeries(s){
+  /* Rewrites the b-side of every row IN PLACE. The a-side is never touched:
+     it comes from this page, built in the same run as everything else, and the
+     two halves of a comparison must not be different vintages. */
+  const snap = smod7(dnum(D.ev) - dnum(s.ev));
+  const day = {}, revd = {};
+  for (const [jx, n, rev] of s.daily) { day[jx] = n; revd[jx] = rev; }
+  const sold = s.daily.map(r => r[0]);
+  /* The same-point cut, exactly as the server takes it: the LAST day this
+     edition sold on at or before our J−x, not our J−x itself. They differ
+     whenever the edition was quiet that day. */
+  const cut = sold.filter(j => j >= D.jx);
+  const cutJx = cut.length ? Math.min(...cut) : null;
+
+  let cb = 0, rcb = 0;
+  for (const r of D.daily) {
+    const jr = r.jx - snap;
+    /* Exactly the server's two conditions and no third one. It bounds the
+       reference by ref_cut in the past and by its own event in the future,
+       and it does NOT require the edition to have been on sale: a day
+       before its campaign opened is a real date with zero sales, not a
+       blank. An extra `jr <= lead` here dropped the oldest rows, which
+       then rendered as 1 jan 1970. */
+    const ok = r.fut ? jr >= 0 : (cutJx !== null && jr >= cutJx);
+    if (!ok) { r.b = r.rb = r.cb = r.rcb = r.db = null; continue; }
+    r.b = day[jr] || 0;
+    r.rb = revd[jr] || 0;
+    cb += r.b; rcb += r.rb;
+    r.cb = cb; r.rcb = rcb;
+    r.db = new Date((dnum(s.ev) - jr) * 86400000).toISOString().slice(0, 10);
+  }
+
+  /* Weekly buckets each side by its OWN distance from its own event — no
+     offset and no snap. Shifting weekly rows by the daily offset mis-aligns
+     every one of them, silently. */
+  const w0 = Math.floor(D.jx / 7), wk = {};
+  for (const [jx, n, rev] of s.daily) {
+    const w = Math.floor(jx / 7);
+    if (w > w0 && (cutJx === null || jx < cutJx)) continue;
+    (wk[w] = wk[w] || [0, 0])[0] += n;
+    wk[w][1] += rev;
+  }
+  let bb = 0;
+  const evd = dnum(s.ev);
+  for (const r of D.weekly) {
+    const b = wk[r.w];
+    if (!b) { r.b = r.rb = r.pb = r.cb = r.sb = r.eb = null; continue; }
+    r.b = b[0]; r.rb = b[1]; bb += b[0];
+    r.pb = Math.round(b[0] / D.cap * 1000) / 10;
+    r.cb = Math.round(bb / D.cap * 1000) / 10;
+    const sb = (evd - ((r.w + 1) * 7 - 1)) * 86400000;
+    r.sb = new Date(sb).toISOString().slice(0, 10);
+    r.eb = new Date(sb + 6 * 86400000).toISOString().slice(0, 10);
+  }
+  CYR = new Date(s.ev + 'T00:00:00Z').getUTCFullYear();
+}
+
+async function pickCmp(n){
+  if (window.swCloseAll) window.swCloseAll();
+  const c = CMAP[n];
+  if (!c) return;
+  CSEL = n; CMPERR = null; renderSuivi();
+  const s = await loadSeries(c.id);
+  if (!s) {
+    CMPERR = n;
+  } else {
+    applySeries(s);
+  }
+  renderSuivi();
+}
 
 
 function dRow(r){
@@ -1546,9 +1650,9 @@ function dRow(r){
       <div class="sv-n">${fut?'–':nf(r.a)}<span class="dtl-rev">${r.ra?eur(r.ra):''}</span></div>
       ${fut?'':`<div class="sv-x">Cumulé ${nf(r.ca)}${r.rca?' · '+eur(r.rca):''}</div>`}</div></div>`;
   return `<div class="sv${r.jx===D.jx?' today':''}">
-    <div class="sv-l"><div class="sv-d">${fday(r.db)}</div>
-      <div class="sv-n">${nf(r.b)}<span class="dtl-rev">${r.rb?eur(r.rb):''}</span></div>
-      <div class="sv-x">Cumulé ${nf(r.cb)}${r.rcb?' · '+eur(r.rcb):''}</div></div>
+    <div class="sv-l"><div class="sv-d">${r.db ? fday(r.db) : '—'}</div>
+      <div class="sv-n">${r.b==null?'—':nf(r.b)}<span class="dtl-rev">${r.rb?eur(r.rb):''}</span></div>
+      <div class="sv-x">${r.cb==null?'':'Cumulé '+nf(r.cb)+(r.rcb?' · '+eur(r.rcb):'')}</div></div>
     <div class="sv-c">${fut ? `<div class="sv-dp">J−${r.jx}</div>`
       : `<div class="sv-df ${d>=0?'pos':'neg'}">${d>=0?'+':''}${nf(d)}</div>
          <div class="sv-dp">${r.b?(p>=0?'+':'')+p.toFixed(1)+'%':'—'}</div>`}</div>
@@ -1565,12 +1669,12 @@ function wRow(r){
   if (!HAS_CMP) return `<div class="sv sv-solo">
     <div class="sv-r"><div class="sv-d">S−${r.w} · ${fwk(r.sa,r.ea)}</div>
       <div class="sv-n">${r.fut?'–':nf(r.a)}</div>
-      ${r.fut?'':`<div class="sv-x">${r.pa}% · ${r.ca}% cumulé</div><div class="sv-x">${k(r.ra)}</div>`}</div></div>`;
+      ${r.fut?'':`<div class="sv-x">${r.pa}% de la jauge · ${r.ca}% cumulé</div><div class="sv-x">${k(r.ra)}</div>`}</div></div>`;
   return `<div class="sv">
-    <div class="sv-l"><div class="sv-d">S−${r.w} · ${fwk(r.sb,r.eb)}</div>
-      <div class="sv-n">${nf(r.b)}</div>
-      <div class="sv-x">${r.pb}% · ${r.cb}% cumulé</div>
-      <div class="sv-x">${k(r.rb)}</div></div>
+    <div class="sv-l"><div class="sv-d">${r.sb ? 'S−'+r.w+' · '+fwk(r.sb,r.eb) : '—'}</div>
+      <div class="sv-n">${r.b==null?'—':nf(r.b)}</div>
+      <div class="sv-x">${r.pb==null?'':r.pb+'% de la jauge · '+r.cb+'% cumulé'}</div>
+      <div class="sv-x">${r.rb==null?'':k(r.rb)}</div></div>
     <div class="sv-c">${r.fut ? `<div class="sv-dp">S−${r.w}</div>`
       : `<div class="sv-df ${d>=0?'pos':'neg'}">${d>=0?'+':''}${nf(d)}</div>
          <div class="sv-dp">${r.b?(p>=0?'+':'')+p.toFixed(1)+'%':'—'}</div>`}</div>
@@ -1579,7 +1683,7 @@ function wRow(r){
          <div class="sv-n" style="color:var(--text-muted)">–</div>`
       : `<div class="sv-d">S−${r.w} · ${fwk(r.sa,r.ea)}</div>
          <div class="sv-n">${nf(r.a)}</div>
-         <div class="sv-x">${r.pa}% · ${r.ca}% cumulé</div>
+         <div class="sv-x">${r.pa}% de la jauge · ${r.ca}% cumulé</div>
          <div class="sv-x">${k(r.ra)}</div>`}</div>
   </div>`;
 }
@@ -1607,6 +1711,11 @@ function renderSuivi(){
          <button class="scen-b ${isD?'on':''}" onclick="grain('jour')">Jour</button>
          <button class="scen-b ${isD?'':'on'}" onclick="grain('semaine')">Semaine</button></div>
        ${HAS_CMP ? cmpMenu() : ''}</div>
+     ${CMPERR ? `<div class="empty" style="margin:12px 0">
+       <div class="empty-t">Comparaison indisponible</div>
+       <div class="empty-s">Les ventes de ${CMPERR} n’ont pas pu être chargées.
+         Les chiffres ci-dessous sont toujours ceux de la comparaison
+         précédente — ils ne concernent pas ${CMPERR}.</div></div>` : ''}
      ${HAS_CMP ? H('2023 (même jour)','Diff','2026 (actuel)') : H('','','2026 (actuel)')}
      <button class="show-more-btn more" onclick="tog('past')" id="b-past">Voir les ${past.length}
        ${isD?'jours précédents':'semaines précédentes'}</button>

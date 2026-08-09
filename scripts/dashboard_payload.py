@@ -327,7 +327,7 @@ def daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first, offset, ref_cut,
 
 
 def weekly_rows(cur_n, cur_rev, ref_n, ref_rev, cur_ev, ref_ev, cutoff, ref_cut,
-                cur_jx):
+                cur_jx, cap):
     """Bucketed by each side's OWN distance from its event - no offset, no
     weekday snap. The two grains do not share a mapping (§1).
 
@@ -355,8 +355,16 @@ def weekly_rows(cur_n, cur_rev, ref_n, ref_rev, cur_ev, ref_ev, cutoff, ref_cut,
             cb[w][0] += k
             cb[w][1] += ref_rev.get(d, 0)
     weeks = sorted(set(ca) | set(cb) | set(range(0, w0 + 1)), reverse=True)
-    ta = sum(v[0] for v in ca.values()) or 1
-    tb = sum(v[0] for v in cb.values()) or 1
+    # ONE denominator, and it is OUR jauge on both sides (ruled, after seeing
+    # both rendered). Per-side totals put the two columns on two scales, so the
+    # S-17 row read "12.8% cumulé" beside "65.1% cumulé" - same unit, same row,
+    # different meanings - and the reference column was a percentage of a total
+    # the reader cannot see. It also made the last row read 100% by
+    # construction, which is a number that carries no information.
+    #
+    # The row template says "de la jauge" out loud (D10). An unlabelled "%"
+    # over two possible denominators is how this got as far as it did.
+    ta = tb = cap or 1
     out, aa, bb = [], 0, 0
     for w in weeks:
         a, ra = ca[w][0], ca[w][1]
@@ -539,6 +547,13 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
 
     D = {
         'jx': (cur_cfg['event_date_first'] - cutoff).days,
+        # B1: the two scalars a consumer contributes to alignment. `jx` is the
+        # same-point truncation (filter_tickets_to_same_point reduces to
+        # exactly `keep jx_ref >= D.jx`); `ev` is one half of the weekday snap
+        # `signed_mod7(cur_ev - cand_ev)`, the other half being in the
+        # candidate's own file. Nothing else about this event enters.
+        'ev': cur_cfg['event_date_first'].isoformat(),
+        'ref_id': ref_event,
         'cap': sum(caps.values()),
         'daycap': max(caps.values()) if caps else 0,
         'vat': VAT,
@@ -569,7 +584,7 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
     D['weekly'] = weekly_rows(cur_n, cur_rev, ref_n, ref_rev,
                               cur_cfg['event_date_first'],
                               ref_cfg['event_date_first'] if ref_cfg else None,
-                              cutoff, ref_cut, D['jx']) if ref_cfg else []
+                              cutoff, ref_cut, D['jx'], D['cap']) if ref_cfg else []
     D['maxjx'] = max((r['jx'] for r in D['daily']), default=span)
     # The last ten days LIVED, not the last ten rows: with future rows in the
     # list the tail is all `–`.

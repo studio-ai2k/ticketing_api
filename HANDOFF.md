@@ -2270,3 +2270,119 @@ the other single-event literals, rather than by editing the mock.
 **Both instances were found by looking at a rendered page for another reason.**
 Neither was found by a check, and #14 says plainly that neither could have
 been.
+
+## B1: the comparison selector, and why the file could be generic
+
+Ruled after pricing three options. Inlining every candidate in every page cost
++216 KB across six pages and +9s of build; one JSON per edition costs 64.5 KB
+total, +2.1s once per run, and 1.4–5.6 KB downloaded only when a reader
+actually picks something.
+
+That only works if the file is event-agnostic, and the premise we were given —
+"our J−69 against their J−69" — is **wrong on half the pairs**.
+
+`run.filter_tickets_to_same_point` is three lines and reduces to `keep the
+reference's tickets where jx_ref >= D.jx`: the consumer's own D.jx against the
+candidate's own jx, nothing crossing. That half is generic.
+
+But the daily table does not pair rows through that function. It pairs them
+through `daily_offset`, and the identity is
+
+    jx_ref = jx_cur − signed_mod7(G),    G = (cur_ev − cand_ev).days
+
+Derived, then **checked against all six shipped pairs before being used**:
+rennes 0, epk +1, geneve −1, bordeaux_oct 0, bordeaux −1, parisxxl 0.
+Single-valued across every row of every page, and equal to the closed form.
+
+Reading jx straight through would have agreed with the server on three pairs
+and been one day out on the other three, rendering as ordinary numbers.
+
+The snap survives into a generic file because it is a pure function of the two
+event dates: the file carries `ev`, the consumer knows its own. **Two scalars
+from the consumer and no per-pair work on the server** — the condition that
+would have sent the option back for re-pricing.
+
+`D.cap` is also read, as the percentage denominator. It is the consumer's own
+jauge and not an alignment input, and it is called out here rather than quietly
+folded into "two scalars".
+
+### The check is two implementations of the same rule, in two languages
+
+`verify/check_b1_switch.py` serves the repo over HTTP (a `file://` origin
+cannot `fetch`), clicks every candidate on every page, reads the reference
+column **back out of the rendered rows**, and compares it against
+`dashboard_payload.daily_rows` — the server-side implementation that has been
+shipping for weeks. 45 comparisons across 6 pages, agreeing row for row.
+
+Not "did something change". Two independent implementations agreeing is a much
+stronger statement, and it is available here only because the server path
+already existed.
+
+The snap is asserted directly too: constant per pair, equal to the closed form,
+and at least one non-zero across the set — **a rule that is always zero is a
+rule that has never run**, and would be indistinguishable from not having it.
+
+Negative-tested: forcing `smod7` to zero, dropping the same-point cut, and
+pointing the fetch at a missing file each fail on their own assertion.
+
+### Two things the first version got wrong, both caught by that check
+
+  - an extra `jr <= lead` bound the server does not have. It dropped the oldest
+    rows, whose `db` then rendered through `fday(null)` as **1 jan 1970**.
+  - `nf(null)` renders `0`, so a row with no counterpart claimed the reference
+    sold zero that day. Now an em-dash, on both grains (D14, D15).
+
+The second is trap #12 again — a missing value shown as the operation's
+identity — and it was in the locked mock all along.
+
+### Live editions are not candidates, deliberately
+
+`suivi_candidates` already ruled that a live candidate must be anchored on
+LAUNCH, not on its event date, because an event-date anchor maps recent rows
+into its future. That is a second alignment mode needing a third input from the
+consumer — the stated stop condition. So the menu lists finished editions only,
+and the hardcoded mock menu that used to list live ones is gone with it.
+
+## Trap #14, the structural half — priced, then built narrow
+
+`verify/check_mock_literals.py`. The instinct after LG and A7 is a scan for
+numeric literals in the template. Most of that is not worth having, and the
+pricing is the useful part:
+
+| scan | hits | real | verdict |
+|---|---|---|---|
+| multi-digit literals in reader-facing text | 42 | ~0 | **no.** SVG viewBoxes, rgba components, `stroke-dasharray`, percentages. The allow-list would be longer than the check. **And it would not have caught LG** — LG is syntactically an object literal, i.e. data, which the scan skips by construction. |
+| year literals | 11 | 6 | **yes.** Cheap, stable, and it caught a cluster on its first run. |
+
+So two narrow assertions instead of one broad one:
+
+1. **Every top-level data literal is substituted** — asserted by comparing the
+   built page's `const NAME = {…}` against the mock's and requiring them to
+   differ. Not "does build_v2 mention it": an *error message* mentions it, and
+   the first version of this passed for exactly that reason.
+2. **No foreign year in reader-facing text on a BUILT PAGE.** On the page, not
+   the mock: the mock is a single-event artefact and its literal years are
+   legitimate there because `event_identity` replaces them. Third time the
+   file-is-not-the-page distinction has decided where a check belongs.
+
+Two things the first version of (2) got wrong, both found by making it fail:
+
+  - candidate labels were added to the allowed set, which admitted almost every
+    year and made the check unable to fire on an injected `Trajectoire 2023`.
+    They reach the page through `${…}` and the scan never sees them, so they
+    did not need allowing at all.
+  - the `${…}` stripper was a regex, and the mock nests template literals three
+    deep. An unbalanced strip merges the text either side and reports years
+    that are already `${YR}` — three of the eleven original hits were the
+    check's own.
+
+**What it found on its first clean run: D16.** The entire "Logique de
+projection" methodology block hardcoded 2023 and 2026 — "Réplique exacte des
+ventes 2023", "2023 × coef. 2026", "2026 vend plus vite que 2023" — on a page
+comparing against 2025. Ten literals, one block, every page, same class as A7.
+
+**Still open from it:** that block reads `YR`, the *configured* reference, and
+the projection selector can pick any of eight editions. So the prose is right
+for the default and stale for the other seven. Same shape as B1 — a selector
+that does not reach a block — and it needs `LG` per candidate to fix properly.
+Not built; Leo's call.
