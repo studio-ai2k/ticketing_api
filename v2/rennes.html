@@ -1767,6 +1767,16 @@ function cmpMenu(){
    A failed fetch SAYS SO. "Picked a comparison and nothing happened" is the
    worst outcome and it is the same degrade-honestly rule as a null refday. */
 const SERIES = {};
+/* Our own weekly aggregates, snapshotted before any candidate is applied.
+   applySeries REBUILDS D.weekly, so reading our side back out of it would
+   read the previous candidate's rebuild.
+   Filtered to weeks WE actually sold in: the payload's D.weekly is already a
+   union of our weeks and the DEFAULT candidate's, so snapshotting it whole
+   carries that candidate's week range into every other comparison — which is
+   the same bug one level up, and it rendered as leading em-dash rows. The
+   server builds its own side from `cur_n.items()`, i.e. days with sales. */
+const WK_OURS = (D.weekly || []).filter(r => r.a > 0)
+  .map(r => ({w: r.w, a: r.a, ra: r.ra}));
 const smod7 = g => { const m = ((g % 7) + 7) % 7; return m > 3 ? m - 7 : m; };
 const dnum = iso => Math.round(new Date(iso + 'T00:00:00Z').getTime() / 86400000);
 let CMPERR = null;
@@ -1814,26 +1824,64 @@ function applySeries(s){
 
   /* Weekly buckets each side by its OWN distance from its own event — no
      offset and no snap. Shifting weekly rows by the daily offset mis-aligns
-     every one of them, silently. */
-  const w0 = Math.floor(D.jx / 7), wk = {};
+     every one of them, silently.
+
+     AND THE ROW SET IS A UNION, WHICH IS WHY THIS REBUILDS RATHER THAN
+     ASSIGNS. The first version walked `for (const r of D.weekly)` and wrote
+     into the rows built for the DEFAULT candidate. That works for the daily
+     grain, where the row set is OURS and the candidate is mapped onto it. Here
+     each side contributes its own weeks: a longer campaign has weeks we never
+     had and could not be shown at all, so rennes rendered 23 rows against 38
+     — the default candidate's week range with another edition's numbers in it.
+     The arithmetic mirrored weekly_rows; the SHAPE did not. */
+  const w0 = Math.floor(D.jx / 7), theirs = new Map();
   for (const [jx, n, rev] of s.daily) {
     const w = Math.floor(jx / 7);
-    if (w > w0 && (cutJx === null || jx < cutJx)) continue;
-    (wk[w] = wk[w] || [0, 0])[0] += n;
-    wk[w][1] += rev;
+    /* The server's two bounds, both of them. The first version applied only
+       the `w > w0` one and left the other branch unbounded, so days the
+       edition sold AFTER its own event landed in week −1 and rendered as
+       "S−−1". `d <= ref_cut` is `jx >= cutJx`; `d <= ref_ev` is `jx >= 0`. */
+    const keep = w > w0 ? (cutJx !== null && jx >= cutJx) : (jx >= 0);
+    if (!keep) continue;
+    const c = theirs.get(w) || [0, 0];
+    c[0] += n; c[1] += rev; theirs.set(w, c);
   }
-  let bb = 0;
-  const evd = dnum(s.ev);
-  for (const r of D.weekly) {
-    const b = wk[r.w];
-    if (!b) { r.b = r.rb = r.pb = r.cb = r.sb = r.eb = null; continue; }
-    r.b = b[0]; r.rb = b[1]; bb += b[0];
-    r.pb = Math.round(b[0] / D.cap * 1000) / 10;
-    r.cb = Math.round(bb / D.cap * 1000) / 10;
-    const sb = (evd - ((r.w + 1) * 7 - 1)) * 86400000;
-    r.sb = new Date(sb).toISOString().slice(0, 10);
-    r.eb = new Date(sb + 6 * 86400000).toISOString().slice(0, 10);
-  }
+  /* OUR side never changes with the candidate, so it is snapshotted once at
+     load, before any of this runs. Harvesting it from D.weekly here would
+     read whatever the previous candidate left behind. */
+  const ours = new Map(WK_OURS.map(o => [o.w, o]));
+  const weeks = [...new Set([...ours.keys(), ...theirs.keys(),
+                             ...Array.from({length: Math.max(w0 + 1, 0)}, (_, i) => i)])]
+    .sort((x, y) => y - x);
+  const evd = dnum(s.ev), evo = dnum(D.ev);
+  /* Each label comes from ITS OWN side's event date and nowhere else. The
+     "S−-1" row this used to render is that rule broken where it shows; one
+     week further in it would not have. */
+  const span = (anchor, w) => {
+    const a = (anchor - ((w + 1) * 7 - 1)) * 86400000;
+    return [new Date(a).toISOString().slice(0, 10),
+            new Date(a + 6 * 86400000).toISOString().slice(0, 10)];
+  };
+  let aa = 0, bb = 0;
+  D.weekly = weeks.map(w => {
+    const o = ours.get(w), b = theirs.get(w);
+    const a = o ? o.a : 0, ra = o ? o.ra : 0;
+    aa += a;
+    if (b) bb += b[0];
+    const [sa, ea] = span(evo, w), [sb, eb] = span(evd, w);
+    return {
+      w, a, ra, fut: w <= w0,
+      pa: Math.round(a / D.cap * 1000) / 10,
+      ca: Math.round(aa / D.cap * 1000) / 10,
+      sa, ea,
+      /* No counterpart stays NULL on every field — never 0, never the previous
+         candidate's value. D14/D15 render that as an em-dash. */
+      b: b ? b[0] : null, rb: b ? b[1] : null,
+      pb: b ? Math.round(b[0] / D.cap * 1000) / 10 : null,
+      cb: b ? Math.round(bb / D.cap * 1000) / 10 : null,
+      sb: b ? sb : null, eb: b ? eb : null,
+    };
+  });
   CYR = new Date(s.ev + 'T00:00:00Z').getUTCFullYear();
 }
 

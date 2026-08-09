@@ -65,9 +65,11 @@ for f in "${FILES[@]}"; do
   [[ "$n" -gt 0 ]] && pass "reduced-motion block" || fail "reduced-motion block missing"
 
   # ---- 6. mobile nav containment ----
-  # corrected stylesheet merges the rule: html,body{overflow-x:hidden;...}
-  n=$(count "html,body{overflow-x:hidden" "$p")
-  [[ "$n" -gt 0 ]] && pass "overflow-x contained" || fail "overflow-x:hidden missing"
+  # D24: clip, not hidden. `hidden` makes body a scroll container and the
+  # sticky nav positions against it, so the nav never stuck on either head.
+  # This assertion outlived the ruling and kept demanding the broken value.
+  n=$(count "html,body{overflow-x:clip" "$p")
+  [[ "$n" -gt 0 ]] && pass "overflow-x contained (clip)" || fail "overflow-x:clip missing"
 
   # ---- 7. footer version tracks the zip version ----
   # Deploy 3 §7 split this: "Festiflow Dashboard v6.7" is no longer one string,
