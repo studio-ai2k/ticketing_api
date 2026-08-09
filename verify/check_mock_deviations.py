@@ -22,13 +22,19 @@ Both directions matter:
   - a MISSING authorised deviation means an approved change was reverted, which
     is just as wrong and much quieter
 
-The stylesheet carries no authorised deviations at all: after the `.pill-warm`
-deletion the redesign adds zero CSS, so `dashboard_redesign.css` must be
-byte-identical to the locked copy. That is the strongest form this check takes,
-and it is why the CSS is checked separately rather than by signature.
+The stylesheet has exactly ONE class of authorised deviation: `.db-*` rules
+carried VERBATIM from `style/dashboard_v6_8.css` to make the auth overlay work.
+Those are not mock deviations — the locked mock has no auth overlay at all, so
+they are production chrome it never contained.
+
+Anything else fails: a removed line, a modified one, or a `.db-*` rule whose
+text does not appear in production's sheet. The property being protected was
+never byte identity; it is **the redesign invents no CSS**, and that survives
+intact.
 """
 
 import difflib
+import re
 import sys
 from pathlib import Path
 
@@ -54,6 +60,10 @@ AUTHORISED = [
      "d.now>d.cap?'var(--amber)'"),
     ('D7', 'FF2 — gratuits share under the count, amber at >= 50%',
      "pc>=50?'var(--amber)'"),
+    # The smallest kind of deviation: appearance identical, input changed.
+    ('D8', '§5 — headline ring is presence ÷ jauge, not tickets ÷ jauge. Same '
+           'element, same geometry, same position; only its input moves',
+     'A.pres_tot != null ? A.pres_tot : A.n'),
 ]
 
 
@@ -68,17 +78,53 @@ def main():
 
     failures = []
 
-    # ---- the stylesheet must not deviate at all ----
-    lock_css, work_css = LOCK_CSS.read_text(encoding='utf-8'), WORK_CSS.read_text(encoding='utf-8')
-    if lock_css == work_css:
-        print('ok    stylesheet: byte-identical to locked (zero new CSS)')
-    else:
-        d = list(difflib.unified_diff(lock_css.split('\n'), work_css.split('\n'), lineterm='', n=0))
-        failures.append(f'stylesheet deviates from locked ({len(d)} diff lines)')
-        print('FAIL  stylesheet deviates from locked. The redesign adds no CSS;')
-        print('      anything here is an invention. First lines:')
-        for line in d[:6]:
-            print(f'        {line[:110]}')
+    # ---- the stylesheet may differ ONLY by carried-across .db-* rules ----
+    #
+    # NOT relaxed generically. The property worth protecting was never byte
+    # identity - it was "the redesign invents no CSS". The auth-overlay rules
+    # are not inventions: they are carried VERBATIM from dashboard_v6_8.css, and
+    # the locked mock has no auth overlay at all, so they were never mock
+    # deviations. Anything else - an added line, a modified one, a .db-* rule
+    # whose text does not match production's - still fails.
+    def _decomment(s):
+        # Comments carry the RATIONALE for the carry-across and are meant to be
+        # there; comparing them line-by-line would flag prose as invented CSS.
+        return re.sub(r'/\*.*?\*/', '', s, flags=re.DOTALL)
+
+    lock_css = _decomment(LOCK_CSS.read_text(encoding='utf-8'))
+    work_css = _decomment(WORK_CSS.read_text(encoding='utf-8'))
+    prod_css = (ROOT / 'style' / 'dashboard_v6_8.css').read_text(encoding='utf-8')
+    added, removed = [], []
+    for line in difflib.unified_diff(lock_css.split('\n'), work_css.split('\n'),
+                                     lineterm='', n=0):
+        if line.startswith('+++') or line.startswith('---') or line.startswith('@@'):
+            continue
+        if line.startswith('+'):
+            added.append(line[1:])
+        elif line.startswith('-'):
+            removed.append(line[1:])
+
+    def _norm(s):
+        return re.sub(r'\s+', '', s)
+
+    prod_norm = _norm(prod_css)
+    stray = [a for a in added
+             if a.strip()
+             and not (a.lstrip().startswith('.db-') and _norm(a) in prod_norm)]
+    if removed:
+        failures.append(f'stylesheet: {len(removed)} line(s) REMOVED from locked')
+        print(f'FAIL  stylesheet removes {len(removed)} line(s) from locked - '
+              f'the carry-across is additive only')
+    if stray:
+        failures.append(f'stylesheet: {len(stray)} line(s) not carried from production')
+        print('FAIL  stylesheet lines that are neither locked nor verbatim from')
+        print('      dashboard_v6_8.css - i.e. invented:')
+        for s in stray[:5]:
+            print(f'        {s[:100]}')
+    if not removed and not stray:
+        n_db = sum(1 for a in added if a.lstrip().startswith('.db-'))
+        print(f'ok    stylesheet: locked + {n_db} .db-* rule(s) carried verbatim '
+              f'from dashboard_v6_8.css, nothing invented')
 
     # ---- the mock's hunks must each be authorised ----
     lock = LOCK_HTML.read_text(encoding='utf-8').split('\n')

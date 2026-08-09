@@ -892,7 +892,12 @@ const YC = D.cur_year || 2026, YR = D.ref_year || 2023;
 const netHT = ttc => ttc / (1 + VAT);
 (function(){
   const yoy   = pc(A.rev - B.rev, B.rev);
-  const soldPct = pc(A.n, CAP);
+  /* D8: presence / jauge, not tickets sold / jauge. The ring sits directly
+   above a capacity figure and a 2-jours pass is two entries against a
+   two-day jauge, so presence is what that ratio expresses. Also restores
+   agreement with production (33%, not 21%). Appearance is unchanged -
+   same element, same geometry, same position; only the input moves. */
+const soldPct = pc(A.pres_tot != null ? A.pres_tot : A.n, CAP);
   const refPct  = pc(B.n, CAP);
   /* projection: replay 2023's remaining sales onto what we have */
   const refRemain = D.ref_final.n - B.n;

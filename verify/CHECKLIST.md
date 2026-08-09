@@ -49,7 +49,7 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_payout_reconciliation.py` | 3 |
 | `check_mock_deviations.py` | 4 |
 | `check_v2_gate.py` | 1 (the page that actually shipped) |
-| `check_v2_identity.py` | 1 (the page that actually shipped) |
+| `check_v2_identity.py` | 2 (the shipped page; and the nav-form regression) |
 | `check_fixture_quarantine.py` | 3 |
 
 ---

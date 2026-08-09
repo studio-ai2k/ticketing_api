@@ -53,6 +53,63 @@ STYLE_RE = re.compile(r'<style>.*?</style>', re.DOTALL)
 PAYLOAD_RE = re.compile(r'(const D=)(\{.*?\})(;\s*\n)', re.DOTALL)
 
 
+# The mock's own copy of the session-switcher IIFE. It is a SNAPSHOT of a live
+# nav that has since moved on, so it is replaced with production's rather than
+# kept - see swap_nav_script.
+MOCK_SW_HEAD = '/* Session switcher toggle — from BudgetFlow, hardcoded for billetterie */'
+# Production's copy: the one script block after </nav> that drives the nav.
+PROD_SW_MARKS = ('openWrap', 'closeAll', 'data-sw-trigger')
+
+
+def prod_nav_script(page):
+    """Production's nav-switcher <script> block, verbatim.
+
+    The nav's MARKUP is before `</nav>` and its BEHAVIOUR is after, so the seam
+    splits them: pass 0 preserves the markup and deletes the code that animates
+    it. dee55c4 concluded the seam settled the double-handler problem "by
+    construction - exactly one copy survives", which is true and incomplete: the
+    surviving copy was the MOCK's, and the mock's nav is a lossy snapshot.
+    Anything production's nav has gained since then had markup and no handler.
+
+    So the surviving copy must be PRODUCTION's. That also keeps the property
+    that made the seam attractive - still exactly one copy - while fixing which
+    one it is.
+    """
+    i = page.find('</nav>')
+    for m in re.finditer(r'<script[^>]*>', page[i:]):
+        s = i + m.start()
+        e = page.find('</script>', s) + len('</script>')
+        block = page[s:e]
+        if all(k in block for k in PROD_SW_MARKS):
+            return block
+    raise SystemExit(
+        'pass 0: production\'s nav-switcher script not found after </nav>. '
+        'Without it the nav renders as inert markup - the switcher opens '
+        'nothing and the controls do not respond.')
+
+
+def swap_nav_script(region, prod_block):
+    """Drop the mock's snapshot of the nav JS; production's is carried instead."""
+    i = region.find(MOCK_SW_HEAD)
+    if i < 0:
+        raise SystemExit(
+            'pass 0: the mock\'s session-switcher block was not found. If it '
+            'moved, find it - leaving it in alongside production\'s gives two '
+            'document-level click handlers and the dropdown never opens.')
+    j = region.find('(function(){', i)
+    depth, k = 0, j
+    while k < len(region):
+        if region[k] == '(':
+            depth += 1
+        elif region[k] == ')':
+            depth -= 1
+            if depth == 0:
+                break
+        k += 1
+    end = region.find(';', k) + 1
+    return region[:i] + region[end:]
+
+
 def body_of(html):
     """Everything between `</nav>` and `</body>` — the page and its scripts."""
     i = html.find('</nav>')
@@ -182,18 +239,22 @@ def apply_v2_body(page, payload, identity=()):
         region = region.replace(old, new, 1)
     region = strip_placeholders(region)
 
+    region = swap_nav_script(region, None)
+
     pi, pj = body_of(page)
-    out = page[:pi] + region + page[pj:]
+    # Production's nav script is carried across the seam with the nav it drives.
+    out = page[:pi] + prod_nav_script(page) + '\n' + region + page[pj:]
 
     # The upload link lives in the NAV, outside the replaced region, so the
     # region-level strip cannot see it. Production removes it in postprocess
     # pass 1; v2 does not run postprocess, so it must be removed here - and with
     # postprocess's own matcher, not a second one that can drift from it.
-    out, ln = postprocess_html.UPLOAD_LINK_RE.subn('', out)
-    if ln != 1:
-        raise SystemExit(
-            f'pass 0: upload link matched {ln} time(s), want 1. It points at '
-            'v2/upload.html, which does not exist.')
+    # Postprocess pass 1 already removes this, in production and here alike -
+    # the link is not a v2 concern and never was. Kept as a belt-and-braces
+    # removal that tolerates zero, because asserting exactly one would fail the
+    # moment pass 1 does its job, and because at CUTOVER this must not turn into
+    # a feature the redesign silently dropped.
+    out, _ = postprocess_html.UPLOAD_LINK_RE.subn('', out)
 
     css = SHEET.read_text(encoding='utf-8')
     out, sn = STYLE_RE.subn(lambda m: '<style>\n' + css + '\n</style>', out, count=1)
@@ -225,6 +286,13 @@ def main():
     subprocess.run([sys.executable, str(BASE_DIR / 'scripts' / 'build_dashboard.py'),
                     '--event', a.event, '--csv', a.csv, '--out', str(base),
                     '--config', a.config], check=True, stdout=subprocess.DEVNULL)
+
+    # POSTPROCESS FIRST. `align_nav_shell` (pass 9) is what builds the nav v2
+    # needs: the dropdown switcher, the section pill, the account avatar.
+    # Building on run.py's raw output gave v2 the old hidden <select> - which
+    # looked like a CSS or seam problem and was neither.
+    subprocess.run([sys.executable, str(BASE_DIR / 'scripts' / 'postprocess_html.py'),
+                    str(base)], check=True, stdout=subprocess.DEVNULL)
 
     sidecar = json.loads(base.with_suffix('.html.suivi.json').read_text(encoding='utf-8'))
     anchors = sidecar.get('anchors') or {}

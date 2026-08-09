@@ -46,7 +46,15 @@ def main():
         return 0
     failures = []
     for p in pages:
-        html = re.sub(r'<option[^>]*>[^<]*</option>', '', p.read_text(encoding='utf-8'))
+        # The whole <nav> is excluded, not just its <option> elements. The
+        # session switcher legitimately lists EVERY event by name, and since v2
+        # is built on the postprocessed page it renders as `.sw-item` links
+        # rather than `<option>`s - so an exclusion written for the old markup
+        # silently stopped excluding anything. Scope to the element, not to the
+        # shape it happened to have.
+        raw = p.read_text(encoding='utf-8')
+        i, j = raw.find('<nav'), raw.find('</nav>')
+        html = (raw[:i] + raw[j:]) if 0 <= i < j else raw
         allowed = OWN.get(p.name, [])
         hits = [t for t in MOCK_IDENTITY if t not in allowed and t in html]
         paths = [b for b in BAD_PATHS if re.search(b, html)]
