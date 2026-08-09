@@ -1163,19 +1163,22 @@ const netHT = ttc => ttc / (1 + VAT);
           <div class="kg kg-4">
             <div class="kc"><div class="kc-k">Présence</div>
               <div class="kc-v" style="color:${COL[d.k]}">${nf(d.now)}</div>
-              <div class="kc-s">/ ${nf(d.cap)} · ${fill.toFixed(1)}%${d.now>=d.cap?' · complet':''}</div></div>
+              <div class="kc-s">/ ${nf(d.cap)} · ${fill.toFixed(1)}%${
+                d.now>d.cap ? ` · <b style="color:var(--amber)">+${nf(d.now-d.cap)} au-delà de la jauge</b>`
+                : d.now===d.cap ? ' · complet' : ''}</div></div>
             <div class="kc"><div class="kc-k">Vélocité 14 j</div>
               <div class="kc-v">${d.vel14}<span class="hero-u">/j</span></div></div>
             <div class="kc"><div class="kc-k">Places libres</div>
               <div class="kc-v">${nf(Math.max(d.cap-d.now,0))}</div>
-              <div class="kc-s">${d.now>=d.cap ? 'complet'
+              <div class="kc-s">${d.now>d.cap ? 'jauge dépassée'
+                : d.now===d.cap ? 'complet'
                 : d.vel14 ? `${Math.ceil((d.cap-d.now)/d.vel14)} j au rythme actuel` : '—'}</div></div>
             <div class="kc"><div class="kc-k">${YR} au même point</div>
               <div class="kc-v" style="color:var(--ref);font-size:var(--fs-body)">${d.ref?nf(d.ref):'—'}</div>
               <div class="kc-s">${dy!==null?sign(dy):'pas de comparatif'}</div></div>
           </div>
           <div class="rb-bar"><i style="width:${Math.min(fill,100)}%;
-            background:${d.now>=d.cap?'var(--green)':(COL[d.k]||'var(--cur)')}"></i></div>
+            background:${d.now>d.cap?'var(--amber)':d.now===d.cap?'var(--green)':(COL[d.k]||'var(--cur)')}"></i></div>
           <div class="sec-note" style="margin-top:9px">${d.date}</div>
         </div>`;
       }).join('')}
@@ -1202,7 +1205,12 @@ const netHT = ttc => ttc / (1 + VAT);
           <div class="dual-k">${d.label}</div>
           <div class="pnum">${nf(d.comp.single)}</div>
           <div class="pnum">${nf(d.comp.multi)}</div>
-          <div class="pdim">${nf(d.comp.free)}</div></div>`).join('')}
+          <div class="pdim">${nf(d.comp.free)}${(() => {
+            const t = d.comp.single + d.comp.multi + d.comp.free;
+            const pc = t ? d.comp.free / t * 100 : 0;
+            return t ? `<br><small style="color:${pc>=50?'var(--amber)':'inherit'}">${
+              pc.toFixed(0)} %</small>` : '';
+          })()}</div></div>`).join('')}
 
 
         <div class="sec-note" style="margin-top:16px;line-height:1.65">

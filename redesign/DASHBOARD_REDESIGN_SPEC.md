@@ -311,6 +311,39 @@ keep it.
 > `event_config.csv`: 8 500 + 18 000 + 18 000 = 44 500, and 36 000 is where
 > production's denominator comes from.
 
+**A day may exceed its capacity, and the card must say so.** `bordeaux_2026`
+Samedi is **19 388 against 18 000 — 107,7 %, +1 388 over**. That is real:
+presence counts every ticket valid for that day, multi-day passes and
+invitations included, while `day_capacity` is a planning figure from
+`event_config.csv`.
+
+The mock hid it. `width:${Math.min(fill,100)}%` clamped the bar and
+`d.now>=d.cap ? ' · complet'` labelled it, so an overbooked day rendered as a
+full green bar reading *complet* — pixel-identical to exactly-sold-out. Three
+changes, now in the mock:
+
+| | under | exactly at capacity | over |
+| --- | --- | --- | --- |
+| sub-line | `85,6 %` | `100,0 % · complet` | `107,7 % · **+1 388 au-delà de la jauge**` |
+| Places libres | `N j au rythme actuel` | `complet` | `jauge dépassée` |
+| bar colour | day colour | green | **amber** |
+
+The bar **width** stays clamped at 100 %; only the colour and the text carry the
+overshoot.
+
+> **The pattern, and it is the second time: clamping is safe for LAYOUT and
+> lossy for MEANING, and we keep applying it to both.** `Math.min(fill,100)` is
+> correct for a bar that must not overflow its track and wrong for a number that
+> must not be rounded away. Whenever a clamp is added, ask which of the two it
+> is doing — and if it is doing both, split it.
+
+**A day that is mostly non-paying reads differently from one that is mostly
+sold.** `bordeaux_2026` Jeudi is **4 038 free of 5 979 — 68 %**; no other day is
+near it. The *Composition par journée* table already has a Gratuits column, so
+it now carries the share beneath the count, amber at ≥ 50 %. This is the single
+clearest piece of evidence that Thursday is not a normal sales day, and it only
+became visible once the day was counted at all.
+
 **No time component.** Arrival hours are not in the consolidated CSV.
 `event_start_time` and `ticket_scanned_at` would give it; neither is fetched.
 A section explaining missing data was removed rather than shipped.

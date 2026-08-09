@@ -1644,3 +1644,27 @@ and the offset between them is the constant proved earlier in this document. If
 the mock shows some cards on 1 Sept and others on 2 Sept, that is reproducible
 from the grain each card uses — it is not evidence of inconsistent anchors, and
 re-anchoring the cards would break the daily comparison rather than fix it.
+
+## Clamping is safe for LAYOUT and lossy for MEANING
+
+Twice now, a clamp added to keep a layout intact has also erased the fact the
+layout was displaying.
+
+- **`Math.min(fill,100)` on the per-day presence bar.** `bordeaux_2026` Samedi
+  is 19 388 against an 18 000 capacity — 107,7 %, 1 388 people over. The clamp
+  kept the bar inside its track, which is right, and the accompanying
+  `d.now>=d.cap ? ' · complet'` then labelled it *complet* — so an overbooked
+  day rendered pixel-identical to an exactly-sold-out one. An operational fact
+  became a rounding artefact.
+- **The earlier case was the same shape**: a guard added for safety that
+  silently removed the thing it was guarding.
+
+**The rule:** a clamp answers one of two questions — "how wide should this box
+be?" or "what is this number?" It is almost always right for the first and
+almost always wrong for the second. When one expression does both, split it.
+Here the bar keeps `width: min(fill, 100%)` and gains an amber fill plus an
+explicit `+1 388 au-delà de la jauge`; nothing about the width changed.
+
+Worth checking wherever `Math.min`, `Math.max`, `clamp()` or a `>=` threshold
+sits next to a rendered figure. The width is a display decision. The number is
+not ours to round.
