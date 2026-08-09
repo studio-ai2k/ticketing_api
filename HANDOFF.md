@@ -1692,27 +1692,105 @@ horizontal scroll — it passed every assertion §6 and §7 define — and it
 described no event that has ever existed. It was epk's payload with bordeaux's
 day names, dates and capacities pasted over it.
 
-The tell was in the payload the whole time: **`presdays.days` summed to 34 266
-while `presdays.paid` said 10 039.** Those two numbers describe the same
-tickets. Nothing checked that they agreed, because a fixture looks like data
-rather than like code, and data is what checks are pointed *at*.
+**Why this was the one place with no coverage at all: a fixture looks like data
+rather than like code, and data is what checks are pointed *at*.** Every guard
+in `verify/` aims at generated output or at source. Nothing aimed at the inputs
+those guards trust, because trusting them is the point of having them.
 
-> **A fixture that renders cleanly but describes nothing tests nothing. Assert
-> that a fixture is internally consistent — its own totals must reconcile —
-> before trusting anything it proves.**
+The tell was in the payload the whole time: **`presdays.days` summed to 34 266
+while `presdays.paid` said 10 039.** Two numbers describing the same tickets,
+disagreeing by a factor of three, and nothing compared them.
+
+**The rule, actionable half first:**
+
+> **Generate fixtures; never hand-author them.** A generated fixture is
+> consistent by construction; a hand-authored one is consistent only by luck.
+>
+> Where one must be trusted before it can be regenerated, **assert it is
+> internally consistent — its own totals must reconcile** — before trusting
+> anything it proves. A fixture that renders cleanly but describes nothing tests
+> nothing.
+
+The second half detects the failure; the first removes it. Prefer removing it.
+
+The cheap consistency assertion is the one that would have caught this: within a
+fixture, every figure derivable two ways must agree both ways —
+`sum(presdays.days[*].now)` against the composition totals,
+`presdays.paid + presdays.free` against `cur.n + cur.inv`. Neither needs to know
+the right answer, only that the fixture agrees with itself.
 
 Same family as trap #10, one level out: #10 was a *check* that passed for the
-wrong reason, this is *test data* that passed for the wrong reason. Every guard
-in `verify/` points at generated output or at source; none pointed at the
-fixtures, which is why this was the one place with no coverage at all.
+wrong reason; this is *test data* that passed for the wrong reason.
+`verify/check_fixture_quarantine.py` enforces the specific case.
 
-The cheap version of the assertion is the one that would have caught it: within
-a fixture, every figure that can be derived two ways must agree both ways. Here,
-`sum(presdays.days[*].now)` against the composition totals, and
-`presdays.paid + presdays.free` against `cur.n + cur.inv`. Neither needs to know
-what the right answer is — only that the fixture agrees with itself.
+## Trap #12: a missing input given the operation's IDENTITY value
 
-`verify/check_fixture_quarantine.py` enforces the specific case. The general
-rule belongs in whatever generates fixtures next: **generate them, never
-hand-author them**, because a generated fixture is consistent by construction
-and a hand-authored one is consistent only by luck.
+epk's Dimanche had no reference day at all under name matching. Its projection
+card rendered a coefficient of **exactly ×1.00** and *Trajectoire 2023 = 4 515*
+— which is Dimanche's own current presence. The no-reference path projected the
+present straight back at itself and displayed it as a forecast, with flat
+scenarios of 4 515 / 4 675. It has been on a live page for the life of the
+dashboard.
+
+**That is worse than the zero comparisons DD4 was about.** A zero is visibly
+missing. A flat scenario at ×1.00 looks like a considered projection that
+happens to predict no growth, and someone could plan against it.
+
+> **When an input is absent, propagate the absence. Never substitute the
+> operation's identity element — it makes "we have nothing" arithmetically
+> indistinguishable from "we measured no change".**
+
+×1 for a coefficient, 1 for a divisor, 0 for a count, an empty string for a
+label: all of them render as ordinary values. The same bug produced a
+`+16 000 %` on the redesign mock via `B.vel || 1`, three weeks apart, in a
+different codebase, and neither was found by a check.
+
+**What makes it hard to see is that it arrives as a *defensive* guard.** The
+line is `run.py:3051`:
+
+```python
+coef_display = vel_14d / prev_vel_14d_dn if prev_vel_14d_dn > 0 else 1.0
+```
+
+Whoever wrote that was preventing a `ZeroDivisionError`, correctly. The bug is
+entirely in the choice of fallback: `1.0` instead of `None`. A crash would have
+been *better* — it would have been found on the first build.
+
+**It is not one line. There are six, all in the projection path** (run.py is
+do-not-modify, so these are recorded, not fixed):
+
+| line | expression | what the fallback means |
+| --- | --- | --- |
+| **3051** | `vel_14d / prev_vel_14d_dn … else 1.0` | **confirmed firing** — Dimanche's ×1.00 |
+| 2975 | `weeks[0]['vel'] if … > 0 else 1` | a zero first-week velocity becomes a baseline of 1, so every later ratio is the raw velocity wearing a ratio's clothes |
+| 2978 | `w['vel'] / baseline_vel … else 1.0` | same shape, one level down |
+| 3554 | duplicate of 2975 | |
+| 3557 | duplicate of 2978 | |
+| 3632 | `… if day_ratios else 1.0` | an empty ratio list becomes a flat multiplier |
+
+Only 3051 is confirmed to have fired. The others are the same shape and have not
+been observed — which is exactly what 3051 looked like until someone matched
+Dimanche to a real day.
+
+**Grep target:** `else 1.0`, `else 1`, `or 1`, `|| 1`, `?? 0` sitting on the
+false branch of a guard whose true branch is a division or a ratio. Ours are all
+in `run.py`; `scripts/` currently has none — the two hits there are an exit code
+and a depth counter, which are not this.
+
+## Two traps from the Route 1 re-key
+
+**The obvious seam can be complete-looking and partial.** run.py calls
+`calculate_metrics(tickets_prev_filtered, event_config_prev)` exactly once, which
+makes it look like the whole reference side passes through one place. It does
+not: `tickets_prev_full` — the *unfiltered* list — is what vélocité and
+projections read. Re-keying only what `calculate_metrics` was handed would have
+fixed Par Jour and left the other two sites on the old day names: the exact
+partial fix that was ruled worse than none, arrived at by doing the obvious
+thing at the obvious seam. **A single call site is not evidence that a single
+object flows through it.**
+
+**A rename map can destroy its own input.** epk's mapping is
+`{samedi → dimanche, vendredi → samedi}`. Applied in place, sequentially,
+`samedi` is overwritten by `vendredi`'s value before its own is read. Build a
+fresh dict; never rename in place. Same family as the `re.sub` backslash bug —
+an operation that consumes the thing it is also producing into.
