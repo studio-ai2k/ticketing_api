@@ -191,9 +191,27 @@ const { chromium } = require('playwright');
           return wrap ? wrap.querySelectorAll('.sw-item').length : 0;
         })(),
         hasCloseAll: typeof window.swCloseAll === 'function',
+
         htmlOverflowAfter: getComputedStyle(document.documentElement).overflow,
       };
     });
+
+    // D6 - the nav must STICK, not merely carry position:sticky. The rule was
+    // present and correct in both sheets and inert in both, because
+    // body{overflow-x:hidden} made body a scroll container. Reading the rule
+    // tells you it is right; only scrolling tells you it is not.
+    //
+    // Measured across an await, not inside one evaluate: html carries
+    // scroll-behavior:smooth, so scrollTo ANIMATES and a same-tick read gets
+    // the pre-scroll position - which passed on a nav that does not stick.
+    await p.evaluate(() => window.scrollTo({ top: 1500, behavior: 'instant' }));
+    await p.waitForTimeout(250);
+    const navTop = await p.evaluate(() => {
+      const n = document.querySelector('.nav');
+      return n ? Math.round(n.getBoundingClientRect().top) : null;
+    });
+    await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await p.waitForTimeout(150);
 
     // A5 for real: open the comparison menu, click an item, is it closed?
     const menu = await p.evaluate(async () => {
@@ -209,7 +227,7 @@ const { chromium } = require('playwright');
       return { ran: true, opened, closed: !document.querySelector('.sw-wrap.open') };
     });
 
-    out.push({ file: f.split('/').pop(), gated, ...r, menu, errors: errs });
+    out.push({ file: f.split('/').pop(), gated, ...r, navTop, menu, errors: errs });
     await ctx.close();
   }
   console.log('@@' + JSON.stringify(out));
@@ -276,6 +294,10 @@ def main(argv):
             why.append(f"A4 the projection selector renders {r['projItems']} item(s)")
         if r['cuts'] < (2 if live else 1):
             why.append(f"A2 {r['cuts']} separator(s) in Suivi")
+        if r['navTop'] is not None and abs(r['navTop']) > 2:
+            why.append(f"D6 the nav is at {r['navTop']}px after scrolling - it "
+                       f"carries position:sticky and does not stick. Check what "
+                       f"made an ancestor a scroll container")
         if not r['hasCloseAll']:
             why.append('A5 window.swCloseAll is not defined - menus never close on select')
         if r['menu'].get('ran') and r['menu'].get('opened') and not r['menu'].get('closed'):

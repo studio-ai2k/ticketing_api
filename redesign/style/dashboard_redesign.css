@@ -47,7 +47,7 @@
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:96px;overflow-x:hidden}
-html,body{overflow-x:hidden;min-height:100%;background:var(--bg);
+html,body{overflow-x:clip;min-height:100%;background:var(--bg);
   font-family:var(--ff-body);-webkit-font-smoothing:antialiased;color:var(--text)}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}

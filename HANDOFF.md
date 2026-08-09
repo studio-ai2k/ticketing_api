@@ -2476,3 +2476,72 @@ horizontal-overflow protection that rule exists for.
 So D6 is answer **(c)**: it sticks nowhere. Not a v2 regression, a defect in
 both heads with one shared cause. `.dept-tabs` is `position:static`, so (a)'s
 "tabs sticking under the nav" is not happening either.
+
+## Trap #15: a correct declaration, defeated at a distance
+
+The nav carried `position:-webkit-sticky; position:sticky; top:0; z-index:100`,
+identically in both stylesheets, and **had never stuck on either head**. Not a
+v2 regression: production's nav has never stuck either.
+
+The cause says nothing about position:
+
+```css
+html,body{overflow-x:hidden; …}
+```
+
+`overflow-x:hidden` on `body` makes body a **scroll container**. A sticky
+element sticks inside its nearest scrolling ancestor, so the nav stuck to body
+— and body scrolls away with the document.
+
+Measured on both heads rather than reasoned about:
+
+| `body` overflow-x | nav top after 1500 px of scroll |
+|---|---|
+| `hidden` (as shipped) | −353 |
+| `clip` | **0** |
+| `visible` | **0** |
+
+`overflow-x: clip` clips the same overflow **without** creating a scroll
+container. One line, in a rule both heads share.
+
+**Why this class is hard:** reading the rule tells you it is right. There is no
+error, no missing value, no suspicious number — the declaration is correct, the
+browser honours it, and something a hundred lines away changes what "sticky"
+is relative to. Grepping for `sticky` finds the rule and confirms it. Only
+scrolling finds the truth.
+
+Checked before shipping, per the rule that a scale change needs every reader
+found: nothing depends on body being a scroll container. Every scroll consumer
+on the page is on `window` (`window.addEventListener('scroll')`,
+`window.scrollTo`) or uses `scrollIntoView`; there is no `body.scrollTop` read
+or write anywhere. `clip` and `hidden` differ in exactly that respect and
+nothing was relying on it.
+
+The arm is in `check_v2_behaviour`: scroll 1500 px and assert the nav is still
+at the top. **And the first version of that assertion passed on a broken page**
+— `html{scroll-behavior:smooth}` makes `scrollTo` an animation, so measuring in
+the same tick reads the pre-scroll position. It now measures across an await
+with `behavior:'instant'`. A check for a scroll bug that does not wait for the
+scroll is trap #10 in miniature.
+
+## The question that generates all three: which artefact is this check reading?
+
+Three times now a check has been looking at the wrong side of something:
+
+| | reading | shipping |
+|---|---|---|
+| the stylesheet check | `dashboard_redesign.css` | the page's inlined, path-rewritten copy |
+| the year scan | the mock | the built page, after `event_identity` substitutes |
+| the deviation check | the working side of a hunk | a deletion has no working side |
+
+Each fix was correct and each was found afterwards, by a different route. The
+generating question can be asked *before* writing the check:
+
+> **Which artefact does this actually read, and is that the one that ships?**
+
+It is cheaper than the third discovery.
+
+The split in `check_v2_behaviour` — payload asserted against the file, page
+asserted in a browser — is the same question answered in advance. A correct
+payload vouching for a page that never used it is the identical failure, and
+splitting the check was the thing that made it unable to happen.

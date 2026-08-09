@@ -82,6 +82,14 @@ AUTHORISED_CSS = [
            "already downloads at 400/500/600, so this costs no request",
      "  --ff-mono: 'DM Mono', 'SF Mono', monospace;",
      "  --ff-mono: 'JetBrains Mono', monospace;"),
+    ('D24', "D6 - overflow-x: clip instead of hidden. `hidden` makes body a "
+            "SCROLL CONTAINER, so the sticky nav positioned against body and "
+            "scrolled away with it: -353px after 1500px, on BOTH heads, with a "
+            "position:sticky rule that was present and correct the whole time. "
+            "`clip` clips the same overflow without creating a scroll "
+            "container. Measured, not reasoned: hidden -353, clip 0, visible 0",
+     "html,body{overflow-x:hidden;min-height:100%;background:var(--bg);",
+     "html,body{overflow-x:clip;min-height:100%;background:var(--bg);"),
 ]
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
@@ -189,6 +197,21 @@ AUTHORISED = [a for a in AUTHORISED if a[0] not in ('D16', 'D17', 'D18')] + [
              'carried, which is how it came to ship epk\'s under every other '
              'event\'s name',
      'const LG = {'),
+    ('D23', 'D4 - the répartition dots are keyed by GROUP and use --green / '
+            '--amber / --cur / --text-dim. COL[i%3] borrowed --day-0, one of '
+            'the four day colours, so the two colour systems competed',
+     "const COL_G = {'Billets Réguliers':'var(--green)'"),
+    ('D23b', 'D4 - the group bar takes the same colour as its dot',
+     'background:${gcol(g.g)}"></i></div>'),
+    ('D25', 'D5 - the prix affiché -> net encaissé bar is green. --cur is the '
+            '"current edition" colour everywhere else on the page',
+     'style="width:${w(net)}%;background:var(--green)"'),
+    # One ruling, five hunks: the bar has a track and a legend and the diff
+    # splits them. Each gets a signature for the D14/D15 reason.
+    ('D25b', 'D5 - the legend swatch for net HT', 'mb-sw" style="background:var(--green)"'),
+    ('D25c', 'D5 - the VAT segment', 'background:rgba(52,211,153,'),
+    ('D25d', 'D5 - the fee segment', '--fc:rgba(52,211,153,'),
+    ('D23c', 'D4 - the group dot takes its colour by name', 'background:${gcol(g.g)}"></span>'),
 ]
 
 

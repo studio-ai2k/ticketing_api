@@ -62,7 +62,7 @@
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:96px;overflow-x:hidden}
-html,body{overflow-x:hidden;min-height:100%;background:var(--bg);
+html,body{overflow-x:clip;min-height:100%;background:var(--bg);
   font-family:var(--ff-body);-webkit-font-smoothing:antialiased;color:var(--text)}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
@@ -1155,17 +1155,17 @@ const soldPct = pc(A.pres_tot != null ? A.pres_tot : A.n, CAP);
         const paid = face + fee, w = x => x/paid*100;
         return `<div class="mb">
           <div class="mb-track">
-            <div class="mb-seg" style="width:${w(net)}%;background:var(--cur)"></div>
-            <div class="mb-seg" style="width:${w(vat)}%;background:rgba(56,189,248,.42)"></div>
-            <div class="mb-seg mb-fee" style="width:${w(fee)}%;--fc:rgba(56,189,248,.9)"></div>
+            <div class="mb-seg" style="width:${w(net)}%;background:var(--green)"></div>
+            <div class="mb-seg" style="width:${w(vat)}%;background:rgba(52,211,153,.42)"></div>
+            <div class="mb-seg mb-fee" style="width:${w(fee)}%;--fc:rgba(52,211,153,.9)"></div>
           </div>
           <div class="mb-key">
-            <div class="mb-i"><span class="mb-sw" style="background:var(--cur)"></span>
+            <div class="mb-i"><span class="mb-sw" style="background:var(--green)"></span>
               <span class="mb-n">Net HT encaissé</span><span class="mb-v">${eur(net)}</span></div>
-            <div class="mb-i"><span class="mb-sw" style="background:rgba(56,189,248,.42)"></span>
+            <div class="mb-i"><span class="mb-sw" style="background:rgba(52,211,153,.42)"></span>
               <span class="mb-n">TVA ${(VAT*100).toFixed(1).replace('.',',')}% à reverser</span>
               <span class="mb-v">${eur(vat)}</span></div>
-            <div class="mb-i"><span class="mb-sw mb-sw-f" style="--fc:rgba(56,189,248,.9)"></span>
+            <div class="mb-i"><span class="mb-sw mb-sw-f" style="--fc:rgba(52,211,153,.9)"></span>
               <span class="mb-n">Frais <span class="mb-x">payés par l’acheteur</span></span>
               <span class="mb-v">${eur(fee)}</span></div>
             <div class="mb-i mb-tot"><span class="mb-n">Total payé</span>
@@ -1413,7 +1413,14 @@ const soldPct = pc(A.pres_tot != null ? A.pres_tot : A.n, CAP);
   const R = D.rep;
   const CHEV = `<svg class="grp-a" viewBox="0 0 24 24" fill="none" stroke="currentColor"
     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>`;
-  const COL = ['var(--cur)','var(--day-0)','var(--text-dim)'];
+  /* D23 - by GROUP, not by position. COL[i%3] borrowed --day-0, one of the
+     four day colours, so the répartition and the per-day colouring competed
+     for the same hues. All four tokens are already in the sheet: a swap, not
+     a palette change. */
+  const COL_G = {'Billets Réguliers':'var(--green)', 'VIP / Backstage':'var(--amber)',
+                 'Entrée anticipée':'var(--cur)', 'Tarif groupe':'var(--text-dim)',
+                 'Autres':'var(--text-dim)'};
+  const gcol = g => COL_G[g] || 'var(--text-dim)';
   const totRev = R.groups.reduce((s,g)=>s+g.rev,0);
   document.getElementById('rep').innerHTML =
     `<div class="thead"><span>&nbsp;</span><span>Billets</span><span>%</span><span>Revenu</span><span>Prix méd.</span></div>` +
@@ -1421,13 +1428,13 @@ const soldPct = pc(A.pres_tot != null ? A.pres_tot : A.n, CAP);
       <div class="grp">
         <div class="grp-h" onclick="grp(this)">
           <div class="grp-n">${CHEV}
-            <span class="dot" style="background:${COL[i%3]}"></span>${g.g}</div>
+            <span class="dot" style="background:${gcol(g.g)}"></span>${g.g}</div>
           <div class="grp-v">${nf(g.n)}</div>
           <div class="grp-s">${g.pct}%</div>
           <div class="grp-s">${g.rev ? k(g.rev) : '—'}</div>
           <div class="grp-s">${g.p ? eur(g.p) : 'gratuit'}</div>
         </div>
-        <div class="grp-bar"><i style="width:${g.pct}%;background:${COL[i%3]}"></i></div>
+        <div class="grp-bar"><i style="width:${g.pct}%;background:${gcol(g.g)}"></i></div>
         <div class="grp-b">${g.kids.map(kd=>`
           <div class="kid"><div>${kd.k}</div>
             <div class="kid-v">${nf(kd.n)}</div>
