@@ -46,7 +46,7 @@
   --ref: #f472b6;
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth;scroll-padding-top:96px;overflow-x:hidden}
+html{scroll-behavior:smooth;scroll-padding-top:96px}
 html,body{overflow-x:clip;min-height:100%;background:var(--bg);
   font-family:var(--ff-body);-webkit-font-smoothing:antialiased;color:var(--text)}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}
@@ -497,11 +497,11 @@ body {
   .ck-key .kc-s{font-size:var(--fs-tiny)}
   .ck-read{gap:7px;flex:0 0 auto}
   .ck-jx{font-size:var(--fs-tiny)}
-  .ck-va,.ck-vb{font-size:var(--fs-micro)}
+  .ck-va,.ck-vb{font-size:var(--fs-tiny)}
 }
 .ck-jx{font-size:var(--fs-micro);color:var(--text-muted)}
-.ck-va{font-family:var(--ff-display);font-size:var(--fs-caption);font-weight:600;color:var(--cur)}
-.ck-vb{font-family:var(--ff-display);font-size:var(--fs-caption);font-weight:600;color:var(--ref)}
+.ck-va{font-family:var(--ff-display);font-size:var(--fs-mini);font-weight:600;color:var(--cur)}
+.ck-vb{font-family:var(--ff-display);font-size:var(--fs-mini);font-weight:600;color:var(--ref)}
 .velv{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin:2px 0 12px}
 .velv-n{font-family:var(--ff-display);font-size:var(--fs-hero);font-weight:700;
   line-height:1;letter-spacing:-.8px;font-variant-numeric:tabular-nums}

@@ -215,6 +215,48 @@ AUTHORISED = [a for a in AUTHORISED if a[0] not in ('D16', 'D17', 'D18')] + [
 ]
 
 
+AUTHORISED_CSS += [
+    ('D29', "the stray second declaration of overflow-x on html, one line above "
+            "the D6 fix. clip won on SOURCE ORDER alone - same specificity, "
+            "later declaration - so D6 worked while holding by accident: "
+            "reorder those two rules and the nav breaks again with the correct "
+            "clip sitting right there. Production's sheet has no such line. "
+            "Trap #15's shape pointed at trap #15's own fix",
+     "html{scroll-behavior:smooth;scroll-padding-top:96px;overflow-x:hidden}",
+     "html{scroll-behavior:smooth;scroll-padding-top:96px}"),
+    ('D28', "D1(a) - the hover readout value drops from --fs-caption (16px) to "
+            "--fs-mini. It was 16px against an 11-12px row",
+     ".ck-va{font-family:var(--ff-display);font-size:var(--fs-caption);font-weight:600;color:var(--cur)}",
+     ".ck-va{font-family:var(--ff-display);font-size:var(--fs-mini);font-weight:600;color:var(--cur)}"),
+    ('D28b', "D1(a) - the reference value, same change",
+     ".ck-vb{font-family:var(--ff-display);font-size:var(--fs-caption);font-weight:600;color:var(--ref)}",
+     ".ck-vb{font-family:var(--ff-display);font-size:var(--fs-mini);font-weight:600;color:var(--ref)}"),
+    ('D28c', "D1(a) - the mobile override, which would otherwise be LARGER than "
+             "the desktop size it was just reduced below",
+     "  .ck-va,.ck-vb{font-size:var(--fs-micro)}",
+     "  .ck-va,.ck-vb{font-size:var(--fs-tiny)}"),
+]
+
+AUTHORISED += [
+    ('D26', 'fm() asks the formatter for the compact form instead of editing '
+            'the full one. It stripped trailing digits and appended its own '
+            'abbreviation, correct while eur() ended in digits; D1 moved the '
+            'symbol to the end, so the strip matched nothing and the append '
+            'still ran - "593 421 EUR593k", one figure twice, in a 50px '
+            'gutter. Both of Leo\'s chart reports were this one function',
+     'ASK THE FORMATTER, DO NOT EDIT ITS OUTPUT'),
+    ('D26b', 'D26 - the revenue chart passes k, the compact formatter, so there '
+             'is no string left to operate on',
+     'k, not eur: the axis and the readout want the compact form'),
+    ('D26c', 'D26 - the second line of the same call, which the diff splits',
+     "weeklySeries(past,'rcb') : [], k);"),
+    ('D27', 'D1(b) - the readout labels the unlabelled figure and separates the '
+            'two values, in Leo\'s words: "Tickets" and a middle dot. Uses '
+            '.kc-s, the legend\'s own class, so no CSS is invented',
+     'kc-s">Tickets<'),
+]
+
+
 def check_pages():
     """The shipped `<style>` may differ from the file ONLY by PAGE_PATHS.
 

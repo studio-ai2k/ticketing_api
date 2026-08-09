@@ -2545,3 +2545,80 @@ The split in `check_v2_behaviour` — payload asserted against the file, page
 asserted in a browser — is the same question answered in advance. A correct
 payload vouching for a page that never used it is the identical failure, and
 splitting the check was the thing that made it unable to happen.
+
+## Trap #16: change a formatter's shape and every string-surgery on it changes meaning
+
+D1 moved the euro symbol to the end for French. `rollChart`'s tick formatter
+did this:
+
+```js
+raw.replace(/[\d \s]+$/, '') + abbreviated + 'k'
+```
+
+Strip the trailing digits, append your own abbreviation. **Correct while
+`eur()` produced `€593421`** — digits at the end, stripped to `€`, then `593k`
+appended. After D1 the string ends in `€`, so the regex matched nothing and the
+append still ran:
+
+```
+    296 710  ->  "296 710 €297k"
+    593 421  ->  "593 421 €593k"
+  1 234 567  ->  "1 234 567 €1235k"
+```
+
+The full number, the symbol, then the same number abbreviated — in a 50–56 px
+gutter. That is both of Leo's Revenus-chart reports: "the axis is cut off and
+seems to show the tickets and the revenue" is **one figure twice**, and "the
+two hover values are too close to tell apart" is the same `fm()` through
+`data-va`/`data-vb`. One function, two reports.
+
+**Same instruction as D0's, applied to a format instead of a unit:** fix the
+shape, then find every reader. Grepped for every regex or slice over the output
+of `eur`, `k`, `nf` or `_joink` — `fm()` is the only one. Everything else
+CONCATENATES onto a formatted value (`nf(x) + ' jours'`, `' · ' + eur(x)`),
+which is indifferent to where the number sits.
+
+The fix removes the surgery rather than repairing it: `rollChart` is passed
+`k`, the compact formatter, and `fm` calls it. **Ask the formatter for the form
+you want; do not edit the form it gave you.**
+
+### Why nothing caught it, and what the assertion had to be
+
+The page checks scan for `NaN`, `undefined` and stray `${`. `"593 421 €593k"`
+contains none of them — a well-formed string no assertion had an opinion about.
+Same family as the ×1.00 fallback and `p1 == p2`: **the failure is a plausible
+value, so a blacklist cannot see it.**
+
+So the assertion is a SHAPE, not another blacklist entry: a tick or a hover
+value is **one number, at most one magnitude suffix, at most one currency
+symbol**. Thousands separators join their digits; everything else splits. Two
+numbers in one label fails. Negative-tested by restoring the old `fm()`:
+`'285 736 €286k'`, `'571 472 €571k'` and two more, flagged by shape alone.
+
+### And the axis did not need reducing after all
+
+Leo suggested showing revenue only so it would fit. Asked and answered in that
+order rather than doing both: the axis now reads `0 €` · `286 k€` · `571 k€`
+and fits with room to spare. **The fix alone was sufficient**; no reduction
+needed.
+
+## D29: the D6 fix was holding by source order
+
+`redesign/style/dashboard_redesign.css` carried, one line apart:
+
+```css
+html{scroll-behavior:smooth;scroll-padding-top:96px;overflow-x:hidden}
+html,body{overflow-x:clip; …}
+```
+
+Two declarations of `overflow-x` on `html`, different values, same
+specificity. `clip` won on **source order alone**, so the nav measured 0 and
+D6 genuinely worked — while resting on the order of two adjacent rules.
+Reorder them, or insert anything between, and the sticky nav breaks again with
+the correct `clip` sitting right there.
+
+Production's sheet has no such line: the redesign carried a leftover.
+
+That is trap #15's own shape pointed at trap #15's fix — a correct declaration
+defeated at a distance. Deleted, so there is exactly one declaration and the D6
+assertion protects something that cannot be silently overruled.

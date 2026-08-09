@@ -191,6 +191,29 @@ const { chromium } = require('playwright');
           return wrap ? wrap.querySelectorAll('.sw-item').length : 0;
         })(),
         hasCloseAll: typeof window.swCloseAll === 'function',
+        // SHAPE, not a blacklist. "593 421 €593k" contains no NaN, no
+        // undefined and no stray ${ - it is a well-formed string that every
+        // existing assertion had an opinion about only by accident. A tick or
+        // a hover value is ONE number, optionally one magnitude suffix and one
+        // currency symbol. Two numbers in one label is the defect.
+        badTicks: (() => {
+          const out = [];
+          const seen = new Set();
+          const test = s => {
+            if (!s || seen.has(s)) return;
+            seen.add(s);
+            // thousands separators join their digits; everything else splits
+            const n = s.replace(/(\d)[\u202f\u00a0 ](?=\d)/g, '$1');
+            const runs = n.match(/[\d]+(?:[.,]\d+)?/g) || [];
+            const syms = (n.match(/€/g) || []).length;
+            if (runs.length > 1 || syms > 1) out.push(s);
+          };
+          document.querySelectorAll('.ck text').forEach(e => test(e.textContent.trim()));
+          document.querySelectorAll('.ck [data-va]').forEach(e => {
+            test(e.getAttribute('data-va')); test(e.getAttribute('data-vb'));
+          });
+          return out.slice(0, 4);
+        })(),
 
         htmlOverflowAfter: getComputedStyle(document.documentElement).overflow,
       };
@@ -298,6 +321,11 @@ def main(argv):
             why.append(f"D6 the nav is at {r['navTop']}px after scrolling - it "
                        f"carries position:sticky and does not stick. Check what "
                        f"made an ancestor a scroll container")
+        if r['badTicks']:
+            why.append('a chart label carries two numbers: '
+                       + ', '.join(repr(x) for x in r['badTicks'])
+                       + '. A tick is one value, one optional magnitude suffix, '
+                         'one currency symbol')
         if not r['hasCloseAll']:
             why.append('A5 window.swCloseAll is not defined - menus never close on select')
         if r['menu'].get('ran') and r['menu'].get('opened') and not r['menu'].get('closed'):

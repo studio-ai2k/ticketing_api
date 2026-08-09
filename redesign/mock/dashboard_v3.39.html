@@ -1030,8 +1030,10 @@ const soldPct = pc(A.pres_tot != null ? A.pres_tot : A.n, CAP);
       ${(()=>{
           const past = D.daily.filter(r=>!r.fut);
           /* drop the leading zeros: a series begins at its own first sale */
+          /* k, not eur: the axis and the readout want the compact form, and
+             asking for it is the whole of D26. */
           return rollChart(weeklySeries(past,'rca'),
-                           HAS_CMP ? weeklySeries(past,'rcb') : [], eur);
+                           HAS_CMP ? weeklySeries(past,'rcb') : [], k);
         })()}
       </div>
 
@@ -1947,11 +1949,24 @@ function rollChart(A, B, fmt, height){
   const sy=v=>H-P.b-v/max*(H-P.t-P.b);
   const ln=S=>S.map((o,i)=>(i?'L':'M')+sx(o.jx)+' '+sy(o.v)).join(' ');
   /* thousands as k, keeping one decimal below 10k so the mid tick is not 0k */
-  const fm=v=>{
-    if(fmt){ const raw=fmt(v);
-      return v>=1000 ? raw.replace(/[\d\u202f\s]+$/,'') + (v>=10000?Math.round(v/1000):(v/1000).toFixed(1)) + 'k' : raw; }
-    return v>=1000 ? (v>=10000?Math.round(v/1000):(v/1000).toFixed(1))+'k' : Math.round(v);
-  };
+  /* D26 — ASK THE FORMATTER, DO NOT EDIT ITS OUTPUT.
+     This used to strip the trailing digits off fmt(v) and append its own
+     abbreviation, which was correct while eur() produced "€593421" — digits at
+     the end, stripped to "€", then "593k" appended. D1 moved the symbol to the
+     end for French, so the regex matched nothing and the append still ran:
+
+         296 710  ->  "296 710 €297k"
+         593 421  ->  "593 421 €593k"
+
+     the full number, the symbol, then the same number abbreviated, inside a
+     50–56 px gutter. That is Leo's "axis cut off, seems to show the tickets and
+     the revenue": it is one figure twice. The hover readout uses the same fm()
+     through data-va/data-vb, so both his chart reports were this one function.
+
+     `fmt` is now the COMPACT formatter itself (k), so there is no string to
+     operate on and no assumption about where the number sits. */
+  const fm=v=> fmt ? fmt(v)
+    : (v>=1000 ? (v>=10000?Math.round(v/1000):(v/1000).toFixed(1))+'k' : Math.round(v));
   const ticks=[0,max/2,max].map(v=>
     `<line x1="${P.l}" y1="${sy(v)}" x2="${W-P.r}" y2="${sy(v)}" stroke="rgba(255,255,255,.06)"/>
      <text x="${P.l-6}" y="${sy(v)+4}" text-anchor="end" fill="var(--text-muted)"
@@ -1984,7 +1999,8 @@ function rollChart(A, B, fmt, height){
       <span class="fi"><span class="dot" style="background:var(--cur)"></span><span class="kc-s">${YC}</span></span>
       ${B.length?`<span class="fi"><span class="dot" style="background:var(--ref)"></span><span class="kc-s">${YR}</span></span>`:''}
       <span class="ck-read"><span class="ck-jx"></span>
-        <span class="ck-va"></span>${B.length?'<span class="ck-vb"></span>':''}</span>
+        ${fmt?'':'<span class="kc-s">Tickets</span>'}
+        <span class="ck-va"></span>${B.length?'<span class="kc-s">·</span><span class="ck-vb"></span>':''}</span>
     </div>
   </div>`;
 }
