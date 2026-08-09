@@ -138,6 +138,58 @@ AUTHORISED = [
     ('D18', 'D16 continued - the per-day application block',
      '→ Trajectoire ${YR} :'),
 ]
+# D16-D18 named YR/YC. D21 removed the years entirely - the block states a
+# METHOD, so it has no year to go stale - which supersedes them. The three
+# entries above stay in the ledger as history and are matched by the D21 hunk
+# instead; a deviation that is superseded is not a deviation that was reverted.
+AUTHORISED = [a for a in AUTHORISED if a[0] not in ('D16', 'D17', 'D18')] + [
+    ('D19', 'D0 - the velocity card prints a RATE. It printed the window total '
+            'with "/jour" after it, beside "Rythme requis" which is a true '
+            'daily rate: 1 350 against 346 read as four times the pace needed '
+            'where the truth was 56% of it',
+     'billets vendus / jour'),
+    ('D20', 'D0 - presence velocity is named "entrées / j". A 2-jours pass is '
+            'two entries, so rennes\' days sum to 84/j against 63.9 tickets/j. '
+            'Both right, different quantities, one word',
+     'entrées / j</span></div></div>'),
+    ('D21', 'the projection methodology states a METHOD, so it carries no year '
+            'and cannot go stale when the selector moves. Figures come from the '
+            'SELECTED candidate, which the payload already carries - which '
+            'removed the last reader of const LG, and LG with it',
+     'window.renderLogique = function()'),
+    ('D22', 'D1 - money through Intl.NumberFormat. The symbol was on the wrong '
+            'side for French and k() had no millions tier, so 1 234 000 printed '
+            'as €1234k',
+     'const _EURF = new Intl.NumberFormat'),
+    # One deviation, several hunks. Each gets its own signature for the reason
+    # D14/D15 are two entries: a single signature would let the rest be
+    # reverted in silence.
+    ('D19b', 'D0 - CYR hoisted beside YR. Declared in the Suivi block it was in '
+             'the temporal dead zone when the velocity card read it, and threw '
+             'before anything rendered',
+     'The year of the SELECTED comparison. Declared here'),
+    ('D19c', 'D0 - the reference rate in the velocity meta line',
+     '${CYR} : ${nf(b)}/j'),
+    ('D20b', 'D0 - the projection card names entrées/j too',
+     'contre ${nf(p.refvel)} entrées/j'),
+    ('D21b', 'D21 - the projection selector repaints the methodology block',
+     'if (window.renderLogique) window.renderLogique();'),
+    ('D21c', 'D21 - scenario 1, stated as a method',
+     '1. Trajectoire ${C.label}'),
+    ('D21d', 'D21 - scenario 2, stated as a method',
+     '2. ${C.label} × coef. de vélocité'),
+    ('D21e', 'D21 - the per-day application block, from the selected candidate',
+     '${days.length ? `<div class="eyebrow"'),
+    ('D21f', 'D21 - the block renders once at load and on every selection',
+     'window.renderLogique();'),
+    ('D21a', 'D21 - the comment recording why the block has no year in it',
+     'the methodology block states a METHOD'),
+    ('D21g', 'D21 - `const LG` deleted. A pure deletion, matched against the '
+             'LOCKED side: it was a second copy of numbers the payload already '
+             'carried, which is how it came to ship epk\'s under every other '
+             'event\'s name',
+     'const LG = {'),
+]
 
 
 def check_pages():
@@ -278,7 +330,11 @@ def main():
     matched = {}
     for tag, i1, i2, j1, j2 in hunks:
         added = '\n'.join(work[j1:j2])
-        hit = next((a for a in AUTHORISED if a[2] in added), None)
+        # A pure DELETION has nothing on the working side, so a signature can
+        # never match there. Match it against what was REMOVED instead - D21
+        # deleted `const LG` outright and this could not have described it.
+        haystack = added if j2 > j1 else '\n'.join(lock[i1:i2])
+        hit = next((a for a in AUTHORISED if a[2] in haystack), None)
         if hit:
             matched.setdefault(hit[0], 0)
             matched[hit[0]] += 1

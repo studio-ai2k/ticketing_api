@@ -2386,3 +2386,93 @@ the projection selector can pick any of eight editions. So the prose is right
 for the default and stale for the other seven. Same shape as B1 — a selector
 that does not reach a block — and it needs `LG` per candidate to fix properly.
 Not built; Leo's call.
+
+## D0: a window TOTAL printed with "/jour" after it
+
+Live on the headline card, on every page, and pointing the wrong way. Spotted
+from the SHAPE of the numbers — a per-day rate cannot climb with the window
+length — and epk's read 504 / 1350 / 2207 / 3677 across 3/7/14/30.
+
+`velocity()` summed the window. `rolling()`, which feeds the CHART, has always
+divided by it. **One function on a different scale from its neighbour, and the
+card and the chart disagreed about one quantity.** Exactly the `daily_rows`
+shape from A0, one file over.
+
+Worse than a label error for two reasons:
+
+  - the card places it beside **Rythme requis**, which IS a true daily rate.
+    So 1 350 sat next to 346 and read as four times the pace needed. The truth
+    was 193 against 345 — **56% of it**.
+  - `proj = A.n + A.vel[7] * JX` multiplied a seven-day total by the days
+    remaining. epk's headline projection read 47 839 against a 20 000 jauge;
+    it now reads 15 729.
+
+At true rates the sequence is 168 → 193 → 158 → 123, i.e. sales
+**accelerating** into the last week. The old display hid that completely.
+
+What survived and must not be "fixed": the percentages were always right, since
+a ratio of totals equals a ratio of rates at equal windows.
+
+### The assertion, and why it belongs with p1 == p2
+
+Two figures that must be on the same scale, with nothing asserting it. The
+card's numbers are now derived from the chart's own cumulative series in
+`check_v2_behaviour`:
+
+    vel[w] == (cumA[jx] − cumA[jx+w]) / w
+
+which is how the bug was found by hand in the first place. Negative-tested by
+putting the totals back: all four windows fail with both figures printed.
+
+### Two velocities, one word (D20)
+
+`presdays` vel14 is PRESENCE velocity — rennes' days sum to 84/day against 63.9
+tickets/day, because a 2-jours pass is two entries. Both correct, different
+quantities. The maths is untouched; the card now says **entrées / j**, the same
+move as "de la jauge".
+
+## D21: state the METHOD and the year problem disappears
+
+The "Logique de projection" block hardcoded 2023/2026, and the obvious fix —
+name `YR`/`YC` — would only have moved the staleness, because the projection
+selector offers eight editions and the block would still have named the
+configured one.
+
+Stating the method removes the class instead: *"Réplique exacte des ventes de
+${C.label}"* is correct for all eight and **has no year to go stale**. Where a
+figure must be named it comes from the SELECTED candidate, which the payload
+already carries per candidate — so following the selector cost nothing.
+
+That removed the last reader of `const LG`, **and LG with it**. It was a second
+copy of numbers that already existed, which is precisely how it came to ship
+epk's under every other event's name. A block with no literals cannot go stale;
+a payload with no duplicate cannot disagree with itself.
+
+**The check had a matching gap:** a pure DELETION has nothing on the working
+side, so no signature could ever match it. `check_mock_deviations` now matches
+those against the LOCKED side. Deleting `const LG` was the first deviation it
+could not have described.
+
+## D6: the nav is sticky nowhere, on either head
+
+Diagnosed, not built. The rule is present and identical in both sheets —
+`position:sticky; top:0; z-index:100` — and the nav still scrolls away: −409 px
+on production, −468 px on v2 at a 1200 px scroll.
+
+Cause, established by experiment rather than by assertion:
+
+| body overflow-x | nav top after scrolling 1500 px |
+|---|---|
+| `hidden` (as shipped, both heads) | **−353** |
+| `clip` | **0** |
+| `visible` | **0** |
+
+`html,body{overflow-x:hidden}` makes `body` a scroll container, so the sticky
+nav positions against **body** rather than the viewport — and body scrolls away
+with the document. `overflow-x: clip` clips the same overflow **without**
+creating a scroll container, so it fixes it in one line while keeping the
+horizontal-overflow protection that rule exists for.
+
+So D6 is answer **(c)**: it sticks nowhere. Not a v2 regression, a defect in
+both heads with one shared cause. `.dept-tabs` is `position:static`, so (a)'s
+"tabs sticking under the nav" is not happening either.

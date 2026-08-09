@@ -54,7 +54,7 @@ MOCK = ROOT / 'redesign' / 'mock' / 'dashboard_v3.39.html'
 
 # Substituted wholesale by pass 0. Anything else at top level with an object or
 # array body is data the build does not touch, and therefore the mock's own.
-SUBSTITUTED = {'D', 'LG'}
+SUBSTITUTED = {'D'}
 # Structure rather than event data: menus, colour maps, month names. Each is
 # listed by NAME so that adding one is a deliberate act.
 STRUCTURAL = {
@@ -174,6 +174,14 @@ def main():
         i, j = body.find('<nav'), body.find('</nav>')
         body = (body[:i] + body[j:]) if 0 <= i < j else body
         body = body[body.find('</nav>'):]
+        # WHAT THIS DOES NOT SEE, stated so the blind spot is legible:
+        # `reader_text` yields only template-literal and quoted spans. Numbers
+        # in ATTRIBUTE values written outside a string - SVG `viewBox`, path
+        # `d`, inline `style` pixel values - are not scanned, and rennes.html
+        # carries 2001, 2006, 2014, 2027, 2029, 2035 and a dozen more of them.
+        # The exclusion is doing real work rather than the scan being trivially
+        # clean; the cost is that a genuine stray year sitting inside a path or
+        # a viewBox would hide behind exactly the same rule.
         bad = []
         for pos, text in reader_text(body):
             if any(a in text for a in YEAR_OK):

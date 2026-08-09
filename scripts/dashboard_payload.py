@@ -132,11 +132,27 @@ def totals(rows, cutoff=None):
 
 
 def velocity(rows, cutoff, windows=(3, 7, 14, 30)):
-    """Paid tickets in the last N complete days ending at the OBSERVED cutoff."""
+    """Paid tickets per DAY over the last N complete days ending at the cutoff.
+
+    D0. This returned the window TOTAL, and the card printed it with "/jour"
+    after it. A per-day rate cannot climb with the window length, and epk's
+    read 504 / 1350 / 2207 / 3677 across 3/7/14/30 - the shape of the numbers
+    was the tell, not any assertion.
+
+    Worse than a label error, because the card puts it beside "Rythme requis",
+    which IS a true daily rate: 1 350 against 346 reads as four times the pace
+    needed, where the truth is 193 against 345 - 56% of it. And `proj = A.n +
+    A.vel[7] * JX` multiplied a seven-day total by the days remaining.
+
+    `rolling()`, which feeds the CHART, has always divided by the window. The
+    two disagreed about one quantity and the chart was right, so this is now
+    the same arithmetic: sum over the window, divided by it.
+    """
     out = {}
     for w in windows:
         lo = cutoff - timedelta(days=w - 1)
-        out[str(w)] = sum(1 for r in rows if r['_paid'] and lo <= r['_d'] <= cutoff)
+        n = sum(1 for r in rows if r['_paid'] and lo <= r['_d'] <= cutoff)
+        out[str(w)] = round(n / w, 1)
     return out
 
 

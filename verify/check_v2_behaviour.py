@@ -79,6 +79,23 @@ def payload_problems(path):
             out.append(f"A0 the daily rows stop at J−{min(r['jx'] for r in daily)}, "
                        f"not at the event")
 
+    # D0: the card and the chart must be the same quantity. The card showed
+    # window TOTALS with "/jour" after them, beside "Rythme requis", which is a
+    # true daily rate - so 1 350 sat next to 346 and read as four times the
+    # pace needed when the truth was 56% of it. Same shape as p1 == p2: two
+    # figures that must share a scale, with nothing asserting it.
+    #
+    # Derived from the chart's own cumulative series, which was right all along.
+    cum = {p['jx']: p['v'] for p in (D.get('cumA') or [])}
+    for w, got in sorted((D.get('cur') or {}).get('vel', {}).items()):
+        if not cum:
+            break
+        want = (cum.get(D['jx'], 0) - cum.get(D['jx'] + int(w), 0)) / int(w)
+        if abs(got - want) > 0.05:
+            out.append(f"D0 vel[{w}] is {got}, but the chart's cumulative gives "
+                       f"{want:.1f}/day over the same window. The card and the "
+                       f"chart are not the same quantity")
+
     px = D.get('projx') or {}
     cands = px.get('cands') or {}
     if len(cands) < 2:
