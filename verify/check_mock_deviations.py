@@ -273,17 +273,21 @@ AUTHORISED += [
      'the current side can now be absent'),
     ('D32f', 'D3(b) - the two absolute slots in the projection readout',
      '<span class="kc-s ck-na"></span>'),
-    ('D32g', 'D3(b) - the readout writes them',
-     "na.textContent = z.dataset.na ? ' · ' + z.dataset.na : ''"),
+    ('D32g', 'D3(b) - the readout writes them, and the label and separator are '
+             'written on HOVER rather than rendered statically: standing in the '
+             'markup they read "Tickets ·" with nothing after them',
+     'belong to a HOVERED point, not to the chart'),
+    ('D27', 'D1(b) - the readout labels the unlabelled figure and separates the '
+            'two values, in Leo\'s words: "Tickets" and a middle dot. The label '
+            'travels on the .ck-read element rather than being emitted inline, '
+            'so applyZone decides when to show it. Uses .kc-s, the legend\'s '
+            'own class, so no CSS is invented',
+     "data-lbl=\"Tickets\""),
     ('D26b', 'D26 - the revenue chart passes k, the compact formatter, so there '
              'is no string left to operate on',
      'k, not eur: the axis and the readout want the compact form'),
     ('D26c', 'D26 - the second line of the same call, which the diff splits',
      "weeklySeries(past,'rcb') : [], k);"),
-    ('D27', 'D1(b) - the readout labels the unlabelled figure and separates the '
-            'two values, in Leo\'s words: "Tickets" and a middle dot. Uses '
-            '.kc-s, the legend\'s own class, so no CSS is invented',
-     'kc-s">Tickets<'),
 ]
 
 

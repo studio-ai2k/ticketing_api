@@ -1382,7 +1382,7 @@ function projChart(ch, col, scen, refLabel, cap){
       <span class="fi"><span class="sw-dash" style="border-color:rgba(248,113,113,.55)"></span><span class="kc-s">${refLabel}</span></span>
       <span class="ck-read"><span class="ck-jx"></span>
         <span class="ck-va"></span><span class="kc-s ck-na"></span>
-        <span class="kc-s">·</span>
+        <span class="kc-s ck-sep"></span>
         <span class="ck-vb"></span><span class="kc-s ck-nb"></span></span>
     </div></div>`;
 }
@@ -2017,9 +2017,9 @@ function rollChart(A, B, fmt, height){
     <div class="ck-key">
       <span class="fi"><span class="dot" style="background:var(--cur)"></span><span class="kc-s">${YC}</span></span>
       ${B.length?`<span class="fi"><span class="dot" style="background:var(--ref)"></span><span class="kc-s">${YR}</span></span>`:''}
-      <span class="ck-read"><span class="ck-jx"></span>
-        ${fmt?'':'<span class="kc-s">Tickets</span>'}
-        <span class="ck-va"></span>${B.length?'<span class="kc-s">·</span><span class="ck-vb"></span>':''}</span>
+      <span class="ck-read" ${fmt?'':'data-lbl="Tickets"'}><span class="ck-jx"></span>
+        <span class="kc-s ck-lbl"></span>
+        <span class="ck-va"></span><span class="kc-s ck-sep"></span>${B.length?'<span class="ck-vb"></span>':''}</span>
     </div>
   </div>`;
 }
@@ -2055,6 +2055,12 @@ function applyZone(z){
   box.querySelector('.ck-va').textContent = z.dataset.va || '—';
   const vb = box.querySelector('.ck-vb');
   if (vb) vb.textContent = z.dataset.vb || '—';
+  /* the label and the separator belong to a HOVERED point, not to the chart:
+     rendered statically they read "Tickets ·" with nothing after them. */
+  const rd = box.querySelector('.ck-read');
+  const lbl = box.querySelector('.ck-lbl'), sep = box.querySelector('.ck-sep');
+  if (lbl) lbl.textContent = (rd && rd.dataset.lbl) ? rd.dataset.lbl : '';
+  if (sep) sep.textContent = box.querySelector('.ck-vb') ? ' · ' : '';
   const na = box.querySelector('.ck-na'), nb = box.querySelector('.ck-nb');
   if (na) na.textContent = z.dataset.na ? ' · ' + z.dataset.na : '';
   if (nb) nb.textContent = z.dataset.nb ? ' · ' + z.dataset.nb : '';
