@@ -216,6 +216,25 @@ AUTHORISED = [a for a in AUTHORISED if a[0] not in ('D16', 'D17', 'D18')] + [
 
 
 AUTHORISED_CSS += [
+    ('C6', 'the velocity meta stays on the title line at every width. .rb-top '
+           'is already space-between, so desktop was always right; only this '
+           'mobile override forced the wrap. A rule removed, not layout added. '
+           'Measured at 393px: 41.2px -> 20.1px, no overflow',
+     "  .rb-m{width:100%}",
+     "  .rb-m{font-size:var(--fs-tiny);text-align:right;min-width:0}"),
+    ('C5', 'the separator above Vélocité 14j and above Vélocité 30j. The line '
+           'Leo already sees is .vproj\'s border-bottom, NOT .rb\'s - all four '
+           '.rb inside #vel measure 0px on both edges, because #vel .rb sets '
+           'border-bottom:0. Same declaration and same token; it cannot be the '
+           'same RULE without dragging .vproj\'s padding and typography onto '
+           'the blocks. `+ .rb` cannot match 7j: first child of the accordion, '
+           'no preceding sibling. Appended to the SAME PHYSICAL LINE: AUTHORISED_CSS matches whole-line modifications, and a new line of its own would read as an invented rule',
+     "#vel .rb{border-bottom:0;padding:22px 0 6px}",
+     "#vel .rb{border-bottom:0;padding:22px 0 6px}#vel .rb + .rb{border-top:1px solid var(--border)}"),
+    ('C-SUIVI', 'the reference ticket count matches the current one, so the two '
+                'sides compare at a glance. Weight kept; only the colour drops',
+     ".sv-l .sv-n{color:var(--text-muted);font-weight:500}",
+     ".sv-l .sv-n{font-weight:500}"),
     ('D29', "the stray second declaration of overflow-x on html, one line above "
             "the D6 fix. clip won on SOURCE ORDER alone - same specificity, "
             "later declaration - so D6 worked while holding by accident: "
