@@ -381,6 +381,26 @@ AUTH_HELPERS_JS = (
     "function dbAuthSet(){"
     f"try{{localStorage.setItem('{AUTH_KEY}', Date.now().toString());}}catch(e){{}}"
     "}\n"
+    # The gate is a fixed full-screen overlay over a document that still
+    # scrolls, so the dashboard slid past behind it. Nothing in the template
+    # ever locked scroll - not a v2 regression, a defect in both heads, fixed
+    # in the one place that feeds both.
+    #
+    # Driven off the ELEMENT rather than off the two code paths that hide it:
+    # the load check and the correct-password branch both work, and so does
+    # any third path added later, because the observer watches the thing whose
+    # state actually decides the answer.
+    "(function(){\n"
+    "  var o = document.getElementById('db-overlay'); if(!o) return;\n"
+    "  var sync = function(){\n"
+    "    var up = o.style.display !== 'none';\n"
+    "    document.documentElement.style.overflow = up ? 'hidden' : '';\n"
+    "    if (document.body) document.body.style.overflow = up ? 'hidden' : '';\n"
+    "  };\n"
+    "  sync();\n"
+    "  try{ new MutationObserver(sync).observe(o,{attributes:true,"
+    "attributeFilter:['style']}); }catch(e){}\n"
+    "})();\n"
 )
 
 

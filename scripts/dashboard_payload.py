@@ -270,15 +270,45 @@ def cumulative(counts, anchor, span, cap):
     return out
 
 
-def daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first, offset, ref_cut):
-    """One row per day from `first` to `cutoff`, with the reference matched by
-    the proven daily offset. `b`/`rb` are None where the reference has no day."""
+def daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first, offset, ref_cut,
+               cur_ev, ref_ev):
+    """One row per day from `first` to the EVENT, with the reference matched by
+    the proven daily offset. `b`/`rb` are None where the reference has no day.
+
+    TWO THINGS THAT LOOK LIKE ONE
+    -----------------------------
+    `jx` counts down to the event, NOT back from the cutoff. The template reads
+    `r.jx === D.jx` for "Aujourd'hui" and `r.jx < D.jx` for "still to come", and
+    D.jx is `(event - cutoff).days`. A row scale anchored on the cutoff is off
+    by exactly D.jx, which makes today unfindable and every row look past.
+
+    And the rows stop at the cutoff, so there is nothing for `fut` to be true
+    OF. Both had to move together: rescaling alone gives a correct "today" and
+    still no future; extending alone gives future rows that never match.
+
+    Rows after the cutoff are `fut`. They carry no current-side figures - the
+    cutoff is the observed anchor and our side does not exist beyond it - but
+    they DO carry the reference's, which is the whole point of the block: what
+    the comparison edition did over the stretch we have not lived yet.
+    """
     rows, ca, cb, rca, rcb = [], 0, 0, 0.0, 0.0
     day = first
-    while day <= cutoff:
+    # `max` because a FINISHED event's cutoff is past its own event date - the
+    # clamp puts it at event_date_last + 1. Stopping at the event there would
+    # drop the last rows AND lose the "today" row with them, which is how the
+    # first version of this passed on four pages and failed on two.
+    end = max(cutoff, cur_ev)
+    while day <= end:
+        fut = day > cutoff
         m = day - timedelta(days=offset) if offset is not None else None
-        a, ra = cur_n.get(day, 0), cur_rev.get(day, 0)
-        has_ref = m is not None and ref_cut is not None and m <= ref_cut
+        a, ra = (0, 0) if fut else (cur_n.get(day, 0), cur_rev.get(day, 0))
+        # Like-for-like truncation is a rule about the PAST: compare the two
+        # editions only as far as ours has run. Past the cutoff there is no
+        # same-point left to preserve, so the bound becomes the reference's own
+        # event - otherwise the future rows are blank on both sides and the
+        # block says nothing.
+        limit = ref_ev if fut else ref_cut
+        has_ref = m is not None and limit is not None and m <= limit
         b = ref_n.get(m, 0) if has_ref else None
         rb = ref_rev.get(m, 0) if has_ref else None
         ca += a
@@ -286,19 +316,28 @@ def daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first, offset, ref_cut):
         if b is not None:
             cb += b
             rcb += rb
-        rows.append({'jx': (cutoff - day).days, 'da': day.isoformat(),
+        rows.append({'jx': (cur_ev - day).days, 'da': day.isoformat(),
                      'db': m.isoformat() if has_ref else None,
                      'a': a, 'b': b, 'ra': round(ra), 'rb': round(rb) if rb is not None else None,
                      'ca': ca, 'cb': cb if b is not None else None,
                      'rca': round(rca), 'rcb': round(rcb) if b is not None else None,
-                     'fut': False})
+                     'fut': fut})
         day += timedelta(days=1)
     return rows
 
 
-def weekly_rows(cur_n, cur_rev, ref_n, ref_rev, cur_ev, ref_ev, cutoff, ref_cut):
+def weekly_rows(cur_n, cur_rev, ref_n, ref_rev, cur_ev, ref_ev, cutoff, ref_cut,
+                cur_jx):
     """Bucketed by each side's OWN distance from its event - no offset, no
-    weekday snap. The two grains do not share a mapping (§1)."""
+    weekday snap. The two grains do not share a mapping (§1).
+
+    `fut` is `w <= cur_jx // 7`: the week TODAY SITS IN is already future,
+    because it has not finished. That is a different rule from the daily grain,
+    where today is present and only tomorrow onward is future - and it is the
+    rule the locked mock's own payload carries. Both bucket sets extend to
+    w = 0 so the "À venir" block has weeks to show.
+    """
+    w0 = cur_jx // 7
     ca = defaultdict(lambda: [0, 0.0])
     cb = defaultdict(lambda: [0, 0.0])
     for d, k in cur_n.items():
@@ -307,11 +346,15 @@ def weekly_rows(cur_n, cur_rev, ref_n, ref_rev, cur_ev, ref_ev, cutoff, ref_cut)
             ca[w][0] += k
             ca[w][1] += cur_rev.get(d, 0)
     for d, k in ref_n.items():
-        if ref_cut and d <= ref_cut:
-            w = (ref_ev - d).days // 7
+        w = (ref_ev - d).days // 7
+        # Same split as the daily grain: truncate at the same point for the
+        # weeks already lived, and run to the reference's own event for the
+        # weeks still ahead.
+        keep = (d <= ref_cut) if w > w0 else (d <= ref_ev)
+        if ref_cut and keep:
             cb[w][0] += k
             cb[w][1] += ref_rev.get(d, 0)
-    weeks = sorted(set(ca) | set(cb), reverse=True)
+    weeks = sorted(set(ca) | set(cb) | set(range(0, w0 + 1)), reverse=True)
     ta = sum(v[0] for v in ca.values()) or 1
     tb = sum(v[0] for v in cb.values()) or 1
     out, aa, bb = [], 0, 0
@@ -333,7 +376,7 @@ def weekly_rows(cur_n, cur_rev, ref_n, ref_rev, cur_ev, ref_ev, cutoff, ref_cut)
                     'sa': sa.isoformat(), 'ea': (sa + timedelta(days=6)).isoformat(),
                     'sb': sb.isoformat() if has_b else None,
                     'eb': (sb + timedelta(days=6)).isoformat() if has_b else None,
-                    'fut': False})
+                    'fut': w <= w0})
     return out
 
 
@@ -379,7 +422,8 @@ def day_cumulative(rows, day, day_names, anchor, span, cap, jx0):
 
 
 def projx(days_blocks, cur_days, caps, cutoff, cur_ev, ref_label, ref_key,
-          ref_vel, ref_ev, ref_cut, mapping, ref_days_names, charts=None):
+          ref_vel, ref_ev, ref_cut, mapping, ref_days_names, charts=None,
+          is_ref=True):
     """One candidate. `coef`, `refday`, `refname`, `refvel` are None when the
     day has no counterpart - never 1.0, which reads as "no change" (trap #12)."""
     cur_to_ref = {v: k for k, v in mapping.items()}
@@ -403,21 +447,52 @@ def projx(days_blocks, cur_days, caps, cutoff, cur_ev, ref_label, ref_key,
             ref = charts['ref'].get(rd, [])
             jx_left = max((cur_ev - cutoff).days, 0)
             last = act[-1]['v'] if act else 0
-            # s1 replays the reference's remaining shape; s2 scales it by coef.
-            rem = 0.0
-            if ref:
-                rem = max(ref[-1]['v'] - next((x['v'] for x in ref
-                                               if x['jx'] <= jx_left), ref[-1]['v']), 0.0)
-            t1 = min(round((last + rem) / 100 * caps[d]), caps[d])
-            t2 = min(round((last + rem * (coef or 1)) / 100 * caps[d]), caps[d]) if coef else None
-            s1 = {'tot': t1, 'add': max(t1 - blk['now'], 0),
-                  'date': (cur_ev).isoformat(), 'pct': round(t1 / caps[d] * 100)}
-            s2 = ({'tot': t2, 'add': max(t2 - blk['now'], 0),
-                   'date': (cur_ev).isoformat(), 'pct': round(t2 / caps[d] * 100),
-                   'coef': coef} if t2 is not None else None)
-            p1 = [{'jx': jx_left, 'v': last}, {'jx': 0, 'v': round(t1 / caps[d] * 100, 2)}]
-            p2 = ([{'jx': jx_left, 'v': last},
-                   {'jx': 0, 'v': round(t2 / caps[d] * 100, 2)}] if t2 is not None else [])
+            refv = {x['jx']: x['v'] for x in ref}
+            base = refv.get(jx_left)
+            if base is None and ref:
+                base = next((x['v'] for x in ref if x['jx'] <= jx_left), ref[-1]['v'])
+
+            def _curve(scale):
+                """One point per remaining day, J-jx_left down to J-0.
+
+                A two-point line from today to the endpoint has the right ends
+                and no shape at all, so the two scenarios drew the same flat
+                segment and the toggle looked broken. The shape IS the
+                reference's own cumulative curve over the same stretch: that
+                is what "réplique des ventes" means, and it is the only reason
+                the chart is worth drawing.
+                """
+                out = []
+                for jx in range(jx_left, -1, -1):
+                    at = refv.get(jx)
+                    if at is None:
+                        at = next((v for j, v in sorted(refv.items()) if j >= jx),
+                                  base if base is not None else 0.0)
+                    v = last + max(at - (base or 0.0), 0.0) * scale
+                    # 120 is the mock's own ceiling: past it the curve leaves
+                    # the plot area and the sellout date has long since been
+                    # read off the 100% line anyway.
+                    out.append({'jx': jx, 'v': round(min(v, 120.0), 2)})
+                return out
+
+            p1 = _curve(1.0) if ref else []
+            p2 = _curve(coef) if (ref and coef) else []
+
+            def _sc(curve):
+                """`tot` from the curve's own endpoint, so the card and the
+                chart can never disagree; `date` is the first day the curve
+                reads 100%, and None when it never does."""
+                if not curve:
+                    return None
+                tot = min(round(curve[-1]['v'] / 100 * caps[d]), caps[d])
+                hit = next((p['jx'] for p in curve if round(p['v']) >= 100), None)
+                return {'tot': tot,
+                        'date': (cur_ev - timedelta(days=hit)).isoformat()
+                                if hit is not None else None,
+                        'add': max(tot - blk['now'], 0),
+                        'pct': round(tot / caps[d] * 100) if caps[d] else 0}
+
+            s1, s2 = _sc(p1), _sc(p2)
             chart = {'act': act, 'ref': ref, 'p1': p1, 'p2': p2}
         out.append({
             'day': d, 'cap': caps[d], 'now': blk['now'], 'vel14': blk['vel14'],
@@ -430,10 +505,11 @@ def projx(days_blocks, cur_days, caps, cutoff, cur_ev, ref_label, ref_key,
     # §5.6's degrade-honestly path and is already written in the locked mock.
     # `ref` is a boolean: is this the configured comparison?
     return {'label': ref_label, 'days': out,
-            'refdays': ref_days_names, 'ref': True}
+            'refdays': ref_days_names, 'ref': is_ref}
 
 
-def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None):
+def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
+          extra_refs=()):
     cfg_all = run.load_event_config(config)
     cur_cfg = cfg_all[event]
     ref_cfg = cfg_all.get(ref_event) if ref_event else None
@@ -487,14 +563,18 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None):
     offset = (daily_offset(cur_cfg['event_date_first'], ref_cfg['event_date_first'])
               if ref_cfg else None)
 
-    D['maxjx'] = span
     D['daily'] = daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first,
-                            offset, ref_cut)
+                            offset, ref_cut, cur_cfg['event_date_first'],
+                            ref_cfg['event_date_first'] if ref_cfg else None)
     D['weekly'] = weekly_rows(cur_n, cur_rev, ref_n, ref_rev,
                               cur_cfg['event_date_first'],
                               ref_cfg['event_date_first'] if ref_cfg else None,
-                              cutoff, ref_cut) if ref_cfg else []
-    D['suivi'] = D['daily'][-10:]
+                              cutoff, ref_cut, D['jx']) if ref_cfg else []
+    D['maxjx'] = max((r['jx'] for r in D['daily']), default=span)
+    # The last ten days LIVED, not the last ten rows: with future rows in the
+    # list the tail is all `–`.
+    D['suivi'] = [{k: r[k] for k in ('jx', 'a', 'b', 'da', 'db')}
+                  for r in D['daily'] if not r['fut']][-10:]
 
     D['cumA'] = cumulative(cur_n, cutoff, span, D['jx'])
     D['r7A'] = rolling(cur_n, cutoff, span, 7, D['jx'])
@@ -546,25 +626,56 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None):
     D['coef'] = None
     D['proj'] = [{'day': b['k'], 'now': b['now'], 'cap': b['cap'],
                   's1': None, 's2': None} for b in blocks]
-    cands = {}
-    if ref_cfg:
-        rvel = ref_day_velocity(ref_rows, ref_days, ref_cut)
-        rspan_c = (ref_cut - min(ref_n)).days if ref_n else 0
-        rjx_c = (ref_cfg['event_date_first'] - ref_cut).days
-        charts = {
-            'act': {d: day_cumulative(cur_rows, d, cur_days, cutoff, span, caps[d], D['jx'])
-                    for d in cur_days},
-            'ref': {d: day_cumulative(ref_rows, d, ref_days, ref_cut, rspan_c,
-                                      caps.get(mapping.get(d, d), 1), rjx_c)
-                    for d in ref_days},
-        }
-        cands[ref_event] = projx(blocks, cur_days, caps, cutoff,
-                                 cur_cfg['event_date_first'],
-                                 ref_cfg.get('event_name', ref_event), ref_event,
-                                 rvel, ref_cfg['event_date_first'], ref_cut,
-                                 mapping, ref_days, charts)
-    D['projx'] = {'cands': cands, 'default': ref_event, 'curdays': cur_days,
-                  'jx': D['jx']}
+
+    # `act` is the CURRENT edition's curve - one per day of ours, and the same
+    # under every candidate. Computed once, shared by all of them.
+    act_charts = {d: day_cumulative(cur_rows, d, cur_days, cutoff, span,
+                                    caps[d], D['jx']) for d in cur_days}
+
+    # The configured comparison first, then every other finished edition that
+    # has data. The selector listed exactly one candidate because exactly one
+    # was ever built - the menu was right, the payload behind it was a single
+    # entry wearing a dropdown.
+    cands, order = {}, []
+    for cid, ccsv in ([(ref_event, ref_csv)] if ref_cfg else []) + list(extra_refs or []):
+        if cid in cands or cid == event or not ccsv:
+            continue
+        ccfg = cfg_all.get(cid)
+        if not ccfg:
+            continue
+        crows = load_rows(ccsv)
+        if not crows:
+            continue
+        cdays = _ordered_days(ccfg)
+        cmap = _position_map(cur_days, cdays)
+        c_n, _ = series(crows)
+        if not c_n:
+            continue
+        crows_cut = run.filter_tickets_to_same_point(
+            [{**r, 'order_date': r['_d']} for r in crows],
+            cutoff, cur_cfg['event_date_first'], ccfg['event_date_first'])
+        c_cut = max((r['order_date'] for r in crows_cut), default=None)
+        if not c_cut:
+            continue
+        c_ev = ccfg['event_date_first']
+        # The reference curve runs to ITS OWN event, not to the same point:
+        # the remaining shape being replayed is precisely the part after the
+        # same point, so truncating there leaves nothing to replay.
+        cands[cid] = projx(
+            blocks, cur_days, caps, cutoff, cur_cfg['event_date_first'],
+            ccfg.get('event_name', cid), cid,
+            ref_day_velocity(crows, cdays, c_cut), c_ev, c_cut, cmap, cdays,
+            {'act': act_charts,
+             'ref': {d: day_cumulative(crows, d, cdays, c_ev,
+                                       (c_ev - min(c_n)).days,
+                                       caps.get(cmap.get(d, d), 1), 0)
+                     for d in cdays}},
+            is_ref=(cid == ref_event))
+        order.append(cid)
+
+    D['projx'] = {'cands': cands, 'default': ref_event if ref_event in cands
+                  else (order[0] if order else None),
+                  'curdays': cur_days, 'jx': D['jx']}
 
     # ---- meta ------------------------------------------------------------
     D['meta'] = {'cur': _meta(cur_rows, cur_cfg), 'ref': _meta(ref_rows, ref_cfg)}

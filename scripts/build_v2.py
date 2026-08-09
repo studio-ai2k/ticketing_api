@@ -51,6 +51,12 @@ SHEET = BASE_DIR / 'redesign' / 'style' / 'dashboard_redesign.css'
 
 STYLE_RE = re.compile(r'<style>.*?</style>', re.DOTALL)
 PAYLOAD_RE = re.compile(r'(const D=)(\{.*?\})(;\s*\n)', re.DOTALL)
+# `const D` was not the only payload in the mock. `LG` drives the "Logique de
+# projection" accordion and is a SECOND hardcoded object, three lines below it -
+# so every v2 page shipped epk's samedi 8 083 / dimanche 4 513 under its own
+# event's name. No error, no missing value, a full accordion of another
+# festival's figures. Found while fixing A0, not by any check.
+LG_RE = re.compile(r'(const LG\s*=\s*)(\{.*?\})(;\s*\n)', re.DOTALL)
 
 
 # The mock's own copy of the session-switcher IIFE. It is a SNAPSHOT of a live
@@ -81,11 +87,48 @@ def prod_nav_script(page):
         e = page.find('</script>', s) + len('</script>')
         block = page[s:e]
         if all(k in block for k in PROD_SW_MARKS):
-            return block
+            return _reexport_close_all(block)
     raise SystemExit(
         'pass 0: production\'s nav-switcher script not found after </nav>. '
         'Without it the nav renders as inert markup - the switcher opens '
         'nothing and the controls do not respond.')
+
+
+# The mock's nav block exported exactly ONE symbol to the page: `swCloseAll`.
+# Grepped both blocks for `window.` assignments to be sure it is one and not
+# "the one I happened to notice" - production's has none.
+CLOSE_ALL_DEF = 'function closeAll(){ document.querySelectorAll(\'.sw-wrap.open\').forEach(closeWrap); }'
+CLOSE_ALL_EXPORT = (
+    '\n  /* Re-rendering a control destroys the wrap that owns its floated menu,\n'
+    '     which would strand the menu in <body> forever. Handlers must close\n'
+    '     first. Carried from the mock\'s block: production defines closeAll but\n'
+    '     never exported it, and pickCmp/pickProj call it through a `if\n'
+    '     (window.swCloseAll)` guard - so the menu stayed open on select and\n'
+    '     nothing errored. */\n'
+    '  window.swCloseAll = closeAll;')
+
+
+def _reexport_close_all(block):
+    """Production's nav script defines `closeAll` and keeps it private.
+
+    The mock's copy ended `window.swCloseAll = closeAll;`, and `pickCmp` /
+    `pickProj` both call it. Replacing the block with production's took the
+    export with it, and because both call sites are guarded the dropdown simply
+    stopped closing on select - no error, no console, nothing to notice.
+
+    THE SEAM, ONE LAYER UP: markup and behaviour were reconciled and the
+    INTERFACE between them was not. Asserted rather than best-effort - a silent
+    miss here reproduces the exact defect.
+    """
+    if 'window.swCloseAll' in block:
+        return block
+    if block.count(CLOSE_ALL_DEF) != 1:
+        raise SystemExit(
+            'pass 0: production\'s nav script does not define closeAll in the '
+            'shape this expects, so swCloseAll cannot be re-exported. The '
+            'comparison and projection menus need it or they never close on '
+            'select. Find the new definition; do not drop the export.')
+    return block.replace(CLOSE_ALL_DEF, CLOSE_ALL_DEF + CLOSE_ALL_EXPORT, 1)
 
 
 def swap_nav_script(region, prod_block):
@@ -215,6 +258,24 @@ def strip_placeholders(region):
     return out
 
 
+def logique_payload(payload):
+    """`LG` - the per-day figures the "Logique de projection" accordion reads.
+
+    Derived from the selected candidate rather than restated, so the accordion
+    and the projection cards above it cannot disagree.
+    """
+    px = payload.get('projx') or {}
+    cand = (px.get('cands') or {}).get(px.get('default'))
+    if not cand:
+        return {}
+    return {p['day']: {
+        'vel14': p['vel14'], 'vel14ref': p['refvel'], 'coef': p['coef'],
+        'now': p['now'],
+        's1': {'tot': (p['s1'] or {}).get('tot'), 'date': (p['s1'] or {}).get('date')},
+        's2': {'tot': (p['s2'] or {}).get('tot'), 'date': (p['s2'] or {}).get('date')},
+    } for p in cand['days'] if p.get('s1')}
+
+
 def apply_v2_body(page, payload, identity=()):
     """Splice the mock's body into a run.py page, carrying the real payload."""
     mock = MOCK.read_text(encoding='utf-8')
@@ -228,6 +289,15 @@ def apply_v2_body(page, payload, identity=()):
             f'pass 0: the mock\'s `const D={{…}}` matched {n} time(s), want 1. '
             'The payload is the one thing that must be replaced; a miss here '
             'ships the mock\'s epk figures under another event\'s name.')
+
+    lg = json.dumps(logique_payload(payload), ensure_ascii=False,
+                    separators=(',', ':'))
+    region, n = LG_RE.subn(lambda m: m.group(1) + lg + m.group(3), region, count=1)
+    if n != 1:
+        raise SystemExit(
+            f'pass 0: the mock\'s `const LG={{…}}` matched {n} time(s), want 1. '
+            'It is a second payload and it ships another event\'s numbers when '
+            'it is missed - which is what happened. Do not make this optional.')
 
     for old, new in identity:
         if region.count(old) != 1:
@@ -313,14 +383,32 @@ def main():
     import dashboard_payload
     import run
     from datetime import datetime
-    D = dashboard_payload.build(a.event, a.csv,
-                                datetime.strptime(cutoff, '%Y-%m-%d').date(),
+    cut = datetime.strptime(cutoff, '%Y-%m-%d').date()
+
+    # A4: every FINISHED edition with data is a projection candidate, not just
+    # the configured comparison. Finished is the operative word - a projection
+    # replays a reference's remaining curve, and a live edition has not run one
+    # yet. Discovered here rather than in the payload so the payload keeps
+    # taking explicit paths and stays testable from a fixture.
+    cfg_all = run.load_event_config(a.config)
+    extra = []
+    for cid, ccfg in sorted(cfg_all.items()):
+        if cid == a.event or cid == ref or not ccfg.get('days'):
+            continue
+        last = max(d['day_date'] for d in ccfg['days'])
+        if last >= cut:
+            continue
+        path = next((BASE_DIR / 'csv_database' / cid).glob('*_merged.csv'), None)
+        if path:
+            extra.append((cid, str(path)))
+
+    D = dashboard_payload.build(a.event, a.csv, cut,
                                 a.config, ref or None,
-                                str(ref_csv) if ref_csv else None)
+                                str(ref_csv) if ref_csv else None,
+                                extra_refs=extra)
 
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    cfg_all = run.load_event_config(a.config)
     ident = event_identity(cfg_all[a.event], cfg_all.get(ref),
                            (cfg_all.get(ref) or {}).get('event_name', ref))
     out.write_text(apply_v2_body(base.read_text(encoding='utf-8'), D, ident),

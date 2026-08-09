@@ -2097,3 +2097,130 @@ directory deep and wrong at the root. When those substitutions become
 location-aware, a second copy of them in the check would go stale and start
 disagreeing with the build — silently, since a stale expectation still produces
 a clean diff against itself. Importing means the check follows the build.
+
+## Leo's v2 review: four of the six bugs were one missing boolean
+
+The review found six bugs. Diagnosis collapsed four of them into one line of
+the payload, and the shape of that is worth keeping.
+
+`fut` was `false` on every row of every page. The Suivi template reads:
+
+```js
+const past = rows.filter(r => !r.fut && r.jx > D.jx + 8);
+const now  = rows.filter(r => !r.fut && r.jx <= D.jx + 8);
+const fut  = rows.filter(r => r.fut);
+```
+
+and the `CUT('Précédent')` / `CUT('À venir')` separators live *inside* the
+`past` and `fut` blocks. So one false flag removed four things Leo listed
+separately: the À venir block, the Précédent button, and both separators.
+
+**Two faults, and they had to be fixed together.** `jx` was
+`(cutoff - day).days` — days ago — while `D.jx` is `(event - cutoff).days`,
+days remaining. Two scales, differing by exactly `D.jx`. Nothing could ever
+equal `D.jx` (no "Aujourd'hui" row) and nothing could be less than it (no
+future). And the rows stopped at the cutoff, so there was nothing for `fut` to
+be true *of*. Rescaling alone gives a correct today and still no future;
+extending alone gives future rows that never match. Either fix alone looks
+like it did nothing.
+
+**The clue that was there all along:** the chart series already had it right —
+`rolling()` and `cumulative()` both end `+ cap` where `cap` is `D.jx`. Only
+`daily_rows` omitted it. One function on a different scale from its neighbours,
+in a file where every other series agreed.
+
+### The projection was a straight line between two correct endpoints
+
+`p1` and `p2` were `[{jx: jx_left, v: today}, {jx: 0, v: final}]`. Both ends
+right, no shape, and — because the scenarios differ only in slope — *identical
+to each other*. The toggle worked perfectly and swapped one flat segment for
+the same flat segment. A bug you cannot see by checking values, only by
+checking that two things which must differ actually do.
+
+The shape is the reference's own cumulative curve replayed over the remaining
+days: `p1(jx) = today + (ref(jx) − ref(D.jx))`, `p2` the same scaled by the
+velocity coefficient, both clamped at 120% — read off the locked mock's own
+payload rather than invented, and cross-checked point-by-point against it.
+
+### A5: the seam again, one layer up
+
+The mock's nav block ended `window.swCloseAll = closeAll;`. Replacing that
+block with production's (correctly — production's nav is the live one) took the
+export with it. Production defines `closeAll` and keeps it private.
+
+Both call sites are written `if (window.swCloseAll) window.swCloseAll();`, so
+the guard did its job: no error, no console, nothing to notice. The dropdown
+simply stopped closing when you picked something.
+
+**Markup and behaviour were reconciled; the INTERFACE between them was not.**
+Grepped both blocks for `window.` assignments to establish that `swCloseAll` is
+the only symbol the replaced block ever exported — "the one I noticed" is not
+an answer to "what else did it export".
+
+### Found while fixing A0, not by any check: `const LG`
+
+`const D` was not the only payload in the mock. `const LG` sits three lines
+below it and drives the "Logique de projection" accordion. Nothing substituted
+it, so **every v2 page shipped epk's samedi 8 083 / dimanche 4 513** under its
+own event's name — a full accordion of another festival's figures, with no
+error and no missing value.
+
+`check_v2_identity` could not see it: it greps for the mock's *names and
+dates*, and this was the mock's *numbers*. Same lesson as the residual-leak
+scan that found the three hardcoded identity blocks — the thing you search for
+determines what you can find.
+
+Still open in the same family: `CANDS`, the Suivi comparison menu, is a
+hardcoded list in the mock. It happens to name the right editions because the
+mock was built from real data, but the "179 j" metadata is a snapshot. It
+should be built from the payload when B1 wires that menu up, not before —
+wiring it twice is how the two menus came to disagree in the first place.
+
+### A6 is a defect in both heads, so it was fixed in the shared pass
+
+Nothing in `dashboard_template.html` ever locked scroll, so the dashboard slid
+past behind the gate on production too. The template is do-not-modify, but
+`postprocess_html.py` already patches that same script block (it is where
+shared auth is injected), so the fix went there and reaches both heads.
+
+Driven off a `MutationObserver` on the overlay rather than off the two code
+paths that hide it. Both paths work today and so will a third added later,
+because the observer watches the element whose state actually decides the
+answer.
+
+### The check that would have caught all of it
+
+`verify/check_v2_behaviour.py`, in two halves that must both pass:
+
+  - the **payload**, asserted against the file: some row carries `fut:true`,
+    exactly one row matches `jx === D.jx`, the two scenarios are not equal,
+    `projx.cands` has more than one entry, `LG`'s days are this event's days.
+  - the **page**, asserted in a browser: `#b-fut` and `#b-past` exist, the two
+    scenario panes draw different `d` attributes, the menu closes on select,
+    the document does not scroll while the gate is up.
+
+Deliberately split. `const D` is script-scoped and unreachable from the page,
+which is the right constraint: reading the payload in the browser half would
+let a correct payload vouch for a page that never used it, and that is the
+entire class of failure this repo keeps meeting.
+
+Everything forward-looking is gated on `D.jx > 0`. A finished event has no
+future, and an assertion that cannot hold on two of six pages is one that gets
+disabled by whoever meets it first.
+
+**Negative-tested, five ways:** flag every row `fut:false`, set `p2 = p1`, drop
+all but one candidate, delete the `swCloseAll` export, delete the scroll-lock —
+each fails on its own assertion, and the payload and page halves catch the
+first three independently.
+
+### `check_v2_identity` had to learn the difference between prose and data
+
+A4 puts every finished edition's `label` in the payload, so "Elektric Park
+2023" now appears on the Bordeaux page legitimately, as a comparison you can
+pick. The scan failed five pages for it.
+
+The exclusion is the `const D` / `const LG` literals — and, so that this is a
+narrowing rather than a hole, every label inside the payload is now checked
+against `event_config.csv`. A mock literal cannot hide there without also being
+a configured event. Same move as the `<nav>` exclusion, and the second time
+this scan has had to separate what the page *says* from what the page *offers*.
