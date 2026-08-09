@@ -94,6 +94,54 @@ def read_config_field(config_path, event_id, field):
 # REGRESSION CANARIES - if either moves, the mapping ran forward.
 
 
+WARMUP_TRUE = ('1', 'true', 'yes', 'oui')
+# Events whose §5.6 mapping depends on the mark being right. If the column is
+# present but these carry no mark, the config regressed and the page would open
+# on the wrong default with no symptom.
+WARMUP_REQUIRED = {'bordeaux_2026': {'jeudi'}}
+
+
+def read_warmup_flags(config_path):
+    """{event_id: {marked day names}}, read straight from event_config.csv.
+
+    RAISES if the `day_is_warmup` column is absent. That is the whole point.
+
+    csv.DictReader ignores columns it does not know, which is exactly what made
+    adding this one provably inert - and is exactly what would make LOSING it
+    invisible. Every day would read unmarked, bordeaux would open on
+    40 783 / 44 500 instead of 34 804 / 36 000, the échauffement badge would
+    never render, and nothing would fail. A default of False is not a safe
+    fallback here; it is the wrong answer, silently. Trap #12: when an input is
+    absent, propagate the absence.
+    """
+    with open(config_path, 'r', encoding='utf-8-sig', newline='') as f:
+        reader = csv.DictReader(f)
+        if 'day_is_warmup' not in (reader.fieldnames or []):
+            raise SystemExit(
+                f'{config_path}: the `day_is_warmup` column is missing.\n'
+                '  A warm-up is a CONFIGURED PER-DAY FACT (DASHBOARD_REDESIGN_SPEC '
+                'ss5.3). Without the column every day reads unmarked, bordeaux_2026 '
+                'opens on 40 783 / 44 500 instead of 34 804 / 36 000, and no badge '
+                'renders - with nothing failing. Restore the column; do not default '
+                'it to false.')
+        flags = {}
+        for row in reader:
+            eid = (row.get('event_id') or '').strip()
+            day = (row.get('day_name') or '').strip().lower()
+            if not eid or not day:
+                continue
+            if (row.get('day_is_warmup') or '').strip().lower() in WARMUP_TRUE:
+                flags.setdefault(eid, set()).add(day)
+    for eid, wanted in WARMUP_REQUIRED.items():
+        got = flags.get(eid, set())
+        if not wanted <= got:
+            raise SystemExit(
+                f'{config_path}: {eid} should mark {sorted(wanted)} as a warm-up, '
+                f'has {sorted(got) or "none"}. The column exists but the mark was '
+                'lost - the page would open on the wrong default silently.')
+    return flags
+
+
 def _ordered_days(cfg):
     """Day names, ordered by day_date, asserting day_number agrees.
 
@@ -128,7 +176,7 @@ def _position_map(cur_days, prev_days):
     return out
 
 
-def _assert_warmup_shapes(cur_cfg, prev_cfg, cur_days, prev_days, mapping):
+def _assert_warmup_shapes(cur_id, prev_id, warm_flags, cur_days, prev_days, mapping):
     """EE3 + GG1. The two rules below coincide TODAY; nothing guarantees it.
 
     Last-day-backward and a main-days-only mapping give identical results on all
@@ -142,21 +190,22 @@ def _assert_warmup_shapes(cur_cfg, prev_cfg, cur_days, prev_days, mapping):
     Either failing would silently shift every day after it. Assert, do not
     assume - that turns a wrong page into a failed build.
 
+    The flags arrive as `warm_flags` - read from event_config.csv DIRECTLY, not
+    from run.py's day dicts. run.py:242 builds each day from four explicit keys
+    (day_number, day_name, day_date, day_capacity), so `day_is_warmup` never
+    reaches `event_config['days']` however the CSV is written. An earlier version
+    of this function read `x.get('day_is_warmup')` off those dicts and would have
+    seen nothing forever, on every event, while its unit tests passed against
+    hand-built dicts that did carry the key. Trap #10 one level down.
+
     GG1 also applies: the warm-up mark and the mapping both decide whether a day
     is excluded, by different means. On bordeaux they must AGREE - jeudi is both
     unmatched and marked. If a marked day is matched, or an unmatched day is
     unmarked, the page has two mechanisms disagreeing about the same day and
     that is a finding, not a detail.
     """
-    def warmups(cfg, names):
-        marked = set()
-        for x in (cfg or {}).get('days') or []:
-            flag = str(x.get('day_is_warmup') or '').strip().lower()
-            if flag in ('1', 'true', 'yes', 'oui'):
-                marked.add(x['day_name'].strip().lower())
-        return [n for n in names if n in marked]
-
-    cur_warm, prev_warm = warmups(cur_cfg, cur_days), warmups(prev_cfg, prev_days)
+    cur_warm = [n for n in cur_days if n in (warm_flags.get(cur_id) or set())]
+    prev_warm = [n for n in prev_days if n in (warm_flags.get(prev_id) or set())]
 
     if prev_warm:
         raise SystemExit(
@@ -213,6 +262,9 @@ def main():
 
     # Historical comparison reads the pre-merged, PII-free CSV for compare_to.
     # Raw exports are never copied here - same rule main.py follows.
+    # Raises if `day_is_warmup` is gone. Loaded before anything is built, so a
+    # config regression stops the build rather than producing a wrong page.
+    warm_flags = read_warmup_flags(args.config)
     compare_to = read_config_field(args.config, args.event, 'compare_to')
     if compare_to:
         ref_folder = BASE_DIR / 'csv_database' / compare_to
@@ -372,7 +424,8 @@ def main():
         if not cur_days or not prev_days:
             return result
         mapping = _position_map(cur_days, prev_days)
-        _assert_warmup_shapes(cur_cfg, event_config, cur_days, prev_days, mapping)
+        _assert_warmup_shapes(args.event, compare_to, warm_flags,
+                              cur_days, prev_days, mapping)
         if mapping == {n: n for n in mapping}:
             print(f'   ↻ day mapping: identical to name matching '
                   f'({", ".join(f"{k}→{v}" for k, v in mapping.items())})')

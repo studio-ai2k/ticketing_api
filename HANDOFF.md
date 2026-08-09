@@ -1847,3 +1847,37 @@ inspection, recorded before the payload work starts:
    Jeudi is the first null, and the quarantined fixture avoided the case by
    inventing `jeudi ref 1640`. The one path the spec singles out as needing care
    is the one with no coverage at all.
+
+## `day_is_warmup`: the column, and the two ways it can be silently absent
+
+A warm-up is a configured per-day fact (`DASHBOARD_REDESIGN_SPEC` §5.3). The
+column is in `event_config.csv`, marked on `bordeaux_2026` Jeudi and nowhere
+else. Adding it changed no output — all six dashboards byte-identical.
+
+**It can go missing in two independent ways, and neither one fails on its own.**
+
+1. **The column is absent from the CSV.** `csv.DictReader` ignores unknown
+   columns, which is what made adding this one provably inert — and is exactly
+   what makes losing it invisible. Every day would read unmarked, bordeaux would
+   open on 40 783 / 44 500 instead of 34 804 / 36 000, no badge would render,
+   and nothing would fail.
+2. **run.py drops it even when the CSV has it.** `run.py:242` builds each day
+   from four explicit keys — `day_number`, `day_name`, `day_date`,
+   `day_capacity`. `day_is_warmup` never reaches `event_config['days']` however
+   the CSV is written.
+
+The second one nearly shipped. `_assert_warmup_shapes` originally read
+`x.get('day_is_warmup')` off run.py's day dicts, and its unit tests passed —
+because the tests built their own dicts, which carried the key. It would have
+seen nothing forever, on every event, and reported every shape as fine. **A
+guard that reads from the wrong structure is trap #10 with a bigger blast
+radius: the check does not merely miss the bug, it certifies its absence.**
+
+So `read_warmup_flags()` reads `event_config.csv` **directly**, asserts the
+column exists in the header, and asserts the mark is present on the events §5.6
+depends on. Proved against the real file, not a copy: column removed → exit 1;
+column present but mark cleared → exit 1; both restored → exit 0.
+
+**A default of `False` would have been the wrong answer, silently** — trap #12
+in a config reader rather than an arithmetic guard. When an input is absent,
+propagate the absence.
