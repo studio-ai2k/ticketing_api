@@ -1603,12 +1603,35 @@ let GRAIN = 'jour';
    snapshot, and wired from a different source than the data behind it. Two
    menus from two sources is how they come to disagree. */
 const CANDS = (() => {
-  const gs = {edition:'Éditions ' + (D.family || ''), past:'Autres éditions passées'};
+  /* THREE groups. The locked mock has always had "Événements en cours" as its
+     third, and suivi_selector.GROUP_TITLES carries all three - this loop read
+     two, so a live candidate was filed under "Autres éditions passées". Genève
+     2026 is not a past edition. Unreachable since B1 shipped, because every
+     candidate was finished until the menu widened.
+     Order and titles follow suivi_selector.GROUP_TITLES; the group comes from
+     the payload's own c.g rather than from an is-live test here, so the menu
+     and the anchoring both read one source.
+
+     The loop iterates the values PRESENT in the payload, not a hardcoded list.
+     A hardcoded list is exactly what broke: the emitter grew a third group and
+     this side kept reading two, so candidates in the group it did not know
+     about vanished into the group it did. ORDER only sorts what it recognises;
+     anything else sorts last and titles itself from its own key, so a fourth
+     group renders - badly named, but visible - without this loop being edited.
+     Silently dropping it is the failure mode that hides; an ugly heading is
+     the one that gets reported. */
+  const gs = {edition:'Éditions ' + (D.family || ''),
+              past:'Autres éditions passées',
+              live:'Événements en cours'};
+  const ORDER = ['edition','past','live'];
+  const seen = [...new Set((D.cands || []).map(c => c.g))]
+    .sort((a,b) => (ORDER.indexOf(a)+1 || 99) - (ORDER.indexOf(b)+1 || 99)
+                   || String(a).localeCompare(String(b)));
   const out = [];
-  for (const g of ['edition','past']) {
+  for (const g of seen) {
     const items = (D.cands || []).filter(c => c.g === g)
       .map(c => ({n:c.n, d:c.lead + ' j', ref:c.ref, id:c.id}));
-    if (items.length) out.push({g:gs[g], items});
+    if (items.length) out.push({g:gs[g] || g, items});
   }
   return out;
 })();
@@ -1943,7 +1966,7 @@ function renderSuivi(){
        <div class="scen" style="max-width:200px">
          <button class="scen-b ${isD?'on':''}" onclick="grain('jour')">Jour</button>
          <button class="scen-b ${isD?'':'on'}" onclick="grain('semaine')">Semaine</button></div>
-       ${HAS_CMP ? modeMenu() + cmpMenu() : ''}</div>
+       ${HAS_CMP ? `<div class="svctl-p">${modeMenu()}${cmpMenu()}</div>` : ''}</div>
      ${HAS_CMP ? `<div class="sec-note" style="margin:8px 0 0">
        L’alignement s’applique aux deux grains : le tableau par jour et le
        tableau par semaine bougent ensemble.${AMODE === 'days_since_launch'

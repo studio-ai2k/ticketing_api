@@ -293,6 +293,7 @@ body {
 
 /* scenario toggle */
 .scen{display:flex;gap:6px;margin-bottom:16px}
+.svctl-p{display:flex;align-items:center;gap:10px}
 .scen-b{flex:1;padding:9px 8px;border:1px solid var(--border);border-radius:8px;background:none;
   font-family:inherit;font-size:var(--fs-micro);font-weight:500;color:var(--text-muted);cursor:pointer}
 .scen-b.on{background:rgba(255,255,255,.07);border-color:var(--border-h);color:#fff;font-weight:600}
@@ -416,6 +417,9 @@ body {
 .meth-t b{color:var(--text)}
 .svctl{display:flex;align-items:center;justify-content:space-between;gap:10px;
   flex-wrap:wrap;margin-bottom:14px}
+@media (max-width:720px){ .svctl{flex-direction:column;align-items:stretch;flex-wrap:nowrap} }
+@media (max-width:720px){ .svctl>.scen{align-self:flex-start;margin-bottom:0} }
+@media (max-width:720px){ .svctl-p{flex-direction:column;align-items:flex-end} }
 .cmp-trigger{display:flex;align-items:center;gap:7px;background:transparent;
   border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;
   font-family:inherit;font-size:var(--fs-micro);font-weight:600;color:var(--text-muted);

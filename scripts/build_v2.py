@@ -466,9 +466,35 @@ def main():
             continue
         head = json.loads(f.read_text(encoding='utf-8'))
         cands.append({'id': cid, 'n': head['name'], 'lead': head['lead'],
-                      'g': 'edition' if _family(cid) == _family(a.event) else 'past',
+                      # THREE groups, not two. `suivi_candidates.py:216` has
+                      # emitted 'live' since it was written and
+                      # `suivi_selector.GROUP_TITLES` has carried "Événements en
+                      # cours" beside it - the design was complete and THIS was
+                      # the one place that stopped at two. Sufficient while every
+                      # candidate was finished; the moment the menu widened, live
+                      # editions filed under "Autres éditions passées", which is
+                      # wrong on its face. Same class as `jr >= 0` and the weekly
+                      # `w >= 0`: a rule that was correct by accident until the
+                      # data it described changed.
+                      #
+                      # Family takes precedence over status, matching
+                      # suivi_candidates' own order. A same-family live edition
+                      # therefore files under "Éditions <family>" - stated here
+                      # because the mock's data has no such case to settle it.
+                      #
+                      # Liveness comes from the SERIES FILE, not from a test
+                      # against this page's `cut`. A cut-relative test makes
+                      # liveness a property of the page doing the looking: the
+                      # first draft of this line tagged bordeaux_2026 `live` on
+                      # parisxxl.html and `past` on the four other pages that
+                      # offer it, because those pages cut earlier. An event is
+                      # live or it is not. build_series already decided, once,
+                      # per event - and `head` is the file it wrote.
+                      'g': ('edition' if _family(cid) == _family(a.event)
+                            else ('live' if head['live'] else 'past')),
                       'ref': cid == ref})
-    cands.sort(key=lambda c: (c['g'] != 'edition', not c['ref'], c['n']))
+    _order = {'edition': 0, 'past': 1, 'live': 2}    # suivi_selector's own order
+    cands.sort(key=lambda c: (_order.get(c['g'], 9), not c['ref'], c['n']))
     D['cands'] = cands
     D['family'] = _family(a.event).replace('_', ' ').title()
     D['series_path'] = 'series/{id}.json'

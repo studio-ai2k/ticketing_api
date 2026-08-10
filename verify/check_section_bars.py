@@ -130,6 +130,17 @@ def main():
         else:
             print(f'  ok    {p.name}')
 
+    # (1b) - every candidate group has a heading - LIVED HERE and has moved to
+    # verify/check_cand_groups.py. It was written against the page's `gs` title
+    # map, which was a real assertion while the CANDS loop iterated a hardcoded
+    # ['edition','past']. Once that loop began deriving its groups from the
+    # values present in the payload, a static check that the groups have titles
+    # could no longer fail - it passed by construction. The replacement drives
+    # the menu open and partitions it at its own headings, and adds the
+    # direction this one never had: no candidate the series file calls live may
+    # be tagged past. Both directions, because a live event under the wrong
+    # heading renders as a perfectly plausible menu.
+
     # ---- (2) both bars behave, and fit, at the judged width --------------
     print(f'\n2  both bars at {JUDGED_AT}px')
     script = Path(tempfile.mkdtemp()) / 'bars.js'

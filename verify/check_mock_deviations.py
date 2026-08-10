@@ -168,6 +168,30 @@ AUTHORISED_CSS = [
     ('C3g', "C3 - the second dead rule, deleted with the first. Its own entry "
             "so a partial revert names itself",
      "  #sec-suivi .card-header .section-title{flex:1 0 100%}", None),
+    ('SV1', "SUIVI ROW - the two pickers get their own flex group. .svctl was "
+            "space-between with THREE children, so free space was distributed "
+            "BETWEEN all three and the two pickers were pushed apart on a wide "
+            "screen - a PRE-EXISTING DESKTOP DEFECT the anchoring picker only "
+            "made visible by giving the first picker a second one to be "
+            "separated from. Two children now: grain group left, picker group "
+            "right, pickers adjacent at the group's own gap",
+     None, ".svctl-p{display:flex;align-items:center;gap:10px}"),
+    ('SV2', "SUIVI ROW - mobile is an EXPLICIT column, not a wrap that lands "
+            "that way. The three items are 121+141+139 plus two gaps = 421 "
+            "against 337 available at 393, so they cannot share a line. "
+            "`flex-wrap` with space-between produced the hard-left landing Leo "
+            "reported: free space goes BETWEEN first-line items and the wrapped "
+            "one starts at the container's start edge. Reproducing the intended "
+            "result by tuning a wrap would be a layout correct by coincidence, "
+            "which is the class this project has paid for three times",
+     None, "@media (max-width:720px){ .svctl{flex-direction:column;align-items:stretch;flex-wrap:nowrap} }"),
+    ('SV3', "SUIVI ROW - grain buttons on their own row, LEFT-aligned, and "
+            "margin-bottom zeroed because the column gap now owns the spacing",
+     None, "@media (max-width:720px){ .svctl>.scen{align-self:flex-start;margin-bottom:0} }"),
+    ('SV4', "SUIVI ROW - the picker group stacks RIGHT-aligned beneath it. "
+            "Three rows: left, right, right - Leo's arrangement stated as a "
+            "layout rather than arrived at",
+     None, "@media (max-width:720px){ .svctl-p{flex-direction:column;align-items:flex-end} }"),
     ('TS1', "TYPE SCALE - the mobile values. Measured, not felt: the DOMINANT "
             "size on the page was --fs-micro at 11px across 35 uses, against "
             "budgetflow's 13px workhorse in the same app, and the floor was 9px "
@@ -230,7 +254,7 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 611
+BUDGET_ADDED = 634
 BUDGET_REMOVED = 160
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
@@ -529,6 +553,24 @@ AUTHORISED += [
            'without saying so. The reader who hits this picked an edition, not '
            'an alignment',
      'est une édition EN COURS'),
+    ('GRP', 'the comparison menu builds THREE groups. The locked mock has '
+            'always had "Événements en cours" as its third and '
+            'suivi_selector.GROUP_TITLES carries all three - this loop read '
+            'two, so a live candidate filed under "Autres éditions passées". '
+            'Genève 2026 is not a past edition. Unreachable since B1 shipped '
+            'because every candidate was finished; the widening made it '
+            'reachable. Third instance of the class after jr >= 0 and the '
+            'weekly w >= 0. The loop iterates the values PRESENT in the '
+            'payload rather than any list written here - a hardcoded list is '
+            'what broke, and hardcoding three instead of two would only move '
+            'the same failure one group further out. ORDER sorts what it '
+            'recognises; anything else sorts last and titles itself from its '
+            'own key, so an unknown group renders badly-named rather than '
+            'vanishing. verify/check_cand_groups.py asserts both ends',
+     'const seen = [...new Set((D.cands || []).map(c => c.g))]'),
+    ('SV0', 'SUIVI ROW - the markup half: the two pickers wrapped in .svctl-p '
+            'so .svctl has two children instead of three',
+     '<div class="svctl-p">'),
     ('C3', 'the section head is EMITTED BY THE RENDERER, from HEADS via '
            'secHead(). Every card on the page has its innerHTML replaced at '
            'runtime, so a head placed in the markup is wiped the moment its '
@@ -726,6 +768,26 @@ def main():
         # decision is findable by name.
         if old_line == new_line and str(old_line).startswith('__') and str(old_line).endswith('__'):
             print(f'ok    {cid}  (rider) {why}')
+            continue
+        # `old_line is None` authorises a pure ADDITION - the mirror of the
+        # deletion below, and the fifth shape this list has needed. A ruled
+        # LAYOUT change adds rules; it does not edit existing ones. Without
+        # this the only ways to ship one were an inline style in the markup
+        # (which puts layout where nobody looks for it) or loosening the
+        # invented-CSS check (which is the assertion, not a detail).
+        #
+        # Still bounded: the added line must be ABSENT from locked and PRESENT
+        # in working, so a listed addition that gets reverted fails exactly like
+        # a listed edit that does.
+        if old_line is None:
+            if new_line in added:
+                added.remove(new_line)
+                print(f'ok    {cid}  (addition) {why}')
+            else:
+                failures.append(f'{cid} not applied as ruled')
+                print(f'FAIL  {cid}: authorised ADDITION, but the line is absent')
+                print(f'        want +{new_line.strip()!r}')
+                print(f'        {why}')
             continue
         # `new_line is None` authorises a pure DELETION. A rule can be wrong by
         # existing - the two `#sec-suivi .card-header` rules were written for
