@@ -190,7 +190,8 @@ def expected(event, cand, cutoff, cfg_all, mode='j_minus'):
      off, _wshift, c_cut) = _sides(event, cand, cutoff, cfg_all, mode)
     first = min(cur_n) if cur_n else cutoff
     rows = dp.daily_rows(cur_n, cur_rev, c_n, c_rev, cutoff, first, off, c_cut,
-                         cfg['event_date_first'], ccfg['event_date_first'])
+                         cfg['event_date_first'], ccfg['event_date_first'],
+                         max(c_n) if c_n else None)
     # EVERY row, with the same em-dash sentinel the template now renders for
     # a missing counterpart. Filtering the blanks out of one side and not the
     # other is how the first version of this compared 155 rows against 157 and
@@ -199,7 +200,7 @@ def expected(event, cand, cutoff, cfg_all, mode='j_minus'):
               str(r['b']) if r['b'] is not None else '—')
              for r in rows]
     snap = signed_mod7((cfg['event_date_first'] - ccfg['event_date_first']).days)
-    return pairs, snap
+    return pairs, snap, rows, (max(c_n) if c_n else None)
 
 
 def fwk(a, b):
@@ -308,7 +309,8 @@ def main():
                 bad.append(f'[{mode}] {label}: rendered the unavailable banner')
                 continue
             with contextlib.redirect_stdout(io.StringIO()):
-                want, snap = expected(event, cid, cutoff, cfg_all, mode)
+                want, snap, srv_rows, c_last = expected(event, cid, cutoff,
+                                                        cfg_all, mode)
             if mode == 'j_minus':
                 snaps.append((name, cid, snap))
             label = f'[{mode}] {label}'
@@ -336,6 +338,19 @@ def main():
                            f'{gotw[i] if i < len(gotw) else "-"} vs '
                            f'{wantw[i] if i < len(wantw) else "-"}')
             BYMODE.setdefault((name, cid), {})[mode] = (tuple(g), tuple(gotw))
+            # ABSENCE, NOT ZERO - and an agreement check cannot see it, because
+            # client and server shared the error. Past the candidate's last day
+            # WITH DATA the reference column must be null: `ref_n.get(m, 0)` and
+            # `day[jr] || 0` cannot tell "quiet day" from "day that has not
+            # happened for them". Inert for a finished edition.
+            if c_last is not None:
+                stray = [r for r in srv_rows
+                         if r.get('fut') and r.get('b') is not None
+                         and r.get('db') and date.fromisoformat(r['db']) > c_last]
+                if stray:
+                    bad.append(f'{label}: {len(stray)} future row(s) carry a '
+                               f'NUMBER past {cid} own last data day {c_last} - '
+                               f'0 is a claim, absence is the truth')
             weeks[0] += 1
         if len(cmap) > 1 and len(seen) < 2:
             bad.append('every candidate renders the same rows - the selection '

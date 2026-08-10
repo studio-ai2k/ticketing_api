@@ -800,14 +800,6 @@ button.sw-item{background:none;border:0;width:100%;text-align:left;
   <div class="sec" id="sec-donnees"><div class="card" id="det-data"></div></div>
 <!-- /page-details -->
 
-<div class="page" id="page-campagne">
-  <div class="sec"><div class="card"><div class="empty" style="padding:44px 20px;text-align:center">
-    <div class="empty-t" style="font-size:var(--fs-mini);font-weight:600;color:var(--text-muted)">Page Campagne</div>
-    <div class="empty-s" style="font-size:var(--fs-tiny);color:var(--text-dim);max-width:42ch;margin:8px auto 0;line-height:1.6">
-      Analyse de campagne : forme, phases de prix, heure zéro, cadence, carte des achats.
-      Voir <code style="font-family:'JetBrains Mono',monospace;font-size:var(--fs-nano);background:rgba(255,255,255,.06);padding:1px 5px;border-radius:4px">campagne_mock.html</code>.</div>
-  </div></div></div>
-</div><!-- /page-campagne -->
 
   <div class="foot" id="foot"></div>
 </div><!-- /wrap -->
@@ -1760,6 +1752,7 @@ function applySeries(s){
   const day = {}, revd = {};
   for (const [jx, n, rev] of s.daily) { day[jx] = n; revd[jx] = rev; }
   const sold = s.daily.map(r => r[0]);
+  const lastJr = sold.length ? Math.min(...sold) : 0;
   /* The same-point cut, exactly as the server takes it: the LAST day this
      edition sold on at or before our J−x, not our J−x itself. They differ
      whenever the edition was quiet that day. */
@@ -1775,7 +1768,17 @@ function applySeries(s){
        before its campaign opened is a real date with zero sales, not a
        blank. An extra `jr <= lead` here dropped the oldest rows, which
        then rendered as 1 jan 1970. */
-    const ok = r.fut ? jr >= 0 : (cutJx !== null && jr >= cutJx);
+    /* `jr >= 0` bounds the future by the reference's own EVENT. That is right
+       for a finished edition and wrong for a LIVE one, whose data stops at
+       today while its event is still ahead: every row between the two rendered
+       `day[jr] || 0` -> 0, asserting it sold nothing on a day that has not
+       happened for it. 25 of 89 future rows on rennes vs epk_2026.
+       `lastJr` is its last day WITH DATA, so a quiet day inside the campaign is
+       still a real zero and only absence becomes an em-dash. Inert for a
+       finished candidate, which is why nothing caught it until live editions
+       reached the menu. */
+    const ok = r.fut ? (jr >= 0 && jr >= lastJr)
+                     : (cutJx !== null && jr >= cutJx);
     if (!ok) { r.b = r.rb = r.cb = r.rcb = r.db = null; continue; }
     r.b = day[jr] || 0;
     r.rb = revd[jr] || 0;
@@ -1946,7 +1949,17 @@ function renderSuivi(){
        tableau par semaine bougent ensemble.${AMODE === 'days_since_launch'
        ? ` Aligné sur l’ouverture, ce sont les DÉBUTS de campagne qui se
            correspondent, pas la date d’aujourd’hui — les tirets en bas de
-           tableau sont donc normaux.` : ''}</div>` : ''}
+           tableau sont donc normaux.` : ''}${
+       /* A LIVE candidate under Jour J alignment: its own J−x has not happened
+          yet for the rows we have already lived, so the reference column is
+          em-dashes. Correct, and unreadable without saying so. Shown where the
+          CANDIDATE is picked rather than only where the MODE is, because the
+          reader who hits this picked an edition, not an alignment. */
+       (CMAP[CSEL] && SERIES[CMAP[CSEL].id] && SERIES[CMAP[CSEL].id].live
+        && AMODE !== 'days_since_launch')
+       ? ` ${CSEL} est une édition EN COURS : son J−x n’est pas encore arrivé
+           pour nos lignes déjà vécues, d’où les tirets. Alignez sur
+           l’ouverture pour comparer les débuts de campagne.` : ''}</div>` : ''}
      ${CMPERR ? `<div class="empty" style="margin:12px 0">
        <div class="empty-t">Comparaison indisponible</div>
        <div class="empty-s">Les ventes de ${CMPERR} n’ont pas pu être chargées.

@@ -3413,3 +3413,89 @@ pattern; when C4 lands, delete the exemption rather than widening around it.
 
 Negative-tested both halves: one renderer's head removed → `sec-velocite: 0
 heading rows`; a note put back beside a title → the page fails.
+
+## Trap #21 fires again: live editions in the menu, and a bound that was correct by accident
+
+The menu widened from `projection_eligible` to `comparison_eligible`. Everything
+underneath was already built — the rule, the twelve series files, launch
+anchoring at 135/135 — so the change is one line. It reached **198 comparisons**
+(66 pairs × 3 modes) and exposed a defect that 135 green ones had hidden.
+
+### A live candidate's future rendered ZERO, not an em-dash
+
+The ruling predicted em-dashes. The page rendered **0**.
+
+`ok = r.fut ? jr >= 0 : …` bounds the future by the reference's own EVENT. Right
+for a finished edition. A LIVE candidate's data stops at **today** while its
+event is still ahead, so every row between the two took `day[jr] || 0` → `0`:
+*"Elektric Park 2026 sold nothing that day"*, about a day that has not happened
+for it. **25 of rennes' 89 future rows**; 67 against Genève 2026.
+
+`.get(m, 0)` is right INSIDE the range — a quiet day is a real zero — and wrong
+outside it, where absence is the truth. **The two are indistinguishable from the
+value alone**, which is the whole trap. Fixed on both sides with the reference's
+last day WITH DATA, so a quiet day stays a zero and only absence becomes a dash.
+
+This is trap #21 exactly: *a dormant correctness argument that expires when an
+assumption changes, with nothing pointing at it.* `jr >= 0` was correct while
+every candidate was finished. Three commits later it was not.
+
+### check_b1_switch could not see it, and that is the durable lesson
+
+**198/198 passed while this shipped.** The check asserts client == server; both
+sides carried the same error, so agreement was total and wrong.
+
+An equivalence check is blind to a shared premise. So the new assertion is about
+the VALUE against the data, not the two implementations against each other: past
+a candidate's last day with data, the reference column must be null. Negative-
+tested by reverting the server bound — 25/67/26 rows named, per page, per mode.
+
+Worth generalising: **every check that compares two implementations needs at
+least one property asserted against reality**, or it certifies consistency and
+nothing else.
+
+### The menu, and P4 retired by name
+
+`comparison_eligible` drives the menu; eleven candidates per page, three to five
+of them live. **P4 fired as designed** and is REPLACED rather than deleted — the
+slot now asserts the menu IS the comparison rule and reports how many candidates
+are live. A tripwire removed with no successor looks like a check someone got
+tired of.
+
+One earlier prediction recorded as WRONG: P3 was expected to fail alongside P4
+with "no file: geneve_2026". It did not. Live editions got series files when
+`comparison_eligible` started driving the EMITTER, two commits before it drove
+the menu — so by the time the tripwire fired, the files were already there.
+
+### The copy, shown where the CANDIDATE is picked
+
+Under Jour J alignment a live candidate's em-dashes are correct and unreadable
+without a sentence. It appears when the picked candidate is live and the mode is
+not launch, and disappears under launch. Verified over local HTTP — `file://`
+cannot `fetch`, so a `file://` probe reports every candidate as not-live and the
+copy as never shown, which is the probe being wrong rather than the page.
+
+## page-campagne removed from v2
+
+Ruled out rather than fixed: Campagne is intel-gathering, not a feature. It was a
+VISIBLE card, and the unclosed `</div>` put it at the foot of the Détails page.
+Fixing the div would have left a correctly-scoped page nothing navigates to —
+dead markup with a longer life expectancy.
+
+C1's "one tab per section" now has no section it cannot index, and
+`check_section_heads`' page exemption went with the defect. **An exemption that
+exists because of a defect must not outlive it, or it becomes a rule nobody can
+explain.**
+
+### AND THE FOOTER IS INSIDE page-details TOO — STILL OPEN
+
+Same unclosed `</div>`, and it survives the removal. Measured on the shipped page
+and on the LOCKED mock: `#foot` is **invisible on Billetterie** (height 0) and
+appears only on Détails. So the footer — the "Données API · HH:MM" freshness
+stamp, the thing the workflow's restamp step exists to keep current — is not on
+the page Leo actually reads.
+
+Not fixed: the ruling was to remove the block and NOT to fix the nesting, and
+this is a second consequence of that nesting that the ruling did not have in
+front of it. One `</div>` after `sec-donnees` closes it. **It is a ruling because
+it changes what renders on the main page.**

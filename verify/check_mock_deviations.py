@@ -182,8 +182,8 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 588
-BUDGET_REMOVED = 150
+BUDGET_ADDED = 609
+BUDGET_REMOVED = 158
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
 AUTHORISED = [
@@ -444,6 +444,34 @@ AUTHORISED += [
      '<div class="sec" id="sec-plateformes">'),
     ('C1-sec-donnees', 'C1/C2 - anchor on "Données". One tab per section means every section needs a target; seven had none. Markup, one attribute, no rendered change - and one entry each rather than one covering all seven, so a reverted anchor names itself',
      '<div class="sec" id="sec-donnees">'),
+    ('C3-campagne', 'RULED OUT of v2: the Page Campagne placeholder block, '
+                    'removed rather than fixed. It was a VISIBLE card - "Analyse '
+                    'de campagne : forme, phases de prix, heure zéro..." - and '
+                    'an unclosed </div> in the LOCKED mock nested it inside '
+                    'page-details, so it rendered at the foot of the Détails '
+                    'page. Campagne is intel-gathering, not a feature of the '
+                    'ticketing tool. Fixing the div would have left a '
+                    'correctly-scoped page nothing navigates to, which is dead '
+                    'markup with a longer life expectancy. A pure deletion, so '
+                    'matched against the LOCKED side',
+     '<div class="page" id="page-campagne">'),
+    ('B2-absence', 'live editions in the menu made a dormant bound reachable: '
+                   '`jr >= 0` bounds the future by the reference\'s EVENT, which '
+                   'is right for a finished edition and wrong for a live one '
+                   'whose data stops at today. Every row between rendered '
+                   '`day[jr] || 0` -> 0 - "sold nothing", about a day that has '
+                   'not happened for them. 25 of 89 future rows on rennes vs '
+                   'epk_2026, and check_b1_switch was blind to it because the '
+                   'server shared the error. Trap #21 again: a bound that was '
+                   'correct by accident until an assumption moved',
+     'const ok = r.fut ? (jr >= 0 && jr >= lastJr)'),
+    ('B2', 'live editions in the comparison menu. The copy shown where a LIVE '
+           'candidate is picked, not only where the mode is: under Jour J '
+           'alignment its own J−x has not happened for our already-lived rows, '
+           'so the reference column is em-dashes - correct, and unreadable '
+           'without saying so. The reader who hits this picked an edition, not '
+           'an alignment',
+     'est une édition EN COURS'),
     ('C3', 'the section head is EMITTED BY THE RENDERER, from HEADS via '
            'secHead(). Every card on the page has its innerHTML replaced at '
            'runtime, so a head placed in the markup is wiped the moment its '

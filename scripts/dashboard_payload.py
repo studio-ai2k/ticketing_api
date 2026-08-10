@@ -335,7 +335,7 @@ def anchor(mode, cur_ev, ref_ev, cur_lead, ref_lead):
 
 
 def daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first, offset, ref_cut,
-               cur_ev, ref_ev):
+               cur_ev, ref_ev, ref_last=None):
     """One row per day from `first` to the EVENT, with the reference matched by
     the proven daily offset. `b`/`rb` are None where the reference has no day.
 
@@ -373,6 +373,19 @@ def daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first, offset, ref_cut,
         # block says nothing.
         limit = ref_ev if fut else ref_cut
         has_ref = m is not None and limit is not None and m <= limit
+        # AND NOT PAST THE REFERENCE'S OWN LAST DAY OF DATA. For a FINISHED
+        # edition `ref_last` is at or after its event, so this is inert - which
+        # is why it was never needed. A LIVE candidate's data stops at TODAY
+        # while `ref_ev` is still in its future, so every row between the two
+        # rendered `ref_n.get(m, 0)` -> 0: "Elektric Park 2026 sold 0 that day",
+        # about a day that has not happened for it. Measured on rennes vs
+        # epk_2026: 25 of 89 future rows.
+        #
+        # `.get(m, 0)` is right INSIDE the range - a quiet day is a real zero -
+        # and wrong outside it, where absence is the truth. The two are
+        # indistinguishable from the value alone, which is the whole trap.
+        if has_ref and ref_last is not None and m > ref_last:
+            has_ref = False
         b = ref_n.get(m, 0) if has_ref else None
         rb = ref_rev.get(m, 0) if has_ref else None
         ca += a
@@ -714,7 +727,8 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
 
     D['daily'] = daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first,
                             offset, ref_cut, cur_cfg['event_date_first'],
-                            ref_cfg['event_date_first'] if ref_cfg else None)
+                            ref_cfg['event_date_first'] if ref_cfg else None,
+                            max(ref_n) if ref_n else None)
     D['weekly'] = weekly_rows(cur_n, cur_rev, ref_n, ref_rev,
                               cur_cfg['event_date_first'],
                               ref_cfg['event_date_first'] if ref_cfg else None,

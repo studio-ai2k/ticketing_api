@@ -440,7 +440,12 @@ def main():
     cfg_all = run.load_event_config(a.config)
     proj = [c for c in build_series.projection_eligible(cfg_all, cut)
             if c != a.event]
-    menu = proj
+    # THE MENU WIDENS. It ran on the projection rule while a live candidate had
+    # no correct anchor; `days_since_launch` is that anchor and it is built,
+    # checked at both grains and at 135/135. Comparing a live edition against
+    # another live one is what the anchoring work was for, and the menu was the
+    # last thing between the feature and a reader.
+    menu = [c for c in build_series.comparison_eligible(cfg_all) if c != a.event]
     extra = [(cid, str(build_series.series_path(cid)))
              for cid in proj if cid != ref]
 

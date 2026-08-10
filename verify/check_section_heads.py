@@ -52,17 +52,15 @@ CHROME = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
 EXEMPT = {'sec-projection'}          # C4's. By name, never by pattern.
 NO_TOOLTIP = {'sec-velocite'}        # has no note; ruled to gain no copy.
 
-# `page-campagne` is an empty-state placeholder for a page that does not exist -
-# no title, no head, nothing to index. Excluded by PAGE rather than by "sections
-# without an id", because the second is a pattern and this is a decision.
+# No page exemptions. `page-campagne` used to need one: an empty-state
+# placeholder for a page nothing navigates to, nested inside `page-details` by an
+# unclosed </div> in the LOCKED mock, so it rendered at the foot of the Détails
+# page. Ruled OUT of v2 rather than fixed - a correctly-scoped page nothing
+# navigates to is dead markup with a longer life expectancy.
 #
-# AND IT IS NESTED INSIDE `page-details`, in the LOCKED mock: an unclosed </div>
-# in the original upload, so the placeholder renders at the foot of the Détails
-# page whenever Détails is shown. Confirmed against the locked file, the working
-# mock and a shipped page - it is not C3's doing and not ours to fix. Found only
-# because this check reads `.page.on .sec` and the nesting made a hidden page's
-# section match a visible page's selector.
-EXEMPT_PAGES = {'page-campagne'}
+# The exemption goes with it. An exemption that exists because of a defect must
+# not outlive the defect, or it becomes a rule nobody can explain.
+EXEMPT_PAGES = set()
 
 JS = r"""
 const { chromium } = require('playwright');

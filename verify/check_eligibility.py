@@ -39,19 +39,26 @@ The two failures are not symmetric, so they are asserted separately:
       Holds today and must keep holding after the widening. An entry the reader
       can pick but not fetch is the exact failure Option 2 was priced to avoid.
 
-P4 — THE TRIPWIRE, EXPECTED TO FAIL ON PURPOSE
-----------------------------------------------
-Today the comparison menu is still built from the PROJECTION rule. That is
-deliberate and temporary: `suivi_candidates` rules that a live candidate must
-be anchored on LAUNCH rather than on its event date, because an event-date
-anchor maps a live edition's recent rows into its own future. Until that
-anchoring mode ships, a live candidate would be pickable and silently wrong.
+P4 — THE TRIPWIRE FIRED, AND `days_since_launch` IS WHAT RETIRED IT
+-------------------------------------------------------------------
+P4 used to pin the menu to the PROJECTION rule, because a live candidate had no
+anchor that made it meaningful: an event-date anchor maps a live edition's recent
+rows into its own future. It was written to fail the day that stopped being true.
 
-So P4 pins the current narrowness. When the launch mode lands and the menu
-widens, P4 fails — by design, and with the reason printed next to it. It is not
-a claim that the menu SHOULD be narrow; it is a claim that the menu is narrow
-FOR A REASON THAT IS WRITTEN DOWN, and that removing the narrowness has to be
-an act rather than a drift.
+**It fired.** `days_since_launch` shipped, checked at both grains and at 135/135,
+and the menu widened to `comparison_eligible` — so a live edition can be compared
+against another live one, which is what the anchoring work was for.
+
+P4 is REPLACED rather than deleted: the slot now asserts the menu IS the
+comparison rule, which is the invariant the widening created, and reports how
+many of each menu's candidates are live. A tripwire removed with no successor
+looks like a check someone got tired of.
+
+One prediction worth recording as WRONG: the earlier negative test expected P3 to
+fail alongside P4 with "no file: geneve_2026". It does not. Live editions got
+series files when `comparison_eligible` started driving the EMITTER, two commits
+before it drove the menu — so by the time the tripwire fired, the files it would
+have complained about were already there.
 
 WHAT THIS CHECK EXCLUDES
 ------------------------
@@ -64,6 +71,7 @@ not cover it and its PAGES tuple has to grow.
 import json
 import re
 import sys
+from datetime import date, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -147,27 +155,31 @@ def main():
         else:
             print(f'  ok    {name}  {len(ids)} entr(y/ies)')
 
-    # ---- P4: the tripwire -------------------------------------------------
-    print('\nP4  the menu is still the PROJECTION rule (temporary, on purpose)')
+    # ---- P4: the menu IS the comparison rule (the tripwire, fired) --------
+    # Was "the menu is still the PROJECTION rule". `days_since_launch` retired
+    # that, so the slot asserts the invariant the widening created rather than
+    # being deleted - a tripwire removed with no successor looks like a check
+    # someone got tired of.
+    print('\nP4  the menu IS the comparison rule (widened by days_since_launch)')
     for name, D in pages():
-        from datetime import date, timedelta
         cut = date.fromisoformat(D['ev']) - timedelta(days=D['jx'])
-        want = {c for c in build_series.projection_eligible(cfg_all, cut)
-                if c != D['id']} & on_disk
+        want = {c for c in comparison if c != D['id']} & on_disk
         got = {c['id'] for c in D.get('cands', [])}
+        live = {c for c in got if c in last_day and last_day[c] >= cut}
         if got == want:
-            print(f'  ok    {name}  menu == projection rule ({len(got)})')
+            print(f'  ok    {name}  {len(got)} candidate(s), {len(live)} live')
         else:
-            fails.append(f'{name}: menu has widened past the projection rule')
-            print(f'  FAIL  {name}  menu != projection rule')
+            fails.append(f'{name}: menu is not the comparison rule')
+            print(f'  FAIL  {name}  menu != comparison rule')
             print(f'        extra: {sorted(got - want) or "-"}   '
                   f'absent: {sorted(want - got) or "-"}')
-            print('        IF THE LAUNCH ANCHORING MODE HAS JUST LANDED, THIS')
-            print('        IS THE EXPECTED FAILURE. The menu was narrowed to')
-            print('        the projection rule only because a live candidate')
-            print('        had no correct anchor. Once it does, widen the menu')
-            print('        to comparison_eligible and retire P4 with a note')
-            print('        saying which mode retired it.')
+            print('        A candidate in the rule with no file cannot be')
+            print('        fetched; one outside the rule should not be offered.')
+    if not any(c in last_day and last_day[c] >= date.today()
+               for _n, D in pages() for c in {x['id'] for x in D.get('cands', [])}):
+        fails.append('no live candidate in any menu')
+        print('  FAIL  not one menu offers a LIVE edition, which is the whole')
+        print('        point of the widening - the rule moved and the data did not')
 
     print()
     if fails:
