@@ -5,9 +5,9 @@
    and hid the whole nav). Swap wholesale; never hand-merge. */
 
 :root{
-  --fs-nano: 10px;
+  --fs-nano: 12px;
   --fs-tiny: 12px;
-  --fs-mini: 13px;
+  --fs-mini: 14px;
   --fs-micro: 14px;
   --fs-caption: 16px;
   --fs-base: 16px;
@@ -79,7 +79,7 @@ body {
 .dept-tabs-bg { background: rgba(0,0,0,.15); border-top: 1px solid rgba(255,255,255,.03); }
 .dept-tabs { max-width: 1020px; margin: 0 auto; padding: 2px 20px; display: flex; overflow-x: auto; scrollbar-width: none; }
 .dept-tabs::-webkit-scrollbar { display: none; }
-.dt { padding: 8px 10px; font-size:var(--fs-tiny); font-weight: 500; color: var(--text-dim); white-space: nowrap; border: none; border-bottom: 2px solid transparent; background: none; font-family: inherit; cursor: pointer; transition: color .15s; }
+.dt { padding: 8px 8px; font-size:var(--fs-tiny); font-weight: 500; color: var(--text-dim); white-space: nowrap; border: none; border-bottom: 2px solid transparent; background: none; font-family: inherit; cursor: pointer; transition: color .15s; }
 /* hover removed */
 .dt.on { color: #fff; font-weight: 600; border-bottom-color: var(--day-0); }
 /* merged into .pill */
@@ -163,11 +163,6 @@ body {
   .nav-sw { padding: 6px 10px 6px 0; margin-right: 6px; }
   .nav-sw-av { width: 30px; height: 30px; }
   .det-links { grid-template-columns: 1fr; }
-  :root{
-  --fs-nano:9px;  --fs-tiny:10px; --fs-mini:11px; --fs-micro:11px;
-  --fs-caption:12px; --fs-base:12px; --fs-body:13px; --fs-large:15px;
-  --fs-xl:18px;   --fs-hero:24px; --fs-display:28px;
-  }
 }
 @media (max-width:480px) {
   /* Répartition: 3 cols -> 2. BudgetFlow drops columns progressively. */
@@ -628,8 +623,16 @@ button.sw-item{background:none;border:0;width:100%;text-align:left;
 
 @media (max-width:860px){ .kg-5{grid-template-columns:repeat(3,1fr)} .kg-4{grid-template-columns:repeat(2,1fr)} }
 @media (max-width:720px){
-  :root{--fs-nano:9px;--fs-tiny:10px;--fs-mini:11px;--fs-micro:11px;--fs-caption:12px;
-        --fs-base:12px;--fs-body:13px;--fs-large:15px;--fs-xl:18px;--fs-hero:24px;--fs-display:32px}
+  /* THE ONE MOBILE SCALE. There were TWO @media (max-width:720px) blocks both
+     redefining every --fs-*, and they DISAGREED: --fs-display was 28px in the
+     earlier one and 32px here. The later wins, so the 28px declaration had
+     never once applied. Nobody would have found it if the two had agreed -
+     same class as the overflow-x leftover D24 removed. Collapsed here, and the
+     collapse happens in the same commit as the values precisely because
+     editing a scale in two places and missing one is how the 28px got
+     stranded. */
+  :root{--fs-nano:11px;--fs-tiny:11px;--fs-mini:13px;--fs-micro:13px;--fs-caption:14px;
+        --fs-base:14px;--fs-body:15px;--fs-large:17px;--fs-xl:20px;--fs-hero:26px;--fs-display:32px}
   .wrap{padding:16px 12px 44px}
   .card{padding:16px 15px}
   .kg-5,.kg-3{grid-template-columns:repeat(2,1fr)}

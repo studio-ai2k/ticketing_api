@@ -3551,3 +3551,75 @@ reverted"* about a deletion that was still there.
 
 Now searches both sides. The line budget is what bounds the total, so nothing is
 lost by being permissive about which side a signature matches.
+
+## The type scale, and the fifth option nobody had costed
+
+Ruled: mobile `--fs-micro` 11 → 13px (35 uses, the dominant size) and the rest of
+the scale with it. The reason is measured and in the entries, because *"the text
+was too small"* is not a reason a later reader can check: **the dominant size was
+11px against budgetflow's 13px workhorse in the same app, and the floor was 9px
+against 10px.** Ticketing read about two steps smaller everywhere.
+
+### The six-tab bar broke, and the fix was the option we had all ruled out
+
+`.dt` is `--fs-tiny`, 10 → 11px, and six tabs went **377 → 399 against 393**.
+Padding had been declared off the table because Leo chose B over C in C1 to keep
+headroom.
+
+**That reasoning did not survive the larger font.** In C1, spending padding bought
+nothing — the bar already fit. Here it moves width *out of padding and into text*:
+`8px 10px` → `8px 8px` gives **375, +18 at 393, better than the +16 C1a bought**,
+with total tab width 375 against today's 377 — the tap target essentially
+unchanged while the label grows, on a page whose whole complaint was small text.
+
+A ruling can be right and its *reasoning* can expire. Worth separating the two
+when recording one.
+
+### The duplicate breakpoint block
+
+Two `@media (max-width:720px)` blocks both redefined every `--fs-*`, and they
+**disagreed**: `--fs-display` 28px in the earlier, 32px in the later. The later
+wins, so the 28px had never once applied. **If the two had agreed nobody would
+ever have found them** — a correct-looking declaration doing nothing, with
+nothing pointing at it. Collapsed in the same commit as the values, because
+editing a scale in two places and missing one is exactly how the 28px got
+stranded.
+
+### Measured after, on the shipped pages
+
+```
+393px   bar 375/393    doc 393/393    worst tooltip 160px    0 wrapped
+360px   bar 375/360    doc 360/360    worst tooltip 160px    0 wrapped
+```
+
+360 was already scrolling (377 > 360 before), so 375 is marginally better rather
+than a regression. Tooltips grew 133 → 160px worst case and stay inside the clamp.
+Nothing wraps — the first probe's "six `.dt` at 2 lines" was **padding counted as
+a second line**, a false positive in my heuristic, corrected by measuring
+`scrollWidth > clientWidth` instead.
+
+## Trap #22: the fourth structural weakness in the ledger
+
+`AUTHORISED_CSS` records `locked → working`. **It cannot hold two edits to one
+line.** C1a took `.dt` 12 → 10; TS5 took it 10 → 8; and the pair now matched
+neither — C1a's replacement "MISSING", TS5's original "STILL THERE".
+
+Resolved with the RIDER mechanism built for C3i: C1a records `locked → CURRENT`
+and keeps its own text, TS5 rides with its own id and reason. The rider test was
+generalised from one hard-coded sentinel to any `__…__` marker, since this is
+now clearly a recurring shape rather than a one-off.
+
+**Four structural weaknesses, all found by hitting them:**
+
+1. the hunk budget — one signature authorising 154 lines
+2. `new_line = None` — no way to authorise a deletion
+3. the rider — a decision with no line of its own
+4. **chained edits — a locked→working pair holding only one edit per line**
+
+And the fragility the last round found, which is the same family: the hunk
+matcher's result depended on **which side of a diff a line landed on**, so adding
+one `</div>` two lines away made a still-present deletion report as reverted.
+
+The thing to watch remains the one already named: the next extension that would
+require **splitting a CSS line** to give an entry its own diff. Refuse it — that
+is where the checker starts shaping the stylesheet.

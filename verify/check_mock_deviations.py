@@ -90,9 +90,9 @@ AUTHORISED_CSS = [
             "(Projections->Projection leaves 3 over, +Velocite->Rythme leaves "
             "2) and the type step was already at its floor, 10px. Padding was "
             "the only lever. 10px gives 377, sixteen of headroom, and leaves "
-            "Détails room for the next section instead of 2px",
+            "Détails room for the next section instead of 2px. NOTE: the recorded replacement is 8px, not the 10px this ruling chose - TS5 edited the same line again. A locked->working pair cannot hold two edits to one line, so the LATER value is recorded and the earlier decision keeps its text. Fourth structural weakness the ledger has shown, and the same shape as the hunk matcher whose result depended on which side a line landed",
      ".dt { padding: 8px 12px; font-size:var(--fs-tiny); font-weight: 500; color: var(--text-dim); white-space: nowrap; border: none; border-bottom: 2px solid transparent; background: none; font-family: inherit; cursor: pointer; transition: color .15s; }",
-     ".dt { padding: 8px 10px; font-size:var(--fs-tiny); font-weight: 500; color: var(--text-dim); white-space: nowrap; border: none; border-bottom: 2px solid transparent; background: none; font-family: inherit; cursor: pointer; transition: color .15s; }"),
+     ".dt { padding: 8px 8px; font-size:var(--fs-tiny); font-weight: 500; color: var(--text-dim); white-space: nowrap; border: none; border-bottom: 2px solid transparent; background: none; font-family: inherit; cursor: pointer; transition: color .15s; }"),
     ('C3a', "C3 - THE CLAMP, and it is the entry that generalises. The tooltip "
             "bubble was `left:50%; transform:translateX(-50%)` - centred on the "
             "15px glyph - so the widest it could ever be was 2*min(glyph_x, "
@@ -168,6 +168,54 @@ AUTHORISED_CSS = [
     ('C3g', "C3 - the second dead rule, deleted with the first. Its own entry "
             "so a partial revert names itself",
      "  #sec-suivi .card-header .section-title{flex:1 0 100%}", None),
+    ('TS1', "TYPE SCALE - the mobile values. Measured, not felt: the DOMINANT "
+            "size on the page was --fs-micro at 11px across 35 uses, against "
+            "budgetflow's 13px workhorse in the same app, and the floor was 9px "
+            "against budgetflow's 10px. The ticketing module read about two "
+            "steps smaller everywhere. micro 11->13 is the change that carries "
+            "it; nothing renders below 11px now. \"The text was too small\" is "
+            "not a reason a later reader can check; these numbers are",
+     "  :root{--fs-nano:9px;--fs-tiny:10px;--fs-mini:11px;--fs-micro:11px;--fs-caption:12px;",
+     "  :root{--fs-nano:11px;--fs-tiny:11px;--fs-mini:13px;--fs-micro:13px;--fs-caption:14px;"),
+    ('TS1b', "TYPE SCALE - the second line of the same declaration",
+     "        --fs-base:12px;--fs-body:13px;--fs-large:15px;--fs-xl:18px;--fs-hero:24px;--fs-display:32px}",
+     "        --fs-base:14px;--fs-body:15px;--fs-large:17px;--fs-xl:20px;--fs-hero:26px;--fs-display:32px}"),
+    ('TS2', "TYPE SCALE - desktop barely moves. --fs-mini 13->14 only, so it "
+            "stops being a step indistinguishable from --fs-micro at 14px. "
+            "ELEVEN NAMES, NINE SIZES was the other half of the finding: on "
+            "mobile micro==mini and caption==base, distinctions that exist in "
+            "the code and are invisible on the page. The proposal makes them "
+            "equal ON PURPOSE so the redundant names can be retired later with "
+            "no visual change - NOT retired in this unit",
+     "  --fs-mini: 13px;", "  --fs-mini: 14px;"),
+    ('TS3', "TYPE SCALE - --fs-nano 10->12 desktop, joining --fs-tiny. Same "
+            "eight-distinct-sizes move as TS2",
+     "  --fs-nano: 10px;", "  --fs-nano: 12px;"),
+    ('TS4', "TYPE SCALE - the DUPLICATE 720px BLOCK, deleted. Two "
+            "@media (max-width:720px) blocks both redefined every --fs-*, and "
+            "they DISAGREED - --fs-display was 28px here and 32px in the later "
+            "one, which wins, so this declaration had never once applied. "
+            "IF THE TWO HAD AGREED NOBODY WOULD EVER HAVE FOUND THEM: a "
+            "correct-looking declaration that does nothing, with nothing "
+            "pointing at it - the overflow-x leftover again. Collapsed in the "
+            "SAME commit as the values, because editing a scale in two places "
+            "and missing one is exactly how the 28px got stranded",
+     "  --fs-nano:9px;  --fs-tiny:10px; --fs-mini:11px; --fs-micro:11px;", None),
+    ('TS4b', "TYPE SCALE - second line of the dead block", 
+     "  --fs-caption:12px; --fs-base:12px; --fs-body:13px; --fs-large:15px;", None),
+    ('TS4c', "TYPE SCALE - third line of the dead block, and the 28px itself",
+     "  --fs-xl:18px;   --fs-hero:24px; --fs-display:28px;", None),
+    ('TS5', "TYPE SCALE - .dt horizontal padding 10->8, and this is NOT the "
+            "trade Leo declined in C1. Then, spending padding bought nothing "
+            "because the bar already fit. Now --fs-tiny goes 10->11 and six "
+            "tabs need 399 against 393; 8px padding gives 375, so the change "
+            "moves width OUT of padding and INTO text. Total tab width 375 vs "
+            "today's 377 - the tap target is essentially unchanged while the "
+            "label grows, on a page whose whole complaint was small text. "
+            "Measured: +18 headroom at 393, better than the +16 C1a bought",
+     "__TS5_rides_on_C1a__", "__TS5_rides_on_C1a__"),
+    ('TS4d', "TYPE SCALE - the dead block's :root{ opener", "  :root{", None),
+    ('TS4e', "TYPE SCALE - and its closing brace", "  }", None),
     ('D24', "D6 - overflow-x: clip instead of hidden. `hidden` makes body a "
             "SCROLL CONTAINER, so the sticky nav positioned against body and "
             "scrolled away with it: -353px after 1500px, on BOTH heads, with a "
@@ -676,7 +724,7 @@ def main():
         # give it one would shape the stylesheet around this file, which is
         # backwards. Recorded rather than merged into the owning entry, so the
         # decision is findable by name.
-        if old_line == new_line == '__C3i_rides_on_C3c__':
+        if old_line == new_line and str(old_line).startswith('__') and str(old_line).endswith('__'):
             print(f'ok    {cid}  (rider) {why}')
             continue
         # `new_line is None` authorises a pure DELETION. A rule can be wrong by
