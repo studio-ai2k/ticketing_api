@@ -96,8 +96,8 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 363
-BUDGET_REMOVED = 87
+BUDGET_ADDED = 448
+BUDGET_REMOVED = 88
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
 AUTHORISED = [
@@ -321,6 +321,29 @@ AUTHORISED += [
      'k, not eur: the axis and the readout want the compact form'),
     ('D26c', 'D26 - the second line of the same call, which the diff splits',
      "weeklySeries(past,'rcb') : [], k);"),
+    ('AN2', 'anchoring - the three modes. `anchorOf` mirrors '
+            'dashboard_payload.anchor(): j_minus and exact_date differ by the '
+            'weekday snap alone and share a weekly column, days_since_launch '
+            'shifts BOTH grains because its offset is the campaign-length '
+            'difference and reaches 105 days. The cut is raw in every mode, '
+            'inherited from run.py\'s two same-point filters rather than '
+            're-decided',
+     'function anchorOf(s)'),
+    ('AN3', 'anchoring - w >= 0 on the reference bucket. Unshifted, `jx >= 0` '
+            'already implied it; shifted, the candidate\'s event lands fifteen '
+            'weeks past ours in launch-aligned time and rendered fifteen rows '
+            'of "S−−1"…"S−−15". Measured: 15 on epk under launch, 0 under '
+            'j_minus',
+     'if (!keep || w < 0) continue;'),
+    ('AN4', 'anchoring - the mode picker, a THIRD instance of the existing '
+            '.sw-wrap / .cmp-trigger / .sw-menu component, so no CSS is '
+            'invented. Starts on D.amode, the config row, so the mode is not '
+            'stated in a second place',
+     'function modeMenu()'),
+    ('AN5', 'anchoring - the one line of copy: the alignment governs both '
+            'grains. The launch clause is conditional because the em-dash note '
+            'is only true in that mode',
+     'L’alignement s’applique aux deux grains'),
     ('AN1', 'anchoring - live editions now get series files, so four of the '
             'twelve are rewritten daily and {cache:no-cache} stops being '
             'hygiene. The reason is recorded at the fetch because that is where '

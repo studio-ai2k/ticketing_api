@@ -286,6 +286,54 @@ def cumulative(counts, anchor, span, cap):
     return out
 
 
+# The anchoring modes. `j_minus` and `days_since_launch` are NOT new names: they
+# are the values `event_config.csv`'s `comparison_mode` column already carries and
+# that `run.py:3955` already branches on, with the launch filter written at
+# `run.py:1426`. Launch anchoring is unused work here, not new work, so the enum
+# is extended rather than replaced and `exact_date` is a third value in it.
+MODES = ('j_minus', 'days_since_launch', 'exact_date')
+
+
+def anchor(mode, cur_ev, ref_ev, cur_lead, ref_lead):
+    """(daily offset in days, weekly bucket shift) for an anchoring mode.
+
+    The daily offset is subtracted from a current-side row DATE to reach the
+    reference's matched date. The weekly shift is subtracted from the reference's
+    own J−x before bucketing.
+
+    WHY THE WEEKLY SHIFT EXISTS, AND ONLY FOR ONE MODE
+    --------------------------------------------------
+    Weekly used to take no offset and no snap in every mode, on the reasoning
+    that the daily offset is a WEEKDAY SNAP of at most ±3 days and cannot
+    survive division by 7. That is true of `j_minus` and of `exact_date` — the
+    two differ by the snap alone, so at weekly granularity they are the same
+    column, and the specified exact-date rule
+    `(cand_ev − (our_date − gap)) // 7` expands to exactly `jx // 7`.
+
+    It is NOT true of `days_since_launch`, where the offset is the difference in
+    CAMPAIGN LENGTHS: −59, +98 and +105 days on the six live pairs. Fifteen weeks
+    does not round away. Without the shift the daily table realigns by fifteen
+    weeks while the weekly table does not move at all, and the two halves of one
+    mode disagree about what the mode is.
+
+    So: the mode governs both grains. `j_minus` and `exact_date` shift by 0
+    because their offsets are sub-week, not because weekly ignores the mode.
+
+    `daily_offset` does the launch case unchanged - its own docstring already
+    says the anchors are event dates for a finished candidate and FIRST-SALE
+    dates for a live one. Only `exact_date` is outside it, being the raw gap with
+    no snap at all.
+    """
+    gap = (cur_ev - ref_ev).days
+    if mode == 'exact_date':
+        return gap, 0
+    if mode == 'days_since_launch':
+        return (daily_offset(cur_ev - timedelta(days=cur_lead),
+                             ref_ev - timedelta(days=ref_lead)),
+                ref_lead - cur_lead)
+    return daily_offset(cur_ev, ref_ev), 0
+
+
 def daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first, offset, ref_cut,
                cur_ev, ref_ev):
     """One row per day from `first` to the EVENT, with the reference matched by
@@ -343,9 +391,14 @@ def daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first, offset, ref_cut,
 
 
 def weekly_rows(cur_n, cur_rev, ref_n, ref_rev, cur_ev, ref_ev, cutoff, ref_cut,
-                cur_jx, cap):
-    """Bucketed by each side's OWN distance from its event - no offset, no
-    weekday snap. The two grains do not share a mapping (§1).
+                cur_jx, cap, wshift=0):
+    """Bucketed by each side's OWN distance from its event, shifted by `wshift`
+    on the reference side. The two grains do not share the daily MAPPING, but
+    they do share the MODE - see `anchor()` for why that is not a contradiction.
+
+    `wshift` is 0 for `j_minus` and `exact_date`, whose offsets are a weekday
+    snap and cannot survive division by 7, and is the campaign-length difference
+    for `days_since_launch`, where it reaches fifteen weeks.
 
     `fut` is `w <= cur_jx // 7`: the week TODAY SITS IN is already future,
     because it has not finished. That is a different rule from the daily grain,
@@ -362,12 +415,23 @@ def weekly_rows(cur_n, cur_rev, ref_n, ref_rev, cur_ev, ref_ev, cutoff, ref_cut,
             ca[w][0] += k
             ca[w][1] += cur_rev.get(d, 0)
     for d, k in ref_n.items():
-        w = (ref_ev - d).days // 7
+        w = ((ref_ev - d).days - wshift) // 7
         # Same split as the daily grain: truncate at the same point for the
         # weeks already lived, and run to the reference's own event for the
         # weeks still ahead.
         keep = (d <= ref_cut) if w > w0 else (d <= ref_ev)
-        if ref_cut and keep:
+        # AND w >= 0, WHICH ONLY BITES ONCE wshift IS NON-ZERO. With no shift,
+        # `keep` already implies `d <= ref_ev` and therefore `w >= 0`, so this
+        # was unreachable and correct by accident. Under `days_since_launch` the
+        # candidate's campaign can be 105 days longer than ours, which puts its
+        # EVENT fifteen weeks past ours in launch-aligned time - geometrically
+        # right, and fifteen rows of "S−−1" … "S−−15" on the page. Measured:
+        # 15 such rows on epk under launch, 0 under j_minus.
+        #
+        # The daily grain never had to say this because it maps the reference
+        # onto OUR rows, and our rows stop at our event. The weekly grain is a
+        # union, so it is the one place the extra weeks can surface.
+        if ref_cut and keep and w >= 0:
             cb[w][0] += k
             cb[w][1] += ref_rev.get(d, 0)
     weeks = sorted(set(ca) | set(cb) | set(range(0, w0 + 1)), reverse=True)
@@ -390,7 +454,10 @@ def weekly_rows(cur_n, cur_rev, ref_n, ref_rev, cur_ev, ref_ev, cutoff, ref_cut,
         if has_b:
             bb += b
         sa = cur_ev - timedelta(days=(w + 1) * 7 - 1)
-        sb = ref_ev - timedelta(days=(w + 1) * 7 - 1)
+        # The reference label comes from ITS OWN event date and its own shift,
+        # never from ours. `- wshift` is the same term the bucket was built
+        # with, so the span a row is labelled with is the span it counted.
+        sb = ref_ev - timedelta(days=wshift + (w + 1) * 7 - 1)
         out.append({'w': w, 'a': a, 'b': b, 'ra': round(ra),
                     'rb': round(rb) if rb is not None else None,
                     'pa': round(a / ta * 100, 1),
@@ -533,10 +600,19 @@ def projx(days_blocks, cur_days, caps, cutoff, cur_ev, ref_label, ref_key,
 
 
 def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
-          extra_refs=()):
+          extra_refs=(), mode=None):
     cfg_all = run.load_event_config(config)
     cur_cfg = cfg_all[event]
     ref_cfg = cfg_all.get(ref_event) if ref_event else None
+
+    # The anchoring mode comes from the config row, exactly as `run.py:3955`
+    # reads it, defaulting the same way. ONE place states the mode; `mode=` here
+    # is for the checks, which have to drive all three without editing the
+    # config back and forth.
+    if mode is None:
+        mode = (cur_cfg.get('comparison_mode') or '').strip() or 'j_minus'
+    if mode not in MODES:
+        raise SystemExit(f'unknown comparison_mode {mode!r}; want one of {MODES}')
 
     cur_days = _ordered_days(cur_cfg)
     ref_days = _ordered_days(ref_cfg) if ref_cfg else []
@@ -553,12 +629,41 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
     cur_rows = load_rows(csv_path)
     ref_rows = load_rows(ref_csv) if ref_csv else []
 
+    # Our campaign length, in days before our own event. Same definition as a
+    # series file's `lead` (the LARGEST jx with a sale), so the two sides of a
+    # launch-anchored comparison are measured the same way.
+    _cur_n_all, _ = series(cur_rows)
+    cur_lead = ((cur_cfg['event_date_first'] - min(_cur_n_all)).days
+                if _cur_n_all else 0)
+    ref_lead = 0
+    if ref_rows and ref_cfg:
+        _ref_n_all, _ = series(ref_rows)
+        ref_lead = ((ref_cfg['event_date_first'] - min(_ref_n_all)).days
+                    if _ref_n_all else 0)
+
     ref_cut = None
     if ref_rows and ref_cfg:
-        # §1 route (c): run.py's own same-point filter, not a reimplementation.
-        ref_rows_cut = run.filter_tickets_to_same_point(
-            [{**r, 'order_date': r['_d']} for r in ref_rows],
-            cutoff, cur_cfg['event_date_first'], ref_cfg['event_date_first'])
+        # §1 route (c): run.py's own same-point filters, not reimplementations -
+        # and there are TWO of them, one per anchoring mode, both already
+        # written. `filter_tickets_to_same_point` cuts at equal days-before-event
+        # and `filter_tickets_to_same_point_dsl` at equal days-since-launch.
+        #
+        # BOTH ARE RAW. Neither applies the weekday snap that the row PAIRING
+        # uses. That asymmetry is not an oversight to be tidied up: it is the
+        # existing convention, visible in run.py's two functions, and the new
+        # modes inherit it rather than reasoning it out again. `exact_date`
+        # shares `j_minus`'s cut because the two differ by the snap alone, which
+        # the cut never had.
+        _rows = [{**r, 'order_date': r['_d']} for r in ref_rows]
+        if mode == 'days_since_launch':
+            ref_rows_cut = run.filter_tickets_to_same_point_dsl(
+                _rows, cutoff,
+                cur_cfg['event_date_first'] - timedelta(days=cur_lead),
+                ref_cfg['event_date_first'] - timedelta(days=ref_lead))
+        else:
+            ref_rows_cut = run.filter_tickets_to_same_point(
+                _rows, cutoff, cur_cfg['event_date_first'],
+                ref_cfg['event_date_first'])
         ref_cut = max((r['order_date'] for r in ref_rows_cut), default=None)
 
     D = {
@@ -574,6 +679,13 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
         # the shipped HTML does not, and the alternative is a filename-to-id
         # map maintained by hand next to the one in the config.
         'id': event,
+        # Launch anchoring's two inputs. `lead` is ours; the candidate's is in
+        # its own series file under the same name and the same definition, so a
+        # launch offset is `s.lead - D.lead` and nothing else crosses. `amode` is
+        # the config's comparison_mode for this event - the mode the picker
+        # STARTS on, not a second place the mode is stated.
+        'lead': cur_lead,
+        'amode': mode,
         'ref_id': ref_event,
         'cap': sum(caps.values()),
         'daycap': max(caps.values()) if caps else 0,
@@ -596,8 +708,9 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
     ref_n, ref_rev = series(ref_rows) if ref_rows else (Counter(), Counter())
     first = min(cur_n) if cur_n else cutoff
     span = (cutoff - first).days
-    offset = (daily_offset(cur_cfg['event_date_first'], ref_cfg['event_date_first'])
-              if ref_cfg else None)
+    offset, wshift = (anchor(mode, cur_cfg['event_date_first'],
+                             ref_cfg['event_date_first'], cur_lead, ref_lead)
+                      if ref_cfg else (None, 0))
 
     D['daily'] = daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first,
                             offset, ref_cut, cur_cfg['event_date_first'],
@@ -605,7 +718,8 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
     D['weekly'] = weekly_rows(cur_n, cur_rev, ref_n, ref_rev,
                               cur_cfg['event_date_first'],
                               ref_cfg['event_date_first'] if ref_cfg else None,
-                              cutoff, ref_cut, D['jx'], D['cap']) if ref_cfg else []
+                              cutoff, ref_cut, D['jx'], D['cap'],
+                              wshift) if ref_cfg else []
     D['maxjx'] = max((r['jx'] for r in D['daily']), default=span)
     # The last ten days LIVED, not the last ten rows: with future rows in the
     # list the tail is all `–`.

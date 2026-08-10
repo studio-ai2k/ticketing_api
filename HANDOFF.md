@@ -3074,3 +3074,86 @@ The mode picker itself is a third instance of the `.sw-wrap` / `.cmp-trigger` /
 `.sw-menu` component the mock already carries twice (`cmpMenu`, the projection
 `menu()`), so no CSS is invented and the per-item `.sw-sub` / `.cmp-meta` slots
 are where the copy goes.
+
+## Anchoring modes: built, and the ruling changed the shape
+
+Leo ruled finding 2 the other way: **the mode governs both grains**. Launch
+anchoring shifts the weekly column too, because at 105 days the offset is fifteen
+weeks and cannot round away the way a ±3-day snap does. So the rules are:
+
+```
+j_minus            off = smod7(G)                wshift = 0
+exact_date         off = 0                       wshift = 0
+days_since_launch  off = smod7(G+O) − O          wshift = O = cand.lead − our.lead
+                   cut: raw in every mode - run.py's two same-point filters,
+                        neither snapped. Only the row PAIRING is snapped.
+```
+
+`j_minus` and `exact_date` share a weekly column not because weekly ignores the
+mode but because their offsets are sub-week. That is a stronger statement than
+the one we had and it needs no warning sentence.
+
+### The shift resurrected the S−−1 class
+
+`w >= 0` on the reference bucket. Unshifted, `keep` already implied `d <= ref_ev`
+and therefore `w >= 0`, so the bound was unreachable and **correct by accident**.
+Shifted, the candidate's own event lands fifteen weeks past ours in launch-aligned
+time — geometrically right — and produced 15 rows of "S−−1"…"S−−15" on epk, 0
+under `j_minus`. The daily grain never needs the bound because it maps the
+reference onto OUR rows and our rows stop at our event. **The weekly grain is a
+union, so it is the one place those weeks can surface.**
+
+### Watch-item (a) resolved the opposite way from expectation
+
+Launch makes the table SHORTER, not longer: epk 38 → 23 weekly rows,
+bordeaux_oct 30 → 16. Aligning campaign starts means the candidate's longer
+campaign no longer contributes weeks beyond ours. Measured before assuming.
+
+### check_b1_switch: 135 comparisons, and a guard against a trivial pass
+
+Mode outside, candidate inside — `pickMode` re-applies the current candidate, so
+both entry points into `applySeries` are exercised rather than only `pickCmp`'s.
+
+**135 green comparisons look identical whether the three modes are three
+alignments or one alignment rendered three times**, because the server would be
+asked for the same thing. So the differences the arithmetic predicts are
+asserted:
+
+```
+j_minus vs days_since_launch: daily differs on 41/45, weekly on 44/45
+j_minus vs exact_date:        daily differs on 21/45, weekly on  0/45
+```
+
+21/45 is exactly the count of non-zero snaps, and 0/45 weekly is the identity.
+Negative-tested by making the client ignore `AMODE`: all six pages fail and both
+rows go to 0/45.
+
+The four pairs where launch's DAILY column matches `j_minus` are not a bug:
+`off_launch == off_j` iff `O == smod7(G+O) − smod7(G)`, which holds for small O —
+rennes has O = −2 and G = 364, giving −2 on both sides. The weekly still differs
+there because it shifts by the raw O.
+
+### verify/check_anchor_modes.py — the enum's other branch has now run
+
+All six pages are `j_minus` or empty, so `days_since_launch` had never executed.
+The check flips one config row, asserts the payload follows, and puts it back.
+
+**On epk deliberately.** Run on rennes (O = −2) the same test passes while showing
+nothing — 23 weekly rows before and after. On epk the table goes 38 → 23, so a
+payload that ignored the mode would fail here and pass there. *A negative test on
+the pair where the effect is smallest is a negative test that cannot fail.*
+
+It also detects `filter_tickets_to_same_point_dsl` by **that function's own
+stdout banner**, so it cannot pass against a reimplementation.
+
+Read but not run, and said so in the docstring: `run.py:3955`'s branch in the
+production pipeline. Exercising it means a full `build_dashboard.py` per mode,
+and production retires at cutover.
+
+### check_mock_literals caught the new literal, correctly
+
+`const AMODES` tripped the `const LG` guard. It carries mode keys and French
+labels identical on every page — structural, not data — so it went into
+`STRUCTURAL` with the reason. Which mode a page STARTS on is per-event and is not
+in the mock: it arrives as `D.amode`, through the payload, like every other
+per-event fact.

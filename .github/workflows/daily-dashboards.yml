@@ -437,6 +437,10 @@ jobs:
           # series file is reachable from some menu" is a statement about the
           # whole set, and a per-event matrix job only ever sees one page.
           python verify/check_eligibility.py
+          # The anchoring enum. Both branches of comparison_mode, on the
+          # pair whose campaign lengths differ most - run on a pair where
+          # they nearly match, the same test passes while showing nothing.
+          python verify/check_anchor_modes.py
           if git diff --cached --quiet; then
             echo "Nothing changed - nothing to commit"
             exit 0

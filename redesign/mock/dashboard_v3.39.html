@@ -1598,6 +1598,39 @@ function cmpMenu(){
           ${it.n===CSEL?`<svg class="sw-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>`:''}</button>`).join('')).join('')}
     </div></div>`;
 }
+/* The mode picker. A THIRD instance of the .sw-wrap / .cmp-trigger / .sw-menu
+   component the page already carries twice (cmpMenu, the projection menu()), so
+   no CSS is invented and the per-item .sw-sub slot is where the copy goes. */
+function modeMenu(){
+  const cur = AMODES.find(m => m.k === AMODE) || AMODES[0];
+  return `<div class="sw-wrap" style="position:relative">
+    <button class="cmp-trigger" data-sw-trigger>
+      <span class="cmp-eyebrow">aligné sur</span><span class="cmp-name">${cur.n}</span>
+      <svg class="sw-chev" width="10" height="10" viewBox="0 0 24 24" fill="none"
+        stroke="var(--text-dim)" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="sw-menu right" role="menu" aria-label="Changer d’alignement">
+      <div class="sw-group">Alignement des deux éditions</div>
+      ${AMODES.map(m=>`<button class="sw-item${m.k===AMODE?' active':''}" role="menuitem"
+        ${m.k===AMODE?'aria-current="true"':''} onclick="pickMode('${m.k}')">
+        <span class="sw-label">${m.n}<span class="sw-sub">${m.d}</span></span>
+        ${m.k===AMODE?`<svg class="sw-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>`:''}</button>`).join('')}
+    </div></div>`;
+}
+
+async function pickMode(k){
+  if (window.swCloseAll) window.swCloseAll();
+  if (k === AMODE) return;
+  AMODE = k;
+  /* Re-apply the CURRENT candidate under the new alignment. Both grains move
+     together — that is what "the mode governs both grains" means — and the
+     rebuild is the same path a candidate switch takes, so there is one
+     implementation of alignment and not two. */
+  const c = CMAP[CSEL];
+  const s = c ? await loadSeries(c.id) : null;
+  if (s) { CMPERR = null; applySeries(s); } else if (c) { CMPERR = CSEL; }
+  renderSuivi();
+}
+
 /* D12 — B1. Picking a comparison used to move CSEL and nothing else: the
    trigger label, the active class, the aria-current and the checkmark all
    followed, and the rows kept reading one fixed series. The rows now come from
@@ -1630,6 +1663,41 @@ const smod7 = g => { const m = ((g % 7) + 7) % 7; return m > 3 ? m - 7 : m; };
 const dnum = iso => Math.round(new Date(iso + 'T00:00:00Z').getTime() / 86400000);
 let CMPERR = null;
 
+/* ANCHORING MODES. The names are event_config.csv's own comparison_mode values,
+   which run.py has branched on since long before the redesign — launch
+   anchoring is unused work here, not new work. D.amode is this event's config
+   row, so the picker STARTS on the configured mode rather than introducing a
+   second place the mode is stated. */
+const AMODES = [
+  {k:'j_minus',           n:'Jour J',      d:'même J−x, même jour de semaine'},
+  {k:'days_since_launch', n:'Ouverture',   d:'même jour de campagne'},
+  {k:'exact_date',        n:'Date exacte', d:'même J−x, date à date'},
+];
+let AMODE = D.amode || 'j_minus';
+
+/* (décalage quotidien en jours de J−x, décalage hebdomadaire, point de coupe).
+   Mirrors dashboard_payload.anchor() exactly; check_b1_switch drives both.
+
+   THE MODE GOVERNS BOTH GRAINS. j_minus and exact_date differ by the weekday
+   snap alone — at most ±3 days — so their weekly columns are identical and
+   wshift is 0 for both, not because weekly ignores the mode but because a snap
+   cannot survive division by 7. Under `days_since_launch` the offset is the
+   difference in campaign lengths (−59, +98, +105 on the six live pairs) and
+   fifteen weeks does not round away, so the weekly follows it.
+
+   THE CUT IS RAW IN EVERY MODE. run.py carries both same-point filters and
+   neither applies the snap; only the row pairing is snapped. Inherited, not
+   re-decided. */
+function anchorOf(s){
+  const G = dnum(D.ev) - dnum(s.ev);
+  if (AMODE === 'exact_date')        return {off: 0, wshift: 0, cutAt: D.jx};
+  if (AMODE === 'days_since_launch') {
+    const O = s.lead - D.lead;
+    return {off: smod7(G + O) - O, wshift: O, cutAt: D.jx + O};
+  }
+  return {off: smod7(G), wshift: 0, cutAt: D.jx};
+}
+
 async function loadSeries(id){
   if (SERIES[id] !== undefined) return SERIES[id];
   try {
@@ -1648,19 +1716,19 @@ function applySeries(s){
   /* Rewrites the b-side of every row IN PLACE. The a-side is never touched:
      it comes from this page, built in the same run as everything else, and the
      two halves of a comparison must not be different vintages. */
-  const snap = smod7(dnum(D.ev) - dnum(s.ev));
+  const {off, wshift, cutAt} = anchorOf(s);
   const day = {}, revd = {};
   for (const [jx, n, rev] of s.daily) { day[jx] = n; revd[jx] = rev; }
   const sold = s.daily.map(r => r[0]);
   /* The same-point cut, exactly as the server takes it: the LAST day this
      edition sold on at or before our J−x, not our J−x itself. They differ
      whenever the edition was quiet that day. */
-  const cut = sold.filter(j => j >= D.jx);
+  const cut = sold.filter(j => j >= cutAt);
   const cutJx = cut.length ? Math.min(...cut) : null;
 
   let cb = 0, rcb = 0;
   for (const r of D.daily) {
-    const jr = r.jx - snap;
+    const jr = r.jx - off;
     /* Exactly the server's two conditions and no third one. It bounds the
        reference by ref_cut in the past and by its own event in the future,
        and it does NOT require the edition to have been on sale: a day
@@ -1690,13 +1758,21 @@ function applySeries(s){
      The arithmetic mirrored weekly_rows; the SHAPE did not. */
   const w0 = Math.floor(D.jx / 7), theirs = new Map();
   for (const [jx, n, rev] of s.daily) {
-    const w = Math.floor(jx / 7);
+    const w = Math.floor((jx - wshift) / 7);
     /* The server's two bounds, both of them. The first version applied only
        the `w > w0` one and left the other branch unbounded, so days the
        edition sold AFTER its own event landed in week −1 and rendered as
        "S−−1". `d <= ref_cut` is `jx >= cutJx`; `d <= ref_ev` is `jx >= 0`. */
     const keep = w > w0 ? (cutJx !== null && jx >= cutJx) : (jx >= 0);
-    if (!keep) continue;
+    /* AND w >= 0, which only bites once wshift is non-zero. Unshifted, `jx >= 0`
+       already implies `w >= 0`, so this was unreachable and correct by accident.
+       Under launch the candidate's campaign can run 105 days longer than ours,
+       which puts its EVENT fifteen weeks past ours in launch-aligned time —
+       geometrically right, and fifteen rows of "S−−1" … "S−−15" on the page.
+       The daily grain never needs this: it maps the reference onto OUR rows and
+       our rows stop at our event. The weekly grain is a union, so it is the one
+       place those weeks can surface. */
+    if (!keep || w < 0) continue;
     const c = theirs.get(w) || [0, 0];
     c[0] += n; c[1] += rev; theirs.set(w, c);
   }
@@ -1722,7 +1798,9 @@ function applySeries(s){
     const a = o ? o.a : 0, ra = o ? o.ra : 0;
     aa += a;
     if (b) bb += b[0];
-    const [sa, ea] = span(evo, w), [sb, eb] = span(evd, w);
+    /* The reference span carries the same shift its bucket was built with, so
+       the dates a row is labelled with are the dates it counted. */
+    const [sa, ea] = span(evo, w), [sb, eb] = span(evd - wshift, w);
     return {
       w, a, ra, fut: w <= w0,
       pa: Math.round(a / D.cap * 1000) / 10,
@@ -1822,7 +1900,13 @@ function renderSuivi(){
        <div class="scen" style="max-width:200px">
          <button class="scen-b ${isD?'on':''}" onclick="grain('jour')">Jour</button>
          <button class="scen-b ${isD?'':'on'}" onclick="grain('semaine')">Semaine</button></div>
-       ${HAS_CMP ? cmpMenu() : ''}</div>
+       ${HAS_CMP ? modeMenu() + cmpMenu() : ''}</div>
+     ${HAS_CMP ? `<div class="sec-note" style="margin:8px 0 0">
+       L’alignement s’applique aux deux grains : le tableau par jour et le
+       tableau par semaine bougent ensemble.${AMODE === 'days_since_launch'
+       ? ` Aligné sur l’ouverture, ce sont les DÉBUTS de campagne qui se
+           correspondent, pas la date d’aujourd’hui — les tirets en bas de
+           tableau sont donc normaux.` : ''}</div>` : ''}
      ${CMPERR ? `<div class="empty" style="margin:12px 0">
        <div class="empty-t">Comparaison indisponible</div>
        <div class="empty-s">Les ventes de ${CMPERR} n’ont pas pu être chargées.

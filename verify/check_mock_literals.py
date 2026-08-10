@@ -63,6 +63,12 @@ STRUCTURAL = {
     'SERIES',     # D12 - the fetch cache, starts empty
     'MOS', 'DYS', 'COL', 'MO',
     'PCOL', 'PRGB',   # platform colour maps: DICE purple, Shotgun green
+    # The anchoring modes: three keys and their French labels, identical on
+    # every page because they describe the CONTROL, not the edition. The keys
+    # are event_config.csv's own comparison_mode values. Which mode a page
+    # starts on IS per-event and is not here - it arrives as D.amode, through
+    # the payload, like every other per-event fact.
+    'AMODES',
 }
 
 # Reader-facing text where a year is a FACT about a specific edition rather

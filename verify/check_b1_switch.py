@@ -34,7 +34,7 @@ import re
 import subprocess
 import sys
 import threading
-from datetime import date
+from datetime import date, timedelta
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -74,7 +74,15 @@ const { chromium } = require('playwright');
 
     const names = await p.evaluate(() =>
       (typeof CMAP === 'undefined' ? [] : Object.keys(CMAP)));
+    const modes = await p.evaluate(() =>
+      (typeof AMODES === 'undefined' ? ['j_minus'] : AMODES.map(m => m.k)));
     const picks = {};
+    // MODE OUTSIDE, candidate inside. pickMode re-applies the current
+    // candidate, so setting the mode first and then walking the menu exercises
+    // both entry points into applySeries rather than only pickCmp's.
+    for (const mode of modes) {
+    await p.evaluate(async (m) => { await pickMode(m); }, mode);
+    await p.waitForTimeout(200);
     for (const n of names) {
       await p.evaluate(async (nm) => { await pickCmp(nm); }, n);
       await p.waitForTimeout(250);
@@ -118,8 +126,10 @@ const { chromium } = require('playwright');
         };
       });
       picks[n].weekly = weekly;
+      picks[mode + '\u0000' + n] = picks[n];
     }
-    out.push({ url, names, picks, errors: errs });
+    }
+    out.push({ url, names, modes, picks, errors: errs });
     await ctx.close();
   }
   console.log('@@' + JSON.stringify(out));
@@ -142,18 +152,42 @@ def signed_mod7(g):
     return m - 7 if m > 3 else m
 
 
-def expected(event, cand, cutoff, cfg_all):
-    """The reference column, from the server-side implementation."""
+def _sides(event, cand, cutoff, cfg_all, mode):
+    """Both sides' series plus the three mode-dependent scalars.
+
+    ONE place computes them for both grains, because the failure this check
+    exists for is the two grains disagreeing about the mode - which is exactly
+    what the launch offset would have caused if the weekly had not followed it.
+    """
     cfg, ccfg = cfg_all[event], cfg_all[cand]
     cur_rows = dp.load_rows(str(ROOT / 'data' / f'{event}_merged.csv'))
     crows = dp.load_rows(str(build_series.series_path(cand)))
     cur_n, cur_rev = dp.series(cur_rows)
     c_n, c_rev = dp.series(crows)
-    cut_rows = run.filter_tickets_to_same_point(
-        [{**r, 'order_date': r['_d']} for r in crows], cutoff,
-        cfg['event_date_first'], ccfg['event_date_first'])
+    cur_lead = (cfg['event_date_first'] - min(cur_n)).days if cur_n else 0
+    c_lead = (ccfg['event_date_first'] - min(c_n)).days if c_n else 0
+    _rows = [{**r, 'order_date': r['_d']} for r in crows]
+    # The same-point cut is RAW in every mode - run.py's two filters, neither
+    # snapped. exact_date shares j_minus's cut because they differ by the snap
+    # alone, which the cut never had.
+    if mode == 'days_since_launch':
+        cut_rows = run.filter_tickets_to_same_point_dsl(
+            _rows, cutoff,
+            cfg['event_date_first'] - timedelta(days=cur_lead),
+            ccfg['event_date_first'] - timedelta(days=c_lead))
+    else:
+        cut_rows = run.filter_tickets_to_same_point(
+            _rows, cutoff, cfg['event_date_first'], ccfg['event_date_first'])
     c_cut = max((r['order_date'] for r in cut_rows), default=None)
-    off = dp.daily_offset(cfg['event_date_first'], ccfg['event_date_first'])
+    off, wshift = dp.anchor(mode, cfg['event_date_first'],
+                            ccfg['event_date_first'], cur_lead, c_lead)
+    return cfg, ccfg, cur_n, cur_rev, c_n, c_rev, off, wshift, c_cut
+
+
+def expected(event, cand, cutoff, cfg_all, mode='j_minus'):
+    """The reference column, from the server-side implementation."""
+    (cfg, ccfg, cur_n, cur_rev, c_n, c_rev,
+     off, _wshift, c_cut) = _sides(event, cand, cutoff, cfg_all, mode)
     first = min(cur_n) if cur_n else cutoff
     rows = dp.daily_rows(cur_n, cur_rev, c_n, c_rev, cutoff, first, off, c_cut,
                          cfg['event_date_first'], ccfg['event_date_first'])
@@ -175,27 +209,21 @@ def fwk(a, b):
     return f'{a.day} {MOS[a.month - 1]}-{b.day} {MOS[b.month - 1]}'
 
 
-def expected_weekly(event, cand, cutoff, cfg_all):
+def expected_weekly(event, cand, cutoff, cfg_all, mode='j_minus'):
     """The reference column at the WEEKLY grain, from the server.
 
-    Different rule from the daily one, and that is the point of checking it
-    separately: no offset and no weekday snap, each side bucketing by its own
-    (event_date_first - order_date)//7. Using the daily offset here would
-    mis-align every row silently.
+    Different MAPPING from the daily one - each side buckets by its own
+    (event_date_first - order_date)//7, with no weekday snap - but the same
+    MODE. Under j_minus and exact_date the shift is 0 because a snap cannot
+    survive division by 7; under days_since_launch it is the campaign-length
+    difference, which reaches fifteen weeks and must not be dropped.
     """
-    cfg, ccfg = cfg_all[event], cfg_all[cand]
-    cur_rows = dp.load_rows(str(ROOT / 'data' / f'{event}_merged.csv'))
-    crows = dp.load_rows(str(build_series.series_path(cand)))
-    cur_n, cur_rev = dp.series(cur_rows)
-    c_n, c_rev = dp.series(crows)
-    cut_rows = run.filter_tickets_to_same_point(
-        [{**r, 'order_date': r['_d']} for r in crows], cutoff,
-        cfg['event_date_first'], ccfg['event_date_first'])
-    c_cut = max((r['order_date'] for r in cut_rows), default=None)
+    (cfg, ccfg, cur_n, cur_rev, c_n, c_rev,
+     _off, wshift, c_cut) = _sides(event, cand, cutoff, cfg_all, mode)
     cap = sum(d['day_capacity'] for d in cfg['days'])
     rows = dp.weekly_rows(cur_n, cur_rev, c_n, c_rev, cfg['event_date_first'],
                           ccfg['event_date_first'], cutoff, c_cut,
-                          (cfg['event_date_first'] - cutoff).days, cap)
+                          (cfg['event_date_first'] - cutoff).days, cap, wshift)
     out = []
     for r in rows:
         if r['sb']:
@@ -246,6 +274,8 @@ def main():
 
     cfg_all = run.load_event_config(str(ROOT / 'event_config.csv'))
     failures, snaps, weeks = [], [], [0]
+    MODES_SEEN = set()
+    BYMODE = {}
     import io
     import contextlib
     for row in json.loads(line[2:]):
@@ -264,14 +294,25 @@ def main():
             print(f"  FAIL  {name}: {row['errors'][0]}")
         seen = set()
         bad = []
-        for label, got in row['picks'].items():
+        # Only the mode-qualified keys. The driver writes each pick twice - once
+        # under the bare candidate name and once under "<mode>\0<name>" - so the
+        # bare entries are the LAST mode's results wearing an unqualified label.
+        # Iterating both would double every comparison and check the last mode
+        # against j_minus's expectation.
+        for key, got in row['picks'].items():
+            if '\0' not in key:
+                continue
+            mode, label = key.split('\0', 1)
             cid = cmap.get(label)
             if got['err']:
-                bad.append(f'{label}: rendered the unavailable banner')
+                bad.append(f'[{mode}] {label}: rendered the unavailable banner')
                 continue
             with contextlib.redirect_stdout(io.StringIO()):
-                want, snap = expected(event, cid, cutoff, cfg_all)
-            snaps.append((name, cid, snap))
+                want, snap = expected(event, cid, cutoff, cfg_all, mode)
+            if mode == 'j_minus':
+                snaps.append((name, cid, snap))
+            label = f'[{mode}] {label}'
+            MODES_SEEN.add(mode)
             g = [tuple(x) for x in got['rows']]
             w = list(want)
             # The rendered set is what is in the DOM; compare as sequences of
@@ -285,7 +326,7 @@ def main():
                            f'{w[first_bad] if first_bad < len(w) else "-"}')
             seen.add(tuple(g[:12]))
             with contextlib.redirect_stdout(io.StringIO()):
-                wantw = expected_weekly(event, cid, cutoff, cfg_all)
+                wantw = expected_weekly(event, cid, cutoff, cfg_all, mode)
             gotw = [tuple(x) for x in (got.get('weekly') or [])]
             if gotw != wantw:
                 i = next((k for k, (x, y) in enumerate(zip(gotw, wantw)) if x != y),
@@ -294,8 +335,9 @@ def main():
                            f'expected; first difference at {i}: '
                            f'{gotw[i] if i < len(gotw) else "-"} vs '
                            f'{wantw[i] if i < len(wantw) else "-"}')
+            BYMODE.setdefault((name, cid), {})[mode] = (tuple(g), tuple(gotw))
             weeks[0] += 1
-        if len(row['picks']) > 1 and len(seen) < 2:
+        if len(cmap) > 1 and len(seen) < 2:
             bad.append('every candidate renders the same rows - the selection '
                        'is not reaching the table')
         if bad:
@@ -304,8 +346,46 @@ def main():
             for x in bad[:4]:
                 print(f'          {x}')
         else:
-            print(f"  ok    {name}: {len(row['picks'])} candidates, daily AND "
-                  f"weekly matching dashboard_payload row for row")
+            print(f"  ok    {name}: {len(cmap)} candidates x "
+                  f"{len(row.get('modes') or [1])} modes, daily AND weekly "
+                  f"matching dashboard_payload row for row")
+
+    # THE MODES MUST ACTUALLY DIFFER. 135 green comparisons look identical
+    # whether the three modes are three alignments or one alignment rendered
+    # three times - the client could ignore AMODE entirely and every row would
+    # still match, because the server would be asked for the same thing. So
+    # assert the differences the arithmetic predicts, per grain.
+    print()
+    diffs = {}
+    for (pg, cid), byk in BYMODE.items():
+        for a, b in (('j_minus', 'exact_date'), ('j_minus', 'days_since_launch')):
+            if a in byk and b in byk:
+                d = diffs.setdefault(f'{a} vs {b}', [0, 0, 0])
+                d[2] += 1
+                if byk[a][0] != byk[b][0]:
+                    d[0] += 1
+                if byk[a][1] != byk[b][1]:
+                    d[1] += 1
+    for k, (nd, nw, tot) in sorted(diffs.items()):
+        print(f'  {k}: daily differs on {nd}/{tot} pair(s), '
+              f'weekly on {nw}/{tot}')
+    if diffs.get('j_minus vs exact_date', [0])[0] == 0:
+        failures.append('exact_date renders identically to j_minus everywhere')
+        print('  FAIL  exact_date never differs from j_minus at the daily grain, '
+              'yet 21 pairs have a non-zero snap - the mode is not reaching the '
+              'client')
+    if diffs.get('j_minus vs exact_date', [0, 1])[1] != 0:
+        failures.append('exact_date differs from j_minus at the weekly grain')
+        print('  FAIL  exact_date differs from j_minus WEEKLY. Those two modes '
+              'differ by the weekday snap alone, which cannot survive division '
+              'by 7 - a difference here means a shift was applied where the '
+              'arithmetic says there is none')
+    dsl = diffs.get('j_minus vs days_since_launch', [0, 0, 0])
+    if dsl[1] == 0:
+        failures.append('days_since_launch never moves the weekly column')
+        print('  FAIL  days_since_launch never differs from j_minus at the '
+              'WEEKLY grain. That is the ruling this mode was rebuilt for: the '
+              'offset reaches 105 days and the weekly must follow it')
 
     nz = [s for s in snaps if s[2]]
     print()
@@ -321,9 +401,9 @@ def main():
     if failures:
         print(f'FAILED: {len(failures)}')
         return 1
-    print(f'{len(snaps)} comparison(s) across {len(pages)} page(s), '
-          f'{weeks[0]} of them checked at BOTH grains: the client alignment '
-          f'agrees with the server implementation')
+    print(f'{weeks[0]} comparison(s) across {len(pages)} page(s) and '
+          f'{len(MODES_SEEN)} anchoring mode(s), every one at BOTH grains: the '
+          f'client alignment agrees with the server implementation')
     return 0
 
 
