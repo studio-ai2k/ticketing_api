@@ -2931,3 +2931,79 @@ carry no stamp at all because pass 0 splices it away); `PAGE_PATHS` disappears a
 root rather than flipping, but is not the complete list of location-dependent
 transforms; and the v2 gate's login background is baked rather than templated,
 invisible only because all six configured values are currently identical.
+
+## CUTOVER.md revised: legacy/ ruled in, and a correction to our own §3(d)
+
+Leo ruled that a `legacy/` folder with the old pages and a README stays in the
+repo. Folded in rather than appended. Three things came out of doing it.
+
+### The correction: dead content, live input
+
+Our §3(d) table said `style/dashboard_v6_8.css` "does not reach a v2 page", which
+is true and was the wrong question. `postprocess_html.py` still READS it to inline
+it, and pass 0 runs postprocess before discarding the result. Measured rather than
+reasoned:
+
+```
+$ mv style/dashboard_v6_8.css /tmp/ && python3 scripts/build_v2.py --event rennes_2026 …
+subprocess.CalledProcessError: … postprocess_html.py … exit status 1
+```
+
+So the file cannot move to `legacy/` at cutover. The table needed a second
+column — *reaches a page* and *read at build time* are different questions and we
+answered only the first. The fix is to stop pass 0 inlining a sheet it discards,
+which touches postprocess and therefore belongs in the CLEANUP commit, when
+postprocess has one consumer rather than two.
+
+**And mitigation (a) is exactly what would have caught it.** "Every file
+postprocess and build_dashboard read must be in SHARED_ASSETS" is a check about
+READS, and `STYLE_PATH` is a read that no page reflects. That raises its priority
+from "before the cleanup" to "the thing that finds this class".
+
+### Our reversibility argument was weaker than we thought, and in our favour
+
+We had argued the cleanup must follow a green run because it deletes the fallback.
+With `legacy/` retained that collapses — and further than the addendum credited:
+what survives is not just artefacts to diff against but the ability to REBUILD,
+because four of the five old-pipeline assets stay at root for v2's sake. The
+sequencing now stands on attribution alone. Recorded as a debugging convenience,
+not as protection against an unrecoverable state.
+
+### Nine page enumerations, three mechanisms, one fix
+
+Six checks glob `v2/*.html`, two hard-code a six-name list, one globs a directory.
+After cutover all six globs point at a directory that no longer exists, so they
+change regardless — and the addendum's warning that *exclusion by glob is coverage
+lost without a decision* applies to every one of them.
+
+The single change that beats nine exclusions: **enumerate from
+`event_config.csv`'s `output_filename` rows**. `legacy/` is then out because no
+config row points at it — a property of what the repo builds rather than of a path
+pattern — and the two hand-written page lists disappear. Same move as `D.id`, one
+layer up.
+
+Also caught: `git add -- '*.html'` in the workflow is RECURSIVE and would re-stage
+`legacy/*.html` on every daily run. An archive that is re-staged daily is not an
+archive. (It is also what stages `v2/*.html` today, which is intended and nowhere
+stated.)
+
+### The banner question, dissolved rather than decided
+
+Stamp the archived pages, and answer the archive-should-be-untouched objection by
+recording each page's SHA-256 in the README BEFORE the banner is inserted. The
+archive is then provably "the page that shipped plus one named insertion". An
+unstamped archive buys byte-identity and pays with a reader who cannot tell the
+page is dead — the wrong trade, and the same degrade-honestly rule as the null
+refday and the failed-fetch notice.
+
+The once-only pre-cutover snapshot is taken BEFORE the banner too, so the two
+changes never have to be separated afterwards.
+
+### Verified for the addendum
+
+`style/dashboard_v6_6.css` is a genuine orphan — no `.py`, `.yml`, `.sh`, `.html`
+or `.md` mentions it, and it is not in `SHARED_ASSETS`. 42 KB, dead.
+`.dashboard {` appears twice in each production page and zero times in each v2
+page, so the negative fingerprint holds — and every `legacy/` page will contain it
+by definition, which is why §5 scopes it to the config's pages rather than to a
+glob.
