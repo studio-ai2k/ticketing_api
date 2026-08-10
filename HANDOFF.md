@@ -2740,3 +2740,40 @@ check read*:
 
 Both questions are the same question pointed at different halves of the
 pipeline — one at verification, one at deployment.
+
+### The build-stamp assertion, and the one property it had to have
+
+`verify/check_build_stamp.py`. `postprocess_html` stamps a 12-char hash of the
+shared-asset set into every production page it writes; the check recomputes it
+and fails any page whose stamp differs or is absent.
+
+**It greps for nothing.** That is the whole design. The assertion it replaces
+demanded `html,body{overflow-x:hidden` — the value D24 had removed by ruling —
+and kept passing, because the pages it read still had it. An assertion written
+in terms of a change we already know about catches that change and nothing
+after it.
+
+Negative-tested on exactly that property: appending a comment to
+`dashboard_v6_8.css` — a change with no name and no meaning — fails all six
+pages by hash alone. And a page reverted to its pre-D24 build fails for having
+no stamp at all.
+
+`SHARED_ASSETS` is imported, never restated, and is a statement about what a
+production page is MADE OF rather than about what has shipped: template,
+`run.py`, postprocess, the vendored stylesheet, the font links. **The mock and
+`dashboard_redesign.css` are deliberately absent** — they reach v2 only, which
+is why those two frozen pages could never have missed a mock deviation.
+
+That distinction is worth keeping in #17: our first candidate list for the audit
+reasoned from WHAT SHIPPED and was too broad. Reasoning from WHAT THE ARTEFACT
+IS MADE OF gave the right answer immediately, and it is *which artefact does
+this check read* asked about a page instead of a check.
+
+Scope is production only, stated in the check: `build_v2` runs unconditionally,
+so a v2 page cannot go stale. If that changes, this needs a v2 half with a
+different shared set.
+
+The workflow now runs it in the commit step and **fails the run rather than
+repairing itself** — a job that silently rebuilt would hide how long the
+exemption had been running. Making the rebuild automatic is the follow-up, not
+this.

@@ -37,6 +37,7 @@ dashboard that no longer remembers its login.
     python scripts/postprocess_html.py api_output/rennes_2026.html
 """
 
+import hashlib
 import re
 import sys
 from datetime import date, datetime
@@ -1920,6 +1921,12 @@ def postprocess(path):
         if emoji in html:
             problems.append(f'footer: raster glyph {emoji} survived (whole file)')
 
+    # Stamped LAST, so it covers the page as written rather than as
+    # intended. Nothing reads it at runtime; it exists so a check can
+    # ask whether this page was built from today's shared assets
+    # WITHOUT knowing what changed in them.
+    html = STAMP_RE.sub('', html)
+    html = html.replace('</body>', f'<!-- shared:{shared_hash()} -->\n</body>', 1)
     path.write_text(html, encoding='utf-8')
     sw_items = html.count('class="sw-item')
     print(f"{path.name}: removed {link_count} upload link(s), "
@@ -1943,6 +1950,45 @@ def postprocess(path):
     if logo_count == 0:
         print("  ⚠ no logo hotlink found - template may already point at the local copy")
     return True
+
+
+# ---------------------------------------------------------- build stamp --
+# THE SHARED SET, on the production side. Short and closed, and it is a
+# statement about what a production page is MADE OF rather than about what has
+# shipped: a page is built from dashboard_template.html through run.py and
+# THIS file, with the vendored stylesheet and font links swapped in. The mock
+# and dashboard_redesign.css are NOT in it - they reach v2 only, which is why
+# the two frozen production pages could never have missed a mock deviation.
+#
+# Auditing an exemption from the CHANGELOG reaches for the wrong list. Auditing
+# it from the artefact's ingredients gives this, and the check states it so the
+# next reader does not have to remember.
+BASE_DIR = Path(__file__).resolve().parent.parent
+SHARED_ASSETS = (
+    'style/dashboard_v6_8.css',
+    'style/font_links.html',
+    'dashboard_template.html',
+    'scripts/postprocess_html.py',
+    'scripts/build_dashboard.py',
+    'run.py',
+)
+STAMP_RE = re.compile(r'<!-- shared:([0-9a-f]{12}) -->')
+
+
+def shared_hash(root=None):
+    """One hash over every shared asset, content not mtime.
+
+    mtime moves on a checkout and says nothing; content is what the page was
+    built from. Missing files hash as absent rather than raising, so a renamed
+    asset changes the stamp instead of crashing the check.
+    """
+    root = Path(root or BASE_DIR)
+    h = hashlib.sha256()
+    for rel in SHARED_ASSETS:
+        f = root / rel
+        h.update(rel.encode())
+        h.update(f.read_bytes() if f.exists() else b'<absent>')
+    return h.hexdigest()[:12]
 
 
 def main():

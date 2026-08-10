@@ -410,6 +410,12 @@ jobs:
           # fetch these by name, so a run that rebuilds the pages without them
           # ships six dashboards whose every comparison says "indisponible".
           git add -- 'series/*.json'
+          # Trap #17: a finished event's CSV never changes, so its page is
+          # exempt from every shared-code and shared-CSS change unless
+          # something forces a rebuild. This FAILS the run rather than fixing
+          # it, deliberately: the fix is to rebuild, and a job that silently
+          # repaired itself would hide how long the exemption had been running.
+          python verify/check_build_stamp.py
           if git diff --cached --quiet; then
             echo "Nothing changed - nothing to commit"
             exit 0
