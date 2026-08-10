@@ -78,7 +78,7 @@ offset 343 939 of 343 984); pass 0's seam is `</nav>` .. `</body>`, so the stamp
 falls inside the replaced region and is spliced away. There is nothing for a v2
 half of the check to read.
 
-Three items land **before** the cutover — not "any time", because §5's once-only
+Four items land **before** the cutover — not "any time", because §5's once-only
 snapshot is worth much less without them:
 
 **P1 — pass 0 re-emits the stamp, over a v2 shared set.** The v2 set is a
@@ -89,6 +89,23 @@ production is made of still applies, plus the mock, `dashboard_redesign.css`,
 **P2 — `check_build_stamp` grows a v2 half.** Not "make the v2 build
 unconditional": that is a fix which can silently stop being true, and it just
 did. The check is what caught this class; the check is what should cover it.
+
+**P0 — v2 HAS NO FOOTER CONTENT, AND THE RESTAMP STEP FAILS ON IT.** Production's
+footer carries `Données API · HH:MM` in `.pgf-k`/`.pgf-v`, and the workflow's
+"Restamp the footer" step patches it with `scripts/stamp_footer.py`. That footer
+lives inside the body region, so **pass 0's seam replaces it** with the mock's
+`<div class="foot" id="foot"></div>` — which nothing writes to. Measured:
+`stamp_footer.py` on a v2 page prints *"footer stamp matched 0 time(s),
+expected 2"* and **exits 1**.
+
+That is the good failure mode — loud, not silent — so the cutover cannot quietly
+lose the freshness stamp. But the restamp step fails on day one unless v2 grows
+a footer or the step is repointed, and it runs on the quiet-hour path for every
+event that did not change. Decide which before cutover, not during.
+
+(Found while fixing a separate defect: `#foot` was a child of `page-details` in
+the LOCKED mock, so it rendered only on Détails. Fixed. The stamp being absent
+from v2 entirely is the larger half and is this item.)
 
 **P3 — the v2 gate's login background is baked, not templated.** Found while
 checking §3(d). `dashboard_template.html` renders `{{LOGIN_BG_IMAGE}}` *inside*

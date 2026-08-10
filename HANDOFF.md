@@ -3499,3 +3499,55 @@ Not fixed: the ruling was to remove the block and NOT to fix the nesting, and
 this is a second consequence of that nesting that the ruling did not have in
 front of it. One `</div>` after `sec-donnees` closes it. **It is a ruling because
 it changes what renders on the main page.**
+
+## The footer fix, and a correction to what I said it meant
+
+One `</div>` after `sec-donnees`. `#foot` was a CHILD of `page-details` in the
+locked mock, so it rendered only when Détails was showing — height 0 on
+Billetterie, 23 on Détails, on the shipped page and the locked file alike. Now a
+sibling of the pages, inside `.wrap`, visible on both.
+
+**But I said the freshness stamp was "not on the page Leo reads", and that was
+wrong.** v2's `#foot` is EMPTY — nothing writes to it, in the mock or in pass 0.
+The stamp lives in PRODUCTION's footer (`.pgf-k`/`.pgf-v`, "Données API · HH:MM"),
+which sits inside the body region and is therefore **replaced by pass 0's seam**.
+
+So the truth is larger than the defect I fixed: **v2 has no footer content at
+all**, and `scripts/stamp_footer.py` on a v2 page prints *"footer stamp matched 0
+time(s), expected 2"* and **exits 1**. Loud, not silent — the cutover cannot
+quietly lose the stamp — but the workflow's restamp step fails on day one unless
+v2 grows a footer or the step is repointed. Recorded as CUTOVER.md **P0**.
+
+## The audit: every equivalence check needs one property against reality
+
+198/198 green over a shipped defect is the proof. Audited the other checks that
+compare two things:
+
+- **`check_pages`** — not the same shape. The page's `<style>` is DERIVED from the
+  file, so a shared error is impossible, and the chain anchors at the locked
+  stylesheet through `AUTHORISED_CSS`. Its real gap is the one already recorded:
+  it validates only the `<style>` block.
+- **`check_build_stamp`** — same shape, and the gap is already named as
+  mitigation (a): the hash covers what is IN `SHARED_ASSETS` and nothing detects
+  what is missing from it. The audit confirms it rather than finding it.
+- **`check_offset`** — the real one, and it was not on the list. It compares the
+  closed form against a VERBATIM transcription of `_prev_match_dow`, with the
+  transcription pinned to run.py's source text. A strong chain with exactly the
+  gap: **if `_prev_match_dow` were itself wrong, both sides would agree.**
+
+So `check_offset` now asserts what the offset is FOR, consulting the calendar
+rather than either implementation: a matched date falls on the SAME WEEKDAY as
+the row it matches, and the correction never exceeds ±3 days. 1 122 pairs × 4
+sample rows. Negative-tested by adding 1 to the closed form — the weekday
+property fails immediately, on pairs the equivalence check would also have
+caught, but now for a reason that does not depend on the other implementation.
+
+## The ledger matcher depended on an entry's NEIGHBOURS
+
+Adding one `</div>` two lines away turned the `page-campagne` deletion hunk into
+a replace hunk. The haystack was `added if j2 > j1 else removed`, so it flipped
+to the added side, and `C3-campagne` reported as *"an approved change someone
+reverted"* about a deletion that was still there.
+
+Now searches both sides. The line budget is what bounds the total, so nothing is
+lost by being permissive about which side a signature matches.

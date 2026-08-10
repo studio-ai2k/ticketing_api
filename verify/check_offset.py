@@ -122,6 +122,47 @@ def main():
             pairs += 1
     print(f'configured pairs: {pairs}, mismatches: {failures}')
 
+    # ---- AND ONE PROPERTY ASSERTED AGAINST REALITY ------------------------
+    # Everything above compares two IMPLEMENTATIONS: the closed form against a
+    # verbatim transcription of `_prev_match_dow`, with the transcription pinned
+    # to run.py's source text. That is a strong chain and it has one gap - if
+    # `_prev_match_dow` were itself wrong, both sides would agree and this would
+    # pass. An equivalence check is blind to a shared premise.
+    #
+    # Learned the hard way elsewhere: check_b1_switch reported 198/198 green over
+    # a shipped defect because client and server made the same mistake. So state
+    # what the offset is FOR, independently of either implementation:
+    #
+    #   a matched date must fall on the SAME WEEKDAY as the row it matches,
+    #   and must be the NEAREST such date at or before the naive gap.
+    #
+    # Neither implementation is consulted - the dates are checked directly.
+    prop_bad = 0
+    for cur, ce in sorted(dated.items()):
+        for cand, de in sorted(dated.items()):
+            if cur == cand:
+                continue
+            # daily_offset IS one of the two implementations, but here it is
+            # only being used to produce a date to test - the assertion below
+            # consults the calendar, not either implementation.
+            off = daily_offset(ce['first'], de['first'])
+            gap = (ce['first'] - de['first']).days
+            for step in (0, 37, 111, 260):
+                row = ce['first'] - timedelta(days=step)
+                got = row - timedelta(days=off)
+                if got.weekday() != row.weekday():
+                    print(f'  FAIL  {cur} vs {cand}: {row} -> {got} is a '
+                          f'different weekday')
+                    prop_bad += 1
+                elif abs(gap - off) > 3:
+                    print(f'  FAIL  {cur} vs {cand}: the correction is '
+                          f'{gap - off} days, more than the +/-3 a weekday '
+                          f'snap can need')
+                    prop_bad += 1
+    failures += prop_bad
+    print(f'weekday property: {"ok" if not prop_bad else str(prop_bad) + " FAILURES"}'
+          f' - matched dates share the row\'s weekday, correction within +/-3')
+
     if args.fuzz:
         random.seed(20260807)
         fuzz_bad = 0

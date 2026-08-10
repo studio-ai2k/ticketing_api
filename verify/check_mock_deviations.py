@@ -182,8 +182,8 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 609
-BUDGET_REMOVED = 158
+BUDGET_ADDED = 611
+BUDGET_REMOVED = 160
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
 AUTHORISED = [
@@ -444,6 +444,15 @@ AUTHORISED += [
      '<div class="sec" id="sec-plateformes">'),
     ('C1-sec-donnees', 'C1/C2 - anchor on "Données". One tab per section means every section needs a target; seven had none. Markup, one attribute, no rendered change - and one entry each rather than one covering all seven, so a reverted anchor names itself',
      '<div class="sec" id="sec-donnees">'),
+    ('FOOT', 'THE FOOTER WAS INVISIBLE ON BILLETTERIE. One </div> after '
+             'sec-donnees closes page-details, which the LOCKED mock never '
+             'did - so #foot was a CHILD of page-details and rendered only '
+             'when Détails was showing. Measured: height 0 on Billetterie, 23 '
+             'on Détails, on the shipped page and the locked file alike. A '
+             'markup fix to the mock, not a design change: the div imbalance '
+             'is exactly 1 and the footer is a sibling of the pages, inside '
+             '.wrap, which is where it now sits',
+     '</div><!-- /page-details -->'),
     ('C3-campagne', 'RULED OUT of v2: the Page Campagne placeholder block, '
                     'removed rather than fixed. It was a VISIBLE card - "Analyse '
                     'de campagne : forme, phases de prix, heure zéro..." - and '
@@ -728,10 +737,19 @@ def main():
     matched = {}
     for tag, i1, i2, j1, j2 in hunks:
         added = '\n'.join(work[j1:j2])
-        # A pure DELETION has nothing on the working side, so a signature can
-        # never match there. Match it against what was REMOVED instead - D21
-        # deleted `const LG` outright and this could not have described it.
-        haystack = added if j2 > j1 else '\n'.join(lock[i1:i2])
+        # BOTH SIDES. A pure DELETION has nothing on the working side, so its
+        # signature can only match what was REMOVED - D21 deleted `const LG`
+        # outright and this could not have described it.
+        #
+        # It used to read `added if j2 > j1 else removed`, i.e. the removed side
+        # ONLY for a pure deletion. That made an entry's matchability depend on
+        # its NEIGHBOURS: adding one `</div>` two lines away turned a pure
+        # deletion hunk into a replace hunk, the haystack flipped to the added
+        # side, and C3-campagne reported as "an approved change someone
+        # reverted" about a deletion that was still there. Searching both sides
+        # removes that coupling; the line budget is what bounds the total, so
+        # nothing is lost by being permissive here.
+        haystack = added + '\n' + '\n'.join(lock[i1:i2])
         # EVERY signature present, not the first one. `next()` credited one
         # entry per hunk, so a second authorised deviation inside the same hunk
         # - which happens the moment two rulings touch one region, and difflib
