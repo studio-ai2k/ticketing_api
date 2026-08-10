@@ -728,11 +728,27 @@ button.sw-item{background:none;border:0;width:100%;text-align:left;
     
   </div>
   <div class="dept-tabs-bg" id="section-tabs">
-    <div class="dept-tabs">
-      <button class="dt on" onclick="scrollToSection('sec-overview',this)">Vue d'ensemble</button>
-      <button class="dt" onclick="scrollToSection('sec-repartition',this)">Répartition</button>
-      <button class="dt" onclick="scrollToSection('sec-suivi',this)">Suivi des ventes</button>
+    <!-- C1/C2 — ONE TAB PER SECTION, on both pages. Ruled: the bar INDEXES the
+         page rather than offering a chosen subset, which is a rule a later
+         reader can apply where "these five, chosen" is not.
+         Both bars stand in the MARKUP and goPage toggles which is shown. The
+         alternative was two template strings swapped into innerHTML, which
+         would have put the page's own markup inside a JS literal - and the
+         literal scanner is right to object to those. -->
+    <div class="dept-tabs" data-bar="billetterie">
+      <button class="dt on" onclick="scrollToSection('sec-overview',this)">Revenus</button>
+      <button class="dt" onclick="scrollToSection('sec-velocite',this)">Vélocité</button>
+      <button class="dt" onclick="scrollToSection('sec-presence',this)">Présence</button>
+      <button class="dt" onclick="scrollToSection('sec-repartition',this)">Billets</button>
+      <button class="dt" onclick="scrollToSection('sec-suivi',this)">Suivi</button>
       <button class="dt" onclick="scrollToSection('sec-projection',this)">Projections</button>
+    </div>
+    <div class="dept-tabs" data-bar="details" style="display:none">
+      <button class="dt on" onclick="scrollToSection('sec-evenement',this)">Événement</button>
+      <button class="dt" onclick="scrollToSection('sec-jours',this)">Jours</button>
+      <button class="dt" onclick="scrollToSection('sec-comparaison',this)">Comparaison</button>
+      <button class="dt" onclick="scrollToSection('sec-plateformes',this)">Plateformes</button>
+      <button class="dt" onclick="scrollToSection('sec-donnees',this)">Données</button>
     </div>
   </div>
 </nav>
@@ -743,10 +759,10 @@ button.sw-item{background:none;border:0;width:100%;text-align:left;
     <div class="sec-note">valeur faciale TTC · hors frais de réservation</div></div>
     <div class="card" id="rev"></div></div>
 
-  <div class="sec"><div class="sec-head"><div class="sec-title">Vélocité actuelle</div>
+  <div class="sec" id="sec-velocite"><div class="sec-head"><div class="sec-title">Vélocité actuelle</div>
     <div class="sec-note" id="velnote"></div></div>
     <div class="card" id="vel"></div></div>
-  <div class="sec"><div class="sec-head"><div class="sec-title">Présence attendue par jour<span class="info" tabindex="0">i<span>Nombre d’entrées estimées. Les pass multi-jours sont comptés une fois par jour (ex. un pass 2 jours = 2 entrées). Les invitations et jeux concours sont inclus.</span></span></div>
+  <div class="sec" id="sec-presence"><div class="sec-head"><div class="sec-title">Présence attendue par jour<span class="info" tabindex="0">i<span>Nombre d’entrées estimées. Les pass multi-jours sont comptés une fois par jour (ex. un pass 2 jours = 2 entrées). Les invitations et jeux concours sont inclus.</span></span></div>
     <div class="sec-note">un pass multi-jours compte une entrée par journée · décochez une journée pour l’exclure du total</div></div>
     <div class="card" id="pres"></div></div>
 
@@ -768,19 +784,19 @@ button.sw-item{background:none;border:0;width:100%;text-align:left;
 </div><!-- /page-billetterie -->
 
 <div class="page" id="page-details">
-  <div class="sec"><div class="sec-head"><div class="sec-title">Événement</div>
+  <div class="sec" id="sec-evenement"><div class="sec-head"><div class="sec-title">Événement</div>
     <div class="sec-note">fiche complète · configuration et sources</div></div>
     <div class="card" id="det-ident"></div></div>
 
-  <div class="sec"><div class="sec-head"><div class="sec-title">Jours de l’événement</div>
+  <div class="sec" id="sec-jours"><div class="sec-head"><div class="sec-title">Jours de l’événement</div>
     <div class="sec-note">jauge par journée</div></div>
     <div class="card" id="det-days"></div></div>
 
-  <div class="sec"><div class="sec-head"><div class="sec-title">Comparaison</div>
+  <div class="sec" id="sec-comparaison"><div class="sec-head"><div class="sec-title">Comparaison</div>
     <div class="sec-note">l’édition de référence et la méthode d’appariement</div></div>
     <div class="card" id="det-cmp"></div></div>
 
-  <div class="sec"><div class="sec-head"><div class="sec-title">Plateformes</div>
+  <div class="sec" id="sec-plateformes"><div class="sec-head"><div class="sec-title">Plateformes</div>
     <div class="sec-note">back-office et pages publiques</div></div>
     <div class="dlinks">
       <a class="dl" href="https://smartboard.shotgun.live/events/535882" target="_blank" rel="noopener">
@@ -799,7 +815,7 @@ button.sw-item{background:none;border:0;width:100%;text-align:left;
           <div class="dl-u">dice.fm/partner/tickets/event/oepro5-madame-loyal-x-elektric-park</div></div></a>
     </div></div>
 
-  <div class="sec"><div class="sec-head"><div class="sec-title">Données</div>
+  <div class="sec" id="sec-donnees"><div class="sec-head"><div class="sec-title">Données</div>
     <div class="sec-note">d’où viennent les chiffres de ce dashboard</div></div>
     <div class="card" id="det-data"></div></div>
 <!-- /page-details -->
@@ -2042,20 +2058,46 @@ function goPage(pg, btn){
   if(btn) btn.classList.add('on');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   var el=document.getElementById('page-'+pg); if(el) el.classList.add('on');
-  var t=document.querySelector('.dept-tabs'); if(t) t.style.display = (pg==='billetterie')?'':'none';
+  /* C2 — the Détails page had NO section bar: this line used to read
+     `display = (pg==='billetterie') ? '' : 'none'`, so the bar vanished off
+     billetterie. It now selects a bar rather than hiding the one bar. */
+  document.querySelectorAll('.dept-tabs').forEach(function(t){
+    t.style.display = (t.dataset.bar===pg) ? '' : 'none'; });
   window.scrollTo({top:0});
 }
 function scrollToSection(id, btn){
-  document.querySelectorAll('.dt').forEach(b=>b.classList.remove('on'));
+  /* Scoped to the button's OWN bar. With two bars in the markup, clearing
+     every .dt would wipe the hidden bar's active tab, so switching pages twice
+     would land on a bar with nothing marked. */
+  var bar = btn && btn.closest('.dept-tabs');
+  (bar ? bar.querySelectorAll('.dt') : document.querySelectorAll('.dt'))
+    .forEach(b=>b.classList.remove('on'));
   if(btn) btn.classList.add('on');
   var el=document.getElementById(id); if(el) el.scrollIntoView({block:'start',behavior:'smooth'});
 }
 (function(){
-  var ids=['sec-overview','sec-repartition','sec-suivi','sec-projection'];
+  /* THE SPY READS THE BUTTONS. It carried
+     `var ids=['sec-overview','sec-repartition','sec-suivi','sec-projection']`
+     — a second statement of a list the buttons beside it already declare, and
+     matched by INDEX, so a tab added anywhere but the end silently highlighted
+     the wrong one. With six tabs and a second bar that would have been three
+     places stating one list: the same hand-maintained correspondence as the
+     page→event map and as SHARED_ASSETS.
+     Derived, C2's bar gets the spy for free, which is the tell that this was
+     the right decomposition rather than a tidy-up. */
+  var tgt = new Map();
+  document.querySelectorAll('.dept-tabs .dt').forEach(function(b){
+    var m = /scrollToSection\('([^']+)'/.exec(b.getAttribute('onclick')||'');
+    if(m) tgt.set(m[1], b);
+  });
+  var ids=[...tgt.keys()];
   var io=new IntersectionObserver(function(es){
     es.forEach(function(e){ if(!e.isIntersecting) return;
-      var i=ids.indexOf(e.target.id); if(i<0) return;
-      document.querySelectorAll('.dt').forEach(function(b,k){ b.classList.toggle('on',k===i); });
+      var b=tgt.get(e.target.id); if(!b) return;
+      /* by IDENTITY, not by index: the button this section belongs to, and
+         only inside its own bar. */
+      b.closest('.dept-tabs').querySelectorAll('.dt')
+        .forEach(function(x){ x.classList.toggle('on', x===b); });
     });
   },{rootMargin:'-110px 0px -70% 0px'});
   ids.forEach(function(id){ var el=document.getElementById(id); if(el) io.observe(el); });

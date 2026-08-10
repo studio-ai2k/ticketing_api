@@ -441,6 +441,11 @@ jobs:
           # pair whose campaign lengths differ most - run on a pair where
           # they nearly match, the same test passes while showing nothing.
           python verify/check_anchor_modes.py
+          # C1/C2. The section bar is nav markup, so the pass-0 seam leaves
+          # it behind and it is transplanted instead - a mock change that
+          # does not reach the page renders as a correct page with the
+          # wrong labels. Also asserts the 393px fit that ruling B bought.
+          NODE_PATH=/opt/node22/lib/node_modules python verify/check_section_bars.py
           if git diff --cached --quiet; then
             echo "Nothing changed - nothing to commit"
             exit 0

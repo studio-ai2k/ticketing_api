@@ -3157,3 +3157,91 @@ labels identical on every page — structural, not data — so it went into
 `STRUCTURAL` with the reason. Which mode a page STARTS on is per-event and is not
 in the mock: it arrives as `D.amode`, through the payload, like every other
 per-event fact.
+
+## Trap #20: the seam splits a component, and only one half moved
+
+C1/C2 were measured, ruled, and built in the mock. **The shipped pages still read
+four tabs.**
+
+`prod_nav_script` had already written the reason down, three months before it
+mattered: *"the nav's MARKUP is before `</nav>` and its BEHAVIOUR is after, so
+the seam splits them."* The section bar is **both**. Its handlers (`goPage`,
+`scrollToSection`, the scroll-spy) sit at the end of the mock's body and arrive
+with the region. Its BUTTONS sit inside `<nav>`, come from
+`dashboard_template.html`, and do not.
+
+So rebuilding the mock changed every handler and not one label, and the page
+rendered perfectly. Found by measuring the SHIPPED page — the post-build
+measurement Leo asked for specifically because *"a fix measured only in the
+proposal is a fix nobody has seen work"*. It was the measurement that found the
+bug, not the fix.
+
+The tell, generalisable: **when a seam is defined by a position in the document,
+any component that straddles it is split by construction, and the half that does
+not move is the half nobody looks at.** `prod_nav_script` and
+`_reexport_close_all` are the same trap already paid for twice — once for the
+nav's behaviour, once for `swCloseAll` — and the note in `prod_nav_script` is
+what made this five minutes instead of an afternoon.
+
+`dashboard_template.html` must not be modified, and editing it would move the
+PRODUCTION bar too — those pages retire at cutover and their bar is not ours to
+change. So pass 0 transplants the mock's bar, v2-only, asserted once on each
+side like every other pass-0 substitution.
+
+### verify/check_section_bars.py
+
+Two halves, and the first is the one that generalises:
+
+1. **The shipped bar EQUALS the mock's bar.** Not "has six tabs" — a count
+   passes against production's four plus two, and the whole defect was a bar
+   that was plausibly right. Equality fails the day the mock moves and the
+   transplant does not, whatever the change was.
+2. **It fits at 393px**, with both bars driven in a real browser. Ruling B chose
+   the fit over the scroll, so the fit is a requirement now: a seventh tab trips
+   this before Leo sees it.
+
+Negative-tested by disabling the transplant and rebuilding: three failures, and
+the first names the class rather than the symptom.
+
+## C1/C2: one tab per section, on both pages
+
+Ruled as a RULE rather than a chosen set — *the bar indexes every section* — which
+a later reader can apply where "these five, chosen" cannot. Billetterie six
+(Revenus · Vélocité · Présence · Billets · Suivi · Projections), Détails five
+(Événement · Jours · Comparaison · Plateformes · Données). Seven sections had no
+anchor and got one, each its own ledger entry so a reverted anchor names itself.
+
+**C2 is new behaviour, not a relabel.** `goPage` hid the only bar off billetterie;
+it now selects between two bars that both stand in the markup. Markup rather than
+two JS template strings, because the page's own markup inside a JS literal is
+what `check_mock_literals` exists to object to.
+
+### The width work, and the option that did not exist
+
+Six tabs needed 401px against 393. Measured before proposing, which removed half
+the options: **no label shortening reaches 393** (Projections→Projection leaves 3
+over; plus Vélocité→Rythme leaves 2), and the type step was already at its floor
+of 10px. Padding was the only lever. Ruled B: `.dt` 12px → 10px, 377px, sixteen
+of headroom, logged as `C1a` in `AUTHORISED_CSS` and checked both directions.
+
+Worth keeping: **the relabel itself was a width GAIN.** Four long labels needed
+382; six short ones need 401. Six tabs for 19px. The natural prior is that adding
+tabs costs a tab's width each.
+
+### The scroll-spy matched by INDEX
+
+It carried its own `ids` array beside the buttons that already declared them —
+and matched `ids.indexOf(...)` against `querySelectorAll('.dt')` position, so a
+tab inserted anywhere but the end would have highlighted the wrong section. With
+six tabs and a second bar that would have been three places stating one list.
+Derived from the buttons and matched by IDENTITY; C2's bar gets the spy for free,
+which is the tell that the decomposition was right rather than tidy.
+
+### And the CSS convention this confirmed
+
+`redesign/style/dashboard_redesign.css` and the mock's inline `<style>` have
+already diverged for D9 and D24: **CSS rulings land on the FILE, which is what
+pass 0 inlines; the mock's inline copy stays frozen.** C1a follows it. The
+consequence for renders: a render taken from the mock would not show a CSS
+ruling, and one taken from a v2 page would. Every render in this round came from
+`v2/rennes.html`.

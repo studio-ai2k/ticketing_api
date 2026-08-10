@@ -82,6 +82,17 @@ AUTHORISED_CSS = [
            "already downloads at 400/500/600, so this costs no request",
      "  --ff-mono: 'DM Mono', 'SF Mono', monospace;",
      "  --ff-mono: 'JetBrains Mono', monospace;"),
+    ('C1a', "C1/C2 - .dt horizontal padding 12px -> 10px. The bar now indexes "
+            "EVERY section by rule, which took billetterie from four tabs to "
+            "six, and six needed 401px against the 393 of the phone this "
+            "project judges mobile at - eight over, with Projections under the "
+            "fade. Measured before choosing: no label shortening reaches 393 "
+            "(Projections->Projection leaves 3 over, +Velocite->Rythme leaves "
+            "2) and the type step was already at its floor, 10px. Padding was "
+            "the only lever. 10px gives 377, sixteen of headroom, and leaves "
+            "Détails room for the next section instead of 2px",
+     ".dt { padding: 8px 12px; font-size:var(--fs-tiny); font-weight: 500; color: var(--text-dim); white-space: nowrap; border: none; border-bottom: 2px solid transparent; background: none; font-family: inherit; cursor: pointer; transition: color .15s; }",
+     ".dt { padding: 8px 10px; font-size:var(--fs-tiny); font-weight: 500; color: var(--text-dim); white-space: nowrap; border: none; border-bottom: 2px solid transparent; background: none; font-family: inherit; cursor: pointer; transition: color .15s; }"),
     ('D24', "D6 - overflow-x: clip instead of hidden. `hidden` makes body a "
             "SCROLL CONTAINER, so the sticky nav positioned against body and "
             "scrolled away with it: -353px after 1500px, on BOTH heads, with a "
@@ -96,8 +107,8 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 448
-BUDGET_REMOVED = 88
+BUDGET_ADDED = 506
+BUDGET_REMOVED = 104
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
 AUTHORISED = [
@@ -344,6 +355,51 @@ AUTHORISED += [
             'grains. The launch clause is conditional because the em-dash note '
             'is only true in that mode',
      'L’alignement s’applique aux deux grains'),
+    ('C1-sec-velocite', 'C1/C2 - anchor on "Vélocité actuelle". One tab per section means every section needs a target; seven had none. Markup, one attribute, no rendered change - and one entry each rather than one covering all seven, so a reverted anchor names itself',
+     '<div class="sec" id="sec-velocite">'),
+    ('C1-sec-presence', 'C1/C2 - anchor on "Présence attendue par jour". One tab per section means every section needs a target; seven had none. Markup, one attribute, no rendered change - and one entry each rather than one covering all seven, so a reverted anchor names itself',
+     '<div class="sec" id="sec-presence">'),
+    ('C1-sec-evenement', 'C1/C2 - anchor on "Événement". One tab per section means every section needs a target; seven had none. Markup, one attribute, no rendered change - and one entry each rather than one covering all seven, so a reverted anchor names itself',
+     '<div class="sec" id="sec-evenement">'),
+    ('C1-sec-jours', 'C1/C2 - anchor on "Jours de l’événement". One tab per section means every section needs a target; seven had none. Markup, one attribute, no rendered change - and one entry each rather than one covering all seven, so a reverted anchor names itself',
+     '<div class="sec" id="sec-jours">'),
+    ('C1-sec-comparaison', 'C1/C2 - anchor on "Comparaison". One tab per section means every section needs a target; seven had none. Markup, one attribute, no rendered change - and one entry each rather than one covering all seven, so a reverted anchor names itself',
+     '<div class="sec" id="sec-comparaison">'),
+    ('C1-sec-plateformes', 'C1/C2 - anchor on "Plateformes". One tab per section means every section needs a target; seven had none. Markup, one attribute, no rendered change - and one entry each rather than one covering all seven, so a reverted anchor names itself',
+     '<div class="sec" id="sec-plateformes">'),
+    ('C1-sec-donnees', 'C1/C2 - anchor on "Données". One tab per section means every section needs a target; seven had none. Markup, one attribute, no rendered change - and one entry each rather than one covering all seven, so a reverted anchor names itself',
+     '<div class="sec" id="sec-donnees">'),
+    ('C1', 'the billetterie section bar indexes EVERY section - six tabs in '
+           'section order, relabelled. Ruled as a rule rather than a chosen '
+           'set: one tab per section is something a later reader can apply. '
+           'The relabel is a width GAIN - four long labels needed 382, six '
+           'short ones need 401 - and C1a pays the difference',
+     "scrollToSection('sec-velocite',this)"),
+    ('C2', 'the same bar on Détails, where there was none: goPage hid the only '
+           'bar off billetterie and now selects between two. NEW BEHAVIOUR, '
+           'not a relabel - the before-shot is an empty strip. Both bars stand '
+           'in the markup rather than in JS template strings, so the page\'s '
+           'own markup does not move inside a literal',
+     'data-bar="details"'),
+    ('C2b', 'the scroll-spy is DERIVED from the buttons. It carried its own '
+            'ids array and matched by INDEX, so a tab added anywhere but the '
+            'end highlighted the wrong section; with six tabs and a second bar '
+            'that would have been three places stating one list. Derived, C2 '
+            'gets the spy for free',
+     'var tgt = new Map();'),
+    ('C2d', 'C2 - goPage selects a bar instead of hiding the only one. Its '
+            'own entry because the OLD line is what a reader needs to see: the '
+            'Détails page having no bar at all was a behaviour, not an '
+            'oversight',
+     "t.style.display = (t.dataset.bar===pg)"),
+    ('C2e', 'C2b - the spy matches by IDENTITY rather than by list index, '
+            'which is the half of the derivation that actually fixes the bug: '
+            'an index match against a derived list is still wrong the moment a '
+            'tab is inserted anywhere but the end',
+     'var b=tgt.get(e.target.id); if(!b) return;'),
+    ('C2c', 'scrollToSection scoped to the button\'s own bar. With two bars in '
+            'the markup, clearing every .dt wipes the hidden bar\'s active tab',
+     "var bar = btn && btn.closest('.dept-tabs');"),
     ('AN1', 'anchoring - live editions now get series files, so four of the '
             'twelve are rewritten daily and {cache:no-cache} stops being '
             'hygiene. The reason is recorded at the fetch because that is where '

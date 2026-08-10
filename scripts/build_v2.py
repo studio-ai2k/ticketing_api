@@ -287,6 +287,27 @@ def _family(event_id):
     return parts[0] if len(parts) == 2 and parts[1].isdigit() else event_id
 
 
+TABS_RE = re.compile(r'<div class="dept-tabs-bg"[^>]*>.*?</div>\s*</div>', re.DOTALL)
+
+
+def transplant_tabs(page, mock):
+    """Give the page the MOCK's section bar, buttons and all.
+
+    Asserted once on each side, like every other substitution in pass 0: the
+    tab bar is the one piece of nav markup the redesign owns, and a silent miss
+    here ships production's four tabs under the redesign's handlers - which is
+    what happened, and which rendered as a working page with the wrong labels.
+    """
+    m = TABS_RE.search(mock)
+    if not m:
+        raise SystemExit('pass 0: the mock has no .dept-tabs-bg block to transplant')
+    if len(TABS_RE.findall(mock)) != 1 or len(TABS_RE.findall(page)) != 1:
+        raise SystemExit(
+            f'pass 0: .dept-tabs-bg matched {len(TABS_RE.findall(mock))} time(s) in '
+            f'the mock and {len(TABS_RE.findall(page))} in the page, want 1 and 1')
+    return TABS_RE.sub(lambda _: m.group(0), page, count=1)
+
+
 def apply_v2_body(page, payload, identity=()):
     """Splice the mock's body into a run.py page, carrying the real payload."""
     mock = MOCK.read_text(encoding='utf-8')
@@ -327,6 +348,22 @@ def apply_v2_body(page, payload, identity=()):
     # moment pass 1 does its job, and because at CUTOVER this must not turn into
     # a feature the redesign silently dropped.
     out, _ = postprocess_html.UPLOAD_LINK_RE.subn('', out)
+
+    # C1/C2 - THE SECTION BAR IS NAV MARKUP, SO THE SEAM LEAVES IT BEHIND.
+    #
+    # `prod_nav_script` already records the halves: "the nav's MARKUP is before
+    # `</nav>` and its BEHAVIOUR is after, so the seam splits them". The bar is
+    # both. Its handlers (goPage, scrollToSection, the scroll-spy) live at the
+    # end of the mock's body and arrive with the region; its BUTTONS live in
+    # `<div class="dept-tabs-bg">` inside the nav and do not. Rebuilding the
+    # mock with six tabs changed the behaviour on every page and none of the
+    # labels - caught by measuring the SHIPPED page, which still read four.
+    #
+    # The bar is emitted by `dashboard_template.html`, which must not be
+    # modified, and editing it would change the production pages too - they
+    # retire at cutover and their tab bar is not ours to move. So the markup is
+    # transplanted here, v2-only, exactly as the body is.
+    out = transplant_tabs(out, mock)
 
     css = SHEET.read_text(encoding='utf-8')
     out, sn = STYLE_RE.subn(lambda m: '<style>\n' + css + '\n</style>', out, count=1)
