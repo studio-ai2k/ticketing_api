@@ -3007,3 +3007,70 @@ or `.md` mentions it, and it is not in `SHARED_ASSETS`. 42 KB, dead.
 page, so the negative fingerprint holds — and every `legacy/` page will contain it
 by definition, which is why §5 scopes it to the config's pages rather than to a
 glob.
+
+## Anchoring modes: three findings from the arithmetic, before any of it was built
+
+Worked the three mappings out on paper and checked them against the six live
+pairs before writing code. Three things came back that change what gets built.
+
+### 1. The exact-date weekly rule is the rule already shipped
+
+Specified as *"candidate bucketed by `(cand_ev − (our_date − gap))//7`, raw gap,
+no snap"*. Expand it with `our_date = cur_ev − jx` and `gap = G = cur_ev − cand_ev`:
+
+```
+cand_ev − (cur_ev − jx − (cur_ev − cand_ev)) = jx     =>  bucket = jx // 7
+```
+
+which is the candidate's own `jx // 7` — byte-for-byte what `applySeries` already
+does. So exact-date does not get its own weekly rule; it gets the existing one,
+and **all three modes share one weekly column**, not two of three. The copy has to
+say three.
+
+### 2. Launch mode moves the daily grain by up to 105 days and the weekly by none
+
+The ruling accepted that event-day and launch produce identical weekly columns
+because weekly carries no offset and no snap. That is easy to accept when the
+offset is a weekday snap of ±3 days. It is not a snap in launch mode — it is the
+difference in campaign lengths:
+
+```
+page               our lead   cand lead   O
+rennes.html            157        155      −2
+parisxxl.html          101        102      +1
+bordeaux.html          156        177     +21
+geneve.html            163        104     −59
+bordeaux_oct.html      106        204     +98
+epk.html               156        261    +105
+```
+
+On epk the daily table realigns by **fifteen weeks** while the weekly table does
+not move at all, and the two tables on one page then disagree about what is being
+compared. Implemented as ruled, with the magnitude stated in the copy rather than
+"identical weekly columns", which reads as "no difference worth mentioning".
+
+### 3. run.py already contains the launch-mode filter, and the vocabulary
+
+`run.py:1426 filter_tickets_to_same_point_dsl` — days-since-launch same-point
+filtering, written and live. `run.py:3955` branches on
+`event_config['comparison_mode']`, values `j_minus` / `days_since_launch`, and
+**the column exists in `event_config.csv`**. All six pages are `j_minus` or empty,
+so production and v2 agree today — the mechanism is unused, not divergent.
+
+Two consequences:
+
+- **It settles the same-point cut by precedent instead of by invention.** The
+  J-minus filter cuts at `jx_cand >= D.jx`, raw. The DSL one cuts at days-since-
+  launch equality, i.e. `jx_cand >= D.jx + O`, also raw. So in BOTH modes the cut
+  is raw and only the row pairing is snapped. That is the existing convention and
+  the new modes should inherit it rather than reason it out again.
+- **The vocabulary already exists.** `comparison_mode` with `j_minus` /
+  `days_since_launch` is the config's own naming; exact-date is a third value in
+  an existing enum, not a new concept. The config value becomes the mode the
+  picker STARTS on — run.py's per-event setting and the spec's per-reader picker
+  are the default and the override, not two designs.
+
+The mode picker itself is a third instance of the `.sw-wrap` / `.cmp-trigger` /
+`.sw-menu` component the mock already carries twice (`cmpMenu`, the projection
+`menu()`), so no CSS is invented and the per-item `.sw-sub` / `.cmp-meta` slots
+are where the copy goes.
