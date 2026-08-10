@@ -569,6 +569,11 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
         # `signed_mod7(cur_ev - cand_ev)`, the other half being in the
         # candidate's own file. Nothing else about this event enters.
         'ev': cur_cfg['event_date_first'].isoformat(),
+        # Which edition this page IS. Not used for rendering - every consumer
+        # already knows it is looking at itself - but a checker holding only
+        # the shipped HTML does not, and the alternative is a filename-to-id
+        # map maintained by hand next to the one in the config.
+        'id': event,
         'ref_id': ref_event,
         'cap': sum(caps.values()),
         'daycap': max(caps.values()) if caps else 0,

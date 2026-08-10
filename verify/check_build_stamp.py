@@ -39,6 +39,36 @@ shipped. The mock and `dashboard_redesign.css` are deliberately absent: they
 reach v2 only. Auditing an exemption from the changelog reaches for the wrong
 list; auditing it from the artefact's ingredients gives this one.
 
+THE BLIND SPOT, NAMED RATHER THAN DISCOVERED
+--------------------------------------------
+The hash covers what is IN `SHARED_ASSETS`. **Nothing detects what is missing
+from it.** A shared surface left out of that tuple moves no hash and fails no
+page, and the failure state is indistinguishable from everything being fine.
+
+That is #18's question pointed at this check: *what does this selector exclude,
+and did anyone decide that?* Here the selector is a hand-maintained list, and
+the evidence that the list is the fragile part rather than the hashing is in
+this file's own history — the first proposed set had three entries and was
+missing `dashboard_template.html`, `run.py` and `build_dashboard.py`. The hash
+is mechanical and cannot be wrong; the list is a judgement and was.
+
+Two mitigations, both priced and neither built:
+
+  (a) DERIVE RATHER THAN DECLARE. Assert that every file `postprocess_html.py`
+      and `build_dashboard.py` open or read appears in `SHARED_ASSETS`. That
+      turns an omission from invisible into a failing test, and it is the same
+      move as importing `PAGE_PATHS` rather than restating it: the check
+      follows the code instead of agreeing with a copy of it.
+
+  (b) REFERENCED BUT NOT READ AT BUILD TIME — `LOGO_ROND_JAUNE.png`,
+      `upload.JPG`, the login background images. A page points at them, they
+      are not in the set, and replacing one changes what a reader sees with no
+      stamp movement. **That is a decision, not a gap:** they are content, not
+      code, and a content swap is a deliberate act by whoever swaps the file,
+      where a shared-code change is a side effect nobody is watching for. If
+      that ever stops being true — an asset pipeline, a CDN, a generated image
+      — they belong in the set.
+
 SCOPE: PRODUCTION ONLY
 ----------------------
 `build_v2.py` runs unconditionally in the workflow, so a v2 page cannot go

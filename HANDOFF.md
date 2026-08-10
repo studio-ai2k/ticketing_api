@@ -2777,3 +2777,85 @@ The workflow now runs it in the commit step and **fails the run rather than
 repairing itself** — a job that silently rebuilt would hide how long the
 exemption had been running. Making the rebuild automatic is the follow-up, not
 this.
+
+## Anchoring, step 1: one eligibility rule was three consumers wearing one hat
+
+The anchoring work starts by SPLITTING a rule, not by adding a mode, because
+the single rule is what made the modes impossible to build.
+
+`build_series.eligible(cfg_all, today)` — *finished, and with data* — served
+three consumers at once: which editions get a series file written, which appear
+in the projection selector, and which appear in B1's comparison menu. Emitting a
+series for a LIVE edition (needed by every anchoring mode) therefore also put
+that edition in the projection selector, where it cannot work: a projection
+replays a reference's REMAINING curve, and a live edition has not run one. It
+would not error. It would draw a line.
+
+So:
+
+```
+projection_eligible(cfg_all, today)   finished, and with data     (the original
+                                      rule, keeping the original name because
+                                      the projection is what it was right for)
+comparison_eligible(cfg_all)          any edition with data       (strictly wider)
+```
+
+**Landed behaviour-neutral, on purpose.** `comparison_eligible` exists; the menu
+does not use it yet. A live candidate is only meaningful once the LAUNCH mode
+ships — an event-date anchor maps a live edition's recent rows into its own
+future — so widening the menu lands *with* the modes. The rebuild diff was one
+line per page, which is the evidence, not the intention.
+
+### verify/check_eligibility.py — both directions, and why one is not enough
+
+A one-directional check on a pair of NESTED sets is nearly free to satisfy:
+`projection ⊆ comparison` is true of the empty set. The two failures are
+different in kind, so they are four separate assertions:
+
+- **P1  no live edition in any projection menu.** The dangerous direction, and
+  read off the SHIPPED PAGE (`D.projx.cands`), not off the rule — the page is
+  what a reader picks from. The page's cutoff is derived from the page itself
+  (`ev − jx`), so it cannot be checked against a date it was not built at.
+- **P2  every series file on disk is comparison-eligible.** The quiet
+  direction: a published file no rule admits is a fetchable URL nobody can
+  reach through the UI, and a menu narrower than the data with nobody deciding.
+- **P3  every menu entry is comparison-eligible and has a file.** Holds now and
+  must keep holding after the widening.
+- **P4  the tripwire — the menu is still the PROJECTION rule.** Expected to fail
+  on purpose when the launch mode lands, with the reason printed beside it. It
+  is not a claim the menu should be narrow; it is a claim that the narrowness
+  has a written reason and that removing it must be an act rather than a drift.
+
+All four were negative-tested before being trusted: a live edition injected into
+one page's projection menu, the comparison rule narrowed against a file that
+exists, a menu entry with no file, and the menu widened to a live candidate.
+Each tripped the assertion it was aimed at. P4's widening also trips P3 with
+`no file: geneve_2026` — which is the NEXT piece of the work naming itself.
+
+### D.id, and a hand-written map that was wrong in every row
+
+P4 needs to know which edition a page IS, to exclude it from its own menu. The
+first version hardcoded a filename→event-id map. It was wrong in all six rows —
+it paired each page with the PAST edition rather than the live one — and I found
+that out by rebuilding on it and clobbering a page.
+
+The mapping was in `event_config.csv` the whole time (`output_filename`). The
+fix was both: derive the rebuild list from the config, and add `'id'` to the
+payload so a checker holding only the shipped HTML does not need a map at all.
+That is build-stamp mitigation (a)'s move — *the check follows the code instead
+of agreeing with a copy of it* — applied somewhere cheaper than where it was
+first written down.
+
+The live pages are the **2026** editions in every case; `bordeaux.html` and
+`parisxxl.html` show `jx` negative because those 2026 editions have already
+happened. That is the same pair as trap #17, and it is a coincidence of the
+calendar, not a category.
+
+### Still to land in this feature
+
+Emit series for LIVE editions (with the churn / no-cache reason recorded AT the
+fetch), then the three modes — event-day (shipped), launch (both first-sale
+dates, snap ON), exact-date (both event dates, snap OFF, and its own weekly
+rule: candidate bucketed by `(cand_ev − (our_date − gap))//7`, raw gap, no
+snap). Then widen the menu and retire P4 with a note saying which mode retired
+it. `check_b1_switch` grows a half per mode AS EACH LANDS, not at the end.

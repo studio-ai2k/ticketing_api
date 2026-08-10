@@ -392,14 +392,20 @@ def main():
     # replays a reference's remaining curve, and a live edition has not run one
     # yet. Discovered here rather than in the payload so the payload keeps
     # taking explicit paths and stays testable from a fixture.
-    # ONE eligibility rule, shared with build_series, so the projection
-    # selector, the comparison menu and the files on disk cannot drift apart.
-    # They were three lists before: two hardcoded and one computed.
+    #
+    # TWO rules now, both from build_series so nothing here restates one. The
+    # projection rule is the original and keeps the original name; the wider
+    # comparison rule exists but the menu below does not use it yet, because a
+    # live candidate is only meaningful once the LAUNCH anchoring mode ships.
+    # Named separately here so widening is a one-line change and so the
+    # difference is visible at the call site rather than only in build_series.
     import build_series
     cfg_all = run.load_event_config(a.config)
-    eligible = [c for c in build_series.eligible(cfg_all, cut) if c != a.event]
+    proj = [c for c in build_series.projection_eligible(cfg_all, cut)
+            if c != a.event]
+    menu = proj
     extra = [(cid, str(build_series.series_path(cid)))
-             for cid in eligible if cid != ref]
+             for cid in proj if cid != ref]
 
     D = dashboard_payload.build(a.event, a.csv, cut,
                                 a.config, ref or None,
@@ -412,7 +418,7 @@ def main():
     series_dir = BASE_DIR / 'series'
     mine = build_series.family(a.event) if hasattr(build_series, 'family') else None
     cands = []
-    for cid in eligible:
+    for cid in menu:
         f = series_dir / f'{cid}.json'
         if not f.exists():
             continue

@@ -416,6 +416,11 @@ jobs:
           # it, deliberately: the fix is to rebuild, and a job that silently
           # repaired itself would hide how long the exemption had been running.
           python verify/check_build_stamp.py
+          # The two eligibility rules, both directions. Runs HERE rather than
+          # in a build job because both halves of it are cross-event: "every
+          # series file is reachable from some menu" is a statement about the
+          # whole set, and a per-event matrix job only ever sees one page.
+          python verify/check_eligibility.py
           if git diff --cached --quiet; then
             echo "Nothing changed - nothing to commit"
             exit 0

@@ -149,8 +149,15 @@ def build_one(event_id, cfg):
     }
 
 
-def eligible(cfg_all, today):
-    """Editions a dashboard may compare against: FINISHED, and with data.
+def projection_eligible(cfg_all, today):
+    """Editions a dashboard may PROJECT from: FINISHED, and with data.
+
+    One rule used to serve three consumers - this script, the projection
+    candidates and the comparison menu - and that made emitting live series
+    impossible without also putting live editions in the projection menu,
+    where they cannot work: a projection replays a REMAINING curve and a live
+    edition has not run one. So the rule splits, and the existing one keeps
+    the projection name because the projection is what it was always right for.
 
     Live editions are deliberately absent. `suivi_candidates` already ruled
     that a live candidate must be anchored on LAUNCH rather than on its event
@@ -160,15 +167,26 @@ def eligible(cfg_all, today):
     rather than quietly implement it. So they are omitted, visibly, and the
     hardcoded mock menu that used to list them is gone with it.
     """
-    out = []
-    for cid, cfg in sorted(cfg_all.items()):
-        if not cfg.get('days'):
-            continue
-        if max(d['day_date'] for d in cfg['days']) >= today:
-            continue
-        if series_path(cid):
-            out.append(cid)
-    return out
+    return [c for c in comparison_eligible(cfg_all)
+            if max(d['day_date'] for d in cfg_all[c]['days']) < today]
+
+
+def comparison_eligible(cfg_all):
+    """Editions a dashboard may COMPARE against: any edition with data.
+
+    Wider than the projection rule and deliberately so - a live edition has a
+    campaign to compare against even though it has no remaining curve to
+    replay. What it does NOT yet have is an anchoring mode that makes the
+    comparison meaningful: `suivi_candidates` rules that a live candidate must
+    be anchored on LAUNCH, and until that mode exists a live candidate would
+    be pickable and silently wrong.
+
+    So this is the rule; the menu does not use it yet. The split lands first
+    because it is verifiable on its own, and widening the menu lands with the
+    modes.
+    """
+    return [cid for cid, cfg in sorted(cfg_all.items())
+            if cfg.get('days') and series_path(cid)]
 
 
 def main():
@@ -185,7 +203,7 @@ def main():
 
     total = 0
     written = []
-    for cid in eligible(cfg_all, today):
+    for cid in projection_eligible(cfg_all, today):
         blob = build_one(cid, cfg_all[cid])
         if not blob:
             continue
