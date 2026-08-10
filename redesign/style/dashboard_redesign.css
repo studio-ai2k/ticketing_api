@@ -368,10 +368,10 @@ body {
   border-radius:50%;border:1px solid var(--border-h);font-size:9px;color:var(--text-dim);
   cursor:help;position:static;vertical-align:2px;margin-left:7px;font-style:italic;
   font-family:var(--ff-display)}
-.info span{display:none;position:absolute;bottom:calc(100% + 8px);left:0;
+.info span{display:none;position:absolute;top:calc(100% + 8px);left:0;
   width:min(330px,100%);background:var(--surface-2);border:1px solid var(--border-h);border-radius:9px;
   padding:11px 13px;font-size:var(--fs-tiny);font-style:normal;color:var(--text-muted);
-  line-height:1.55;text-align:left;z-index:90;box-shadow:0 14px 34px rgba(0,0,0,.6)}
+  line-height:1.55;text-align:left;text-transform:none;letter-spacing:normal;z-index:90;box-shadow:0 14px 34px rgba(0,0,0,.6)}
 .info:hover span,.info:focus span{display:block}
 
 /* warmup toggle */

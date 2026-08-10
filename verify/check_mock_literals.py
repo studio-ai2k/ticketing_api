@@ -69,6 +69,11 @@ STRUCTURAL = {
     # starts on IS per-event and is not here - it arrives as D.amode, through
     # the payload, like every other per-event fact.
     'AMODES',
+    # C3 - the ten section heads: title, tooltip and note. Labels, not figures,
+    # and identical on every page because they describe the SECTION rather than
+    # the edition. The one per-page note names the picked candidate and travels
+    # as SUIVINOTE, a value, precisely so it is not in here.
+    'HEADS', 'SUIVINOTE',
 }
 
 # Reader-facing text where a year is a FACT about a specific edition rather

@@ -446,6 +446,10 @@ jobs:
           # does not reach the page renders as a correct page with the
           # wrong labels. Also asserts the 393px fit that ruling B bought.
           NODE_PATH=/opt/node22/lib/node_modules python verify/check_section_bars.py
+          # C3. Both directions, and AFTER the renderers run: every card on
+          # the page has its innerHTML replaced, so a head in the markup is
+          # wiped silently and the page still renders.
+          NODE_PATH=/opt/node22/lib/node_modules python verify/check_section_heads.py
           if git diff --cached --quiet; then
             echo "Nothing changed - nothing to commit"
             exit 0

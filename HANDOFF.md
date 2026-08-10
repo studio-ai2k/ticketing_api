@@ -3328,3 +3328,88 @@ renders 24px tall with 296 characters in it. And the check, both directions: eve
 `.sec` has exactly one heading row AFTER the renderers run, and no section-level
 `.sec-note` survives — scoped to `.sec-head`'s note, because `.sec-note` is also
 used inside card content (four in `sec-presence` alone).
+
+## C3, part 2: nine renderers, one source, and a nested page nobody had seen
+
+Titles into cards, subtext into the ℹ tooltip. Shipped.
+
+### The heads are emitted by the renderers, from one map
+
+`HEADS` + `secHead(id, dynNote, right)`. **All ten cards are runtime-filled**, so
+a head placed in the markup is wiped the moment its renderer runs — the first
+attempt did exactly that and the page rendered perfectly with no headings at all.
+The ten `.sec-head` blocks are gone from the markup; nine renderers concatenate
+their head, and `sec-plateformes` — the one card that is not runtime-filled,
+because its tile list is static — inserts it. Same source either way, so the
+title a tab scrolls to and the title a card shows cannot drift.
+
+The helper had to move to true top level. Placed next to the first renderer it
+was in that renderer's scope, and exactly one section got a head while the other
+nine threw `secHead is not defined` — visible only because the check reads the
+DOM rather than the file.
+
+Two per-section decisions kept as their own ledger entries: `sec-suivi`'s note
+names the picked candidate, so it travels as `SUIVINOTE` (a value) rather than a
+constant; `sec-evenement` **merges** — its card opened with its own heading row,
+so the section title above it gave the card two, and the dhero row becomes the
+head's right-hand slot instead.
+
+### The bubble opens downward now, and that is a D6 consequence
+
+It opened upward at `z-index:90`; D6 made the nav sticky at `z-index:100`; so a
+bubble opening upward from a header near the top of the viewport rendered
+**behind the nav**. Before D6 the nav scrolled away and it could not happen.
+Uniform rather than per-card, because which card sits under the nav depends on
+scroll position — a conditional rule would be right at one offset and wrong at
+another.
+
+Measured after: **no tooltip reaches the document bottom** at either width, and
+the bubble covers **7–28%** of its own card's content while open (worst is
+`sec-plateformes`, a 183px card; at 393 the worst is 21%).
+
+### The uppercase reset, and why the existing reset was the evidence
+
+`.sec-title` sets `text-transform:uppercase; letter-spacing:.07em`; `.info` lives
+inside it; `.info span` already reset `font-style` and `font-size` **and stopped
+one line short**. Every tooltip has shipped uppercase. Legible at 46 characters,
+much less so at 296. The entry says all of this, because *"why is this reset
+here"* is the question a future reader asks before removing it.
+
+### AUTHORISED_CSS learned a second shape: the RIDER
+
+`new_line = None` was the deletion. `C3i` is the other one: a decision that lands
+on a line another entry already owns, because the sheet declares position in one
+declaration. It gets an id and a reason but no diff of its own. Splitting the CSS
+line to give it one would shape the stylesheet around the checker, which is
+backwards.
+
+**Both extensions were found by hitting them, not by review** — as was the hunk
+budget before them. Three times now the ledger's shape has blocked a legitimate
+change, and each time the block was the first anyone knew of it. That is a
+mechanism worth watching rather than three separate incidents.
+
+### `page-campagne` is nested inside `page-details` in the LOCKED mock
+
+An unclosed `</div>` in the original upload, so the Campagne placeholder renders
+at the foot of the Détails page whenever Détails is shown. Confirmed against the
+locked file, the working mock and a shipped page — **not C3's doing and not ours
+to fix.**
+
+Found only because `check_section_heads` reads `.page.on .sec`, and the nesting
+made a hidden page's section match a visible page's selector. A markup defect
+surfaced by a selector written for something else entirely.
+
+### verify/check_section_heads.py
+
+Both directions, in a browser, after the renderers: every `.sec` has exactly one
+heading row, inside its card, with a tooltip where a note exists (`sec-velocite`
+has none and gains no copy). *And* no section-level `.sec-note` survives.
+
+The selector is the whole difficulty: `.sec-note` is **also** used inside card
+content by the renderers — four in `sec-presence` alone — so "no `.sec-note`
+anywhere" fails on cards that are correct. Scoped to `.sec-head > .sec-note`.
+`sec-projection` is exempt by NAME (C4's) and `page-campagne` by PAGE, never by
+pattern; when C4 lands, delete the exemption rather than widening around it.
+
+Negative-tested both halves: one renderer's head removed → `sec-velocite: 0
+heading rows`; a note put back beside a title → the page fails.

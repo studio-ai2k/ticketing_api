@@ -120,7 +120,34 @@ AUTHORISED_CSS = [
             "leave the viewport - it self-narrows to 304px at 360. Heights at "
             "393: sec-suivi 257 -> 164, sec-presence 210 -> 133, no copy cut",
      ".info span{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);",
-     ".info span{display:none;position:absolute;bottom:calc(100% + 8px);left:0;"),
+     ".info span{display:none;position:absolute;top:calc(100% + 8px);left:0;"),
+    ('C3i', "C3 - THE BUBBLE OPENS DOWNWARD, and this is a consequence of D6. It "
+            "opened UPWARD at z-index 90; D6 made the nav sticky at z-index 100; "
+            "so a bubble opening upward from a header near the top of the "
+            "viewport renders BEHIND THE NAV. Before D6 the nav scrolled away and "
+            "this could not happen. Uniform rather than per-card: which card sits "
+            "under the nav depends on scroll position, so a conditional rule "
+            "would be right at one offset and wrong at another. Every card has "
+            "content below its header, so downward has room. Measured after: no "
+            "tooltip reaches the document bottom at either width, and the bubble "
+            "covers 7-28% of its own card's content while open (worst is "
+            "sec-plateformes, a 183px card). NOTE: this rides on C3c's line "
+            "because the sheet declares position in one declaration - it is a "
+            "separate DECISION with no separate line to own",
+     "__C3i_rides_on_C3c__", "__C3i_rides_on_C3c__"),
+    ('C3h', "C3 - THE BUBBLE STOPS INHERITING THE TITLE'S CASE. .sec-title sets "
+            "text-transform:uppercase and letter-spacing:.07em, .info lives "
+            "INSIDE it, and .info span already reset font-style and font-size "
+            "but not those two - so every tooltip has shipped uppercase and "
+            "letterspaced. THAT EXISTING RESET IS THE EVIDENCE: someone was "
+            "stopping title styling leaking into body copy and stopped one line "
+            "short. Legible at 46 characters, much less so at 296, and C3 takes "
+            "it from three tooltips to nine. Changes how three ruled tooltips "
+            "LOOK and not one word of what they SAY. Written down because 'why "
+            "is this reset here' is exactly the question a future reader asks "
+            "before removing it",
+     "  line-height:1.55;text-align:left;z-index:90;box-shadow:0 14px 34px rgba(0,0,0,.6)}",
+     "  line-height:1.55;text-align:left;text-transform:none;letter-spacing:normal;z-index:90;box-shadow:0 14px 34px rgba(0,0,0,.6)}"),
     ('C3d', "C3 - the width ruling again: the mobile override is DELETED rather "
             "than raised. With min(330px,100%) there is one width instead of "
             "two, and the 100% does what the media query was approximating",
@@ -155,8 +182,8 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 506
-BUDGET_REMOVED = 104
+BUDGET_ADDED = 588
+BUDGET_REMOVED = 150
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
 AUTHORISED = [
@@ -417,6 +444,58 @@ AUTHORISED += [
      '<div class="sec" id="sec-plateformes">'),
     ('C1-sec-donnees', 'C1/C2 - anchor on "Données". One tab per section means every section needs a target; seven had none. Markup, one attribute, no rendered change - and one entry each rather than one covering all seven, so a reverted anchor names itself',
      '<div class="sec" id="sec-donnees">'),
+    ('C3', 'the section head is EMITTED BY THE RENDERER, from HEADS via '
+           'secHead(). Every card on the page has its innerHTML replaced at '
+           'runtime, so a head placed in the markup is wiped the moment its '
+           'renderer runs - trap #20 in a lifecycle rather than a position. '
+           'One source for ten heads, so the title a tab scrolls to and the '
+           'title the card shows cannot drift',
+     'function secHead(id, dynNote, right)'),
+    ('C3-heads', 'the head DATA, moved out of ten markup blocks into one map. '
+                 'Structural, not per-event: which mode/label a card shows is '
+                 'the same on every page, and the one dynamic note travels as '
+                 'SUIVINOTE because it names the picked candidate',
+     'const HEADS = {'),
+    ('C3-rev', 'C3 - the Revenus renderer emits its head',
+     "getElementById('rev').innerHTML = secHead('sec-overview')"),
+    ('C3-vel', 'C3 - Vélocité. The one section with no note, so it gets a title '
+               'and NO tooltip - no copy invented to fill a pattern',
+     "getElementById('vel').innerHTML = secHead('sec-velocite')"),
+    ('C3-pres', 'C3 - Présence. Its note restated the existing tooltip sentence, '
+                'so only the control hint is appended (ruled)',
+     "getElementById('pres').innerHTML = secHead('sec-presence')"),
+    ('C3-rep', 'C3 - Répartition', "getElementById('rep').innerHTML = secHead('sec-repartition')"),
+    ('C3-suivi', 'C3 - Suivi. Its note names the picked candidate, so it is a '
+                 'VALUE (SUIVINOTE) rather than a constant - it was written into '
+                 'a #suivinote element that no longer exists',
+     "getElementById('suivi').innerHTML = secHead('sec-suivi', SUIVINOTE)"),
+    ('C3-suivinote', 'C3 - the dynamic note becomes a variable rather than an '
+                     'element write',
+     "SUIVINOTE = 'comparaison à jour de semaine identique"),
+    ('C3-ident', 'C3 - Événement, MERGED. This card opened with its own heading '
+                 'row, so a section title above it gave the card two headings - '
+                 'which is the thing C3 removes one of. The dhero row moves into '
+                 'the head as its right-hand slot',
+     "host.innerHTML = secHead('sec-evenement', undefined,"),
+    ('C3-identpill', 'C3 - the merged Événement head: the status pill moves from '
+                     'margin-left:auto inside the dhero row to margin-left:8px '
+                     'beside the event name, because the head already flexes '
+                     'the two apart. Its own entry - the pill is the piece a '
+                     'reader would notice missing',
+     'style="margin-left:8px">En vente'),
+    ('C3-days', 'C3 - Jours', "days.innerHTML = secHead('sec-jours')"),
+    ('C3-cmp', 'C3 - Comparaison. The ternary gains a paren because the head is '
+               'concatenated before it',
+     "cmp.innerHTML = secHead('sec-comparaison') + (HAS_CMP ?"),
+    ('C3-plat', 'C3 - Plateformes is the ONE card that is not runtime-filled: '
+                'its tile list is static markup, so the head is INSERTED rather '
+                'than concatenated. Same source, so the data is still stated once',
+     "plat.insertAdjacentHTML('afterbegin', secHead('sec-plateformes'))"),
+    ('C3-platcard', 'C3 - the tile list gets a card so it can hold a title. '
+                    'Ruled: every section is a card with its title inside, no '
+                    'exception, because one rule is what a later reader can apply',
+     '<div class="card" id="det-plat">'),
+    ('C3-dd', 'C3 - Données', "dd.innerHTML = secHead('sec-donnees')"),
     ('C1', 'the billetterie section bar indexes EVERY section - six tabs in '
            'section order, relabelled. Ruled as a rule rather than a chosen '
            'set: one tab per section is something a later reader can apply. '
@@ -554,6 +633,15 @@ def main():
     # directions - the old line must be gone and the new one present. A
     # deviation that is only half there is a broken edit, not a passing one.
     for cid, why, old_line, new_line in AUTHORISED_CSS:
+        # A RIDER: a decision that lands on a line another entry already owns,
+        # because the sheet declares several things in one declaration. It gets
+        # an id and a reason but no diff of its own - splitting the CSS line to
+        # give it one would shape the stylesheet around this file, which is
+        # backwards. Recorded rather than merged into the owning entry, so the
+        # decision is findable by name.
+        if old_line == new_line == '__C3i_rides_on_C3c__':
+            print(f'ok    {cid}  (rider) {why}')
+            continue
         # `new_line is None` authorises a pure DELETION. A rule can be wrong by
         # existing - the two `#sec-suivi .card-header` rules were written for
         # markup the mock never produced and were unreachable for months - and
