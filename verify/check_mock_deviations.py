@@ -92,6 +92,13 @@ AUTHORISED_CSS = [
      "html,body{overflow-x:clip;min-height:100%;background:var(--bg);"),
 ]
 
+# How much the working mock may differ from the locked one, in lines. See the
+# budget check below for why this exists and why it is one pair of numbers
+# rather than a count per entry. Raising it is an act of authorisation and
+# belongs in the same commit as the ledger entry that explains the lines.
+BUDGET_ADDED = 363
+BUDGET_REMOVED = 87
+
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
 AUTHORISED = [
     ('D1', 'P4.1 — old commission disclaimer deleted from the Revenus tooltip',
@@ -314,6 +321,13 @@ AUTHORISED += [
      'k, not eur: the axis and the readout want the compact form'),
     ('D26c', 'D26 - the second line of the same call, which the diff splits',
      "weeklySeries(past,'rcb') : [], k);"),
+    ('AN1', 'anchoring - live editions now get series files, so four of the '
+            'twelve are rewritten daily and {cache:no-cache} stops being '
+            'hygiene. The reason is recorded at the fetch because that is where '
+            'someone would delete the flag. Its own entry even though the '
+            'signature `async function pickCmp(n)` already covered the hunk - '
+            'which is exactly the hole the line budget closes',
+     'no-cache is LOAD-BEARING'),
 ]
 
 
@@ -459,16 +473,60 @@ def main():
         # never match there. Match it against what was REMOVED instead - D21
         # deleted `const LG` outright and this could not have described it.
         haystack = added if j2 > j1 else '\n'.join(lock[i1:i2])
-        hit = next((a for a in AUTHORISED if a[2] in haystack), None)
-        if hit:
-            matched.setdefault(hit[0], 0)
-            matched[hit[0]] += 1
-            print(f'  ok    {hit[0]}  {hit[1]}')
+        # EVERY signature present, not the first one. `next()` credited one
+        # entry per hunk, so a second authorised deviation inside the same hunk
+        # - which happens the moment two rulings touch one region, and difflib
+        # decides where the regions are - read as MISSING: "an approved change
+        # someone reverted", about a change that was right there. The hunk was
+        # never the unit of authorisation; the deviation is.
+        hits = [a for a in AUTHORISED if a[2] in haystack]
+        if hits:
+            for hit in hits:
+                matched.setdefault(hit[0], 0)
+                matched[hit[0]] += 1
+                print(f'  ok    {hit[0]}  {hit[1]}')
         else:
             failures.append(f'unauthorised hunk at working line {j1 + 1}')
             print(f'  FAIL  UNAUTHORISED hunk at working line {j1 + 1}:')
             for line in work[j1:j2][:3]:
                 print(f'          + {line.strip()[:104]}')
+
+    # ---- the line budget: a signature must not authorise its neighbours ----
+    # A signature authorises a HUNK, and difflib's hunks are as large as the
+    # surrounding churn makes them. The B1 block is one `replace` of 154 added
+    # lines matched by the 25 characters `async function pickCmp(n)` - 42% of
+    # every added line in the mock, riding on one substring. Found by adding a
+    # five-line comment inside it and watching the check pass.
+    #
+    # So the signatures say WHICH deviations are present, and this says HOW MUCH
+    # deviation there is. Any unlisted line inside an already-authorised hunk
+    # moves the number and fails, whatever it says and wherever it sits.
+    #
+    # Deliberately ONE pair of numbers rather than a count per entry: a count per
+    # entry is a second place to state something the diff already knows, and it
+    # would need re-stating every time hunks merge - which has happened five
+    # times. Coarse, and it cannot be silently ridden. Raising it IS the act of
+    # authorisation, so a ruling that adds lines changes two things in one
+    # commit: an entry, and this number.
+    n_add = sum(j2 - j1 for _, _, _, j1, j2 in hunks)
+    n_rem = sum(i2 - i1 for _, i1, i2, _, _ in hunks)
+    if (n_add, n_rem) != (BUDGET_ADDED, BUDGET_REMOVED):
+        failures.append(f'line budget {n_add}/{n_rem}, want '
+                        f'{BUDGET_ADDED}/{BUDGET_REMOVED}')
+        print(f'\n  FAIL  line budget: {n_add} added / {n_rem} removed, '
+              f'want {BUDGET_ADDED} / {BUDGET_REMOVED}')
+        print(f'        Something changed inside a hunk that was already')
+        print(f'        authorised, so no signature had to match it. The'
+              f' largest')
+        big = sorted(hunks, key=lambda h: h[4] - h[3], reverse=True)[:3]
+        for tag, i1, i2, j1, j2 in big:
+            print(f'        hunks start at working line {j1 + 1} '
+                  f'({j2 - j1} added) - look there first.')
+        print(f'        If this is an approved change, raise the budget in the')
+        print(f'        same commit as the ledger entry.')
+    else:
+        print(f'\nok    line budget: {n_add} added / {n_rem} removed, exactly '
+              f'as authorised')
 
     missing = [a for a in AUTHORISED if a[0] not in matched]
     if missing:

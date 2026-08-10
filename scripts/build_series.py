@@ -86,11 +86,12 @@ def series_path(event_id):
     return hit
 
 
-def build_one(event_id, cfg):
+def build_one(event_id, cfg, today):
     rows = dp.load_rows(str(series_path(event_id)))
     if not rows:
         return None
     ev = cfg['event_date_first']
+    live = max(d['day_date'] for d in cfg['days']) >= today
     days = dp._ordered_days(cfg)
     jx = lambda d: (ev - d).days                                  # noqa: E731
 
@@ -132,6 +133,14 @@ def build_one(event_id, cfg):
         'id': event_id,
         'name': cfg.get('event_name', event_id),
         'ev': ev.isoformat(),
+        # A LIVE edition's series stops at today, not at its event. Everything
+        # below is therefore PARTIAL, and `final` is the trap: the key is named
+        # for what it means on the eight finished editions, and on a live one it
+        # is a running subtotal that will render as an ordinary number in a
+        # column headed "Réalisé final". Emitted as a flag rather than left to
+        # each consumer to re-derive from `ev` and the clock, because a consumer
+        # that forgets produces a plausible figure and no error.
+        'live': live,
         'days': days,
         'cap': sum(d['day_capacity'] for d in cfg['days']),
         'daycap': {d['day_name'].strip().lower(): d['day_capacity']
@@ -201,18 +210,37 @@ def main():
     out_dir = Path(a.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    # COMPARISON-eligible, not projection-eligible: every anchoring mode needs
+    # a live edition's history, and a file is the only way it can have one. The
+    # projection SELECTOR stays narrow - the split exists precisely so these two
+    # can differ - so writing a live file adds no page a reader can pick yet.
+    #
+    # THE CHURN, WHICH IS WHY THIS IS NOT JUST A WIDER LOOP
+    # A finished edition's file is immutable: same input, same bytes, forever.
+    # A live one is rewritten every run - four of the twelve today - so
+    # `series/` stops being an append-only directory and starts producing a diff
+    # on every daily commit. Two consequences, both accepted here rather than
+    # discovered later:
+    #   1. Bandwidth and history. ~5 KB x 4 rewritten daily is noise next to the
+    #      merged CSVs the same job commits.
+    #   2. STALENESS AT THE READER. The page fetches these at runtime, so a
+    #      cached copy is a comparison drawn from yesterday against a page built
+    #      today - two vintages in one chart, rendering as ordinary numbers. The
+    #      fetch already passes {cache:'no-cache'}; from here on that flag is
+    #      load-bearing rather than belt-and-braces, which is why the reason is
+    #      recorded at the fetch and not only here.
     total = 0
     written = []
-    for cid in projection_eligible(cfg_all, today):
-        blob = build_one(cid, cfg_all[cid])
+    for cid in comparison_eligible(cfg_all):
+        blob = build_one(cid, cfg_all[cid], today)
         if not blob:
             continue
         text = json.dumps(blob, ensure_ascii=False, separators=(',', ':'))
         (out_dir / f'{cid}.json').write_text(text, encoding='utf-8')
         total += len(text)
-        written.append((cid, len(text)))
-    for cid, size in written:
-        print(f'  {cid:24s} {size / 1024:6.1f} KB')
+        written.append((cid, len(text), blob['live']))
+    for cid, size, live in written:
+        print(f'  {cid:24s} {size / 1024:6.1f} KB  {"LIVE" if live else ""}')
     print(f'{len(written)} series -> {out_dir}  ({total / 1024:.1f} KB total)')
     # An empty run is not a quiet success: the pages fetch these by name, and
     # a missing file is a comparison that cannot be picked.

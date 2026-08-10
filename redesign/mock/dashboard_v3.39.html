@@ -1633,6 +1633,11 @@ let CMPERR = null;
 async function loadSeries(id){
   if (SERIES[id] !== undefined) return SERIES[id];
   try {
+    /* no-cache is LOAD-BEARING, not hygiene. Since live editions get series
+       files, four of the twelve are rewritten every daily run. A cached copy is
+       yesterday's candidate drawn against a page built today — two vintages in
+       one chart, and it renders as ordinary numbers. The finished eight are
+       immutable and would not care; the live four are the reason. */
     const r = await fetch(D.series_path.replace('{id}', id), {cache:'no-cache'});
     SERIES[id] = r.ok ? await r.json() : null;
   } catch (e) { SERIES[id] = null; }

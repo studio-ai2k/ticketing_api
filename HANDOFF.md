@@ -2859,3 +2859,75 @@ dates, snap ON), exact-date (both event dates, snap OFF, and its own weekly
 rule: candidate bucketed by `(cand_ev − (our_date − gap))//7`, raw gap, no
 snap). Then widen the menu and retire P4 with a note saying which mode retired
 it. `check_b1_switch` grows a half per mode AS EACH LANDS, not at the end.
+
+## Trap #19: one signature authorised 154 lines
+
+Adding a five-line comment to the mock and running `check_mock_deviations`
+produced **"working mock differs from locked in exactly the 49 authorised ways"
+and exit 0**. The comment was not in the ledger.
+
+The mechanism: a signature is a substring test against a whole difflib hunk, and
+difflib's hunks are as large as the surrounding churn makes them. The B1 block is
+one `replace` of **154 added lines** matched by the 25 characters
+`async function pickCmp(n)` — 42% of every added line in the mock riding on one
+substring. Anything added anywhere inside it passed.
+
+This is not a fold. A fold is a ledger entry that stops matching; this is an
+unlisted change that never had to. The five folds were the mechanism warning us
+that the hunk was the wrong unit, and we kept editing entries.
+
+### The fix, and why it is one number
+
+`BUDGET_ADDED` / `BUDGET_REMOVED`: the total added and removed lines between
+locked and working. Signatures say WHICH deviations are present; the budget says
+HOW MUCH deviation there is. Any unlisted line inside an already-authorised hunk
+moves the number and fails, whatever it says and wherever it sits.
+
+Deliberately **one pair of numbers, not a count per entry**. A per-entry count is
+a second place to state something the diff already knows, and it would need
+re-stating on every merge — the folds again, in a new costume. Coarse, and it
+cannot be ridden. Raising it IS the authorisation, so a ruling that adds lines
+changes two things in one commit: an entry and the number.
+
+Negative-tested: one comment line injected inside the B1 hunk → `364 added / 87
+removed, want 363 / 87`, with the three largest hunks printed so the grower is
+findable.
+
+### And a second bug the fix exposed
+
+`hit = next((a for a in AUTHORISED if a[2] in haystack), None)` credited **one**
+entry per hunk. So the new AN1 entry, sharing D12's hunk, reported as *missing* —
+"an approved change someone reverted" — about a change that was right there. Two
+rulings touching one region is normal and difflib decides where regions are.
+`next()` became a list comprehension: the hunk was never the unit of
+authorisation, the deviation is.
+
+## Anchoring, step 2: series for live editions
+
+`main()` now iterates `comparison_eligible` rather than `projection_eligible`:
+12 files, 115.5 KB, four of them LIVE. The projection selector stays narrow —
+that is what the split was for — so no page gained a candidate.
+
+**The churn is the part that is not just a wider loop.** A finished edition's
+file is immutable; a live one is rewritten every run, so `series/` stops being
+append-only and produces a diff on every daily commit. The consequence that
+matters is at the READER: a cached copy is yesterday's candidate drawn against a
+page built today, two vintages in one chart, rendering as ordinary numbers. The
+fetch already passed `{cache:'no-cache'}` — from here on that flag is
+load-bearing rather than hygiene, which is why the reason is recorded **at the
+fetch**, where someone would delete it, and not only at the emitter.
+
+`live` is now a field on the blob. `final` means "final" on the eight finished
+editions and is a running subtotal on the four live ones; a consumer that forgets
+renders a plausible figure in a column headed *Réalisé final* and no error. Left
+to each consumer to re-derive from `ev` and the clock, someone eventually does
+not.
+
+## The cutover plan is in CUTOVER.md
+
+Three findings in it contradict what the ruling assumed, all measured:
+`build_v2.py` is NOT unconditional (so trap #17 is live in v2 today, and v2 pages
+carry no stamp at all because pass 0 splices it away); `PAGE_PATHS` disappears at
+root rather than flipping, but is not the complete list of location-dependent
+transforms; and the v2 gate's login background is baked rather than templated,
+invisible only because all six configured values are currently identical.
