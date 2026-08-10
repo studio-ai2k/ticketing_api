@@ -3623,3 +3623,77 @@ one `</div>` two lines away made a still-present deletion report as reverted.
 The thing to watch remains the one already named: the next extension that would
 require **splitting a CSS line** to give an entry its own diff. Refuse it — that
 is where the checker starts shaping the stylesheet.
+
+## Trap #23: the third viewport-edge defect, and the generalisation
+
+`placeFloat` set `--sw-left` from the trigger's left and `--sw-right` from
+`innerWidth - r.right`, and nothing else. The menu is `min-width:230px`,
+portalled to `<body>`, `position:fixed`. **No clamp.** Measured on the unfixed
+build at 393px: **4 of 10 menus off-screen** — the comparison picker at
+`left: −63` and the nav session switcher at `right: 435` against a 393 viewport.
+
+**Both branches were broken**: the default overflows right, the `.right` variant
+overflows left. And the nav switcher is PRODUCTION's control — this was never a
+v2 defect, the anchoring picker just made it reachable.
+
+Third instance of one shape:
+
+```
+C7    the projection readout, clipped at the card edge
+C3    .info's tooltip, left:50% translateX(-50%) on a 15px glyph
+this  .sw-menu, positioned from the trigger
+```
+
+> **Any element positioned from an anchor rather than from the viewport needs a
+> clamp, and the absence is invisible until the anchor is near an edge.**
+
+Fixed at `placeFloat`, not at the picker: four call sites go through it — nav
+switcher, comparison picker, projection picker, mode picker — and a fix in the
+one that surfaced it would have left three. `postprocess_html.py` is a SHARED
+asset, so production was rebuilt with it.
+
+The width is READ from the rect, not taken from `min-width:230px`. My own fix
+initially fell back to the constant when the rect was unavailable, which is the
+failure mode the ruling named: a clamp computed from a constant content can
+exceed passes a check and still clips.
+
+### The probe was wrong twice before it was right, both times informatively
+
+1. It queried for "the first visible `.sw-menu`" and reported **the same box five
+   times** — five identical `left`/`right` readings that read as five passes. Now
+   it uses `wrap._swMenu`, the property `openWrap` actually sets.
+2. `scrollIntoView({block:'center'})` **did not scroll**: `html{scroll-behavior:
+   smooth}` makes it an animation, so the trigger still read `y=4275` in a 900px
+   viewport and every menu looked off-screen. **That is the D6 nav-sticky trap
+   exactly**, hit again — this time by the probe rather than the page.
+   `behavior:'instant'` fixes it, and the fact that a recorded trap caught me in
+   a new place is the argument for recording them.
+
+`verify/check_float_clamp.py` opens every `[data-sw-trigger]` on all six pages at
+393/360/320 — 90 menus — and asserts each stays inside the viewport horizontally
+and vertically. Negative-tested by reverting `placeFloat`.
+
+## The Suivi control row, measured but NOT fixed
+
+`.svctl` is `display:flex; justify-content:space-between; flex-wrap:wrap`. It
+carried grain buttons plus one dropdown; the anchoring picker made it three.
+
+```
+              row available   natural width   result
+current  393       337             380        wraps to 2 lines
+current  360       304             380        wraps to 2 lines
+scaled   393       337             421        wraps to 2 lines
+scaled   360       304             421        wraps to 2 lines
+```
+
+The three items are 121 + 141 + 139 plus two 10px gaps = **421 against 337**. They
+cannot share a line at 393, and the type scale widened the row by 41px — so this
+was already true before the scale and is now true by more.
+
+The wrapped item lands hard left because `space-between` distributes free space
+BETWEEN items on the first line and the wrapped one starts a new line at the
+container's start edge. Not a positioning bug: the container doing what it says
+on a row that no longer fits.
+
+**Not fixed — brought back as numbers.** A deliberate two-row layout is a design
+decision, and the ruling was to measure and report rather than pick.

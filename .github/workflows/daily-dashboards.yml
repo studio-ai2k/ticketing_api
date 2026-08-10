@@ -450,6 +450,11 @@ jobs:
           # the page has its innerHTML replaced, so a head in the markup is
           # wiped silently and the page still renders.
           NODE_PATH=/opt/node22/lib/node_modules python verify/check_section_heads.py
+          # Third viewport-edge defect of the same shape (C7's readout, .info's
+          # tooltip, .sw-menu). Any box positioned from an ANCHOR rather than
+          # from the viewport needs a clamp, and the absence is invisible
+          # until the anchor is near an edge.
+          NODE_PATH=/opt/node22/lib/node_modules python verify/check_float_clamp.py
           if git diff --cached --quiet; then
             echo "Nothing changed - nothing to commit"
             exit 0

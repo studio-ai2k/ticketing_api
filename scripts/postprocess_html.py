@@ -480,11 +480,56 @@ NAV_SHELL_JS = """<script>
     var menu = wrap._swMenu, trig = wrap.querySelector('[data-sw-trigger]');
     if(!menu || !trig) return;
     var r = trig.getBoundingClientRect();
-    menu.style.setProperty('--sw-top', (r.bottom + 8) + 'px');
+    /* CLAMPED TO THE VIEWPORT. This positioned the menu from the TRIGGER and
+       trusted the trigger to be far enough from an edge: --sw-left from
+       r.left, --sw-right from innerWidth - r.right, and nothing else. The menu
+       is min-width:230px, portalled to <body>, position:fixed - so on a narrow
+       screen a trigger near the right edge put the menu off it. Reachable on a
+       phone the day the anchoring picker joined the Suivi row.
+
+       THIRD VIEWPORT-EDGE DEFECT ON THIS PROJECT: C7's projection readout,
+       .info's tooltip, and this. All three positioned a floating box from an
+       anchor and trusted the anchor's position. The general form is worth more
+       than the three fixes: ANY ELEMENT POSITIONED FROM AN ANCHOR RATHER THAN
+       FROM THE VIEWPORT NEEDS A CLAMP, AND THE ABSENCE IS INVISIBLE UNTIL THE
+       ANCHOR IS NEAR AN EDGE.
+
+       Fixed HERE rather than in the picker, because placeFloat serves four
+       call sites - the nav session switcher, the comparison picker, the
+       projection picker and the mode picker. The nav switcher has the same
+       latent bug with a long event name on a narrow screen; a fix in one
+       picker would have left three.
+
+       The width is READ, not assumed: min-width is 230px and content can
+       exceed it, so a clamp computed from the constant would pass a check and
+       still clip. The menu is already in <body> and position:fixed when this
+       runs, so its rect is in viewport coordinates and there is no
+       containing-block subtlety like .info had. */
+    var M = 8;                                   /* margin from the edge */
+    var vw = document.documentElement.clientWidth;
+    var vh = document.documentElement.clientHeight;
+    var mb = menu.getBoundingClientRect();
+    var mw = mb.width || menu.offsetWidth || 230;
+    var mh = mb.height || menu.offsetHeight || 0;
+
+    var top = r.bottom + 8;
+    if (mh && top + mh > vh - M) {
+      /* flip above the trigger if there is more room there, else pin */
+      var above = r.top - 8 - mh;
+      top = (above >= M) ? above : Math.max(M, vh - M - mh);
+    }
+    menu.style.setProperty('--sw-top', top + 'px');
+
     if(menu.classList.contains('right')){
-      menu.style.setProperty('--sw-right', (window.innerWidth - r.right) + 'px');
+      var right = vw - r.right;
+      if (right + mw > vw - M) right = Math.max(M, vw - M - mw);
+      if (right < M) right = M;
+      menu.style.setProperty('--sw-right', right + 'px');
     } else {
-      menu.style.setProperty('--sw-left', r.left + 'px');
+      var left = r.left;
+      if (left + mw > vw - M) left = Math.max(M, vw - M - mw);
+      if (left < M) left = M;
+      menu.style.setProperty('--sw-left', left + 'px');
     }
   }
   function openWrap(wrap){
