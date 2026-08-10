@@ -2663,3 +2663,80 @@ tick-shape assertion from trap #16: `"81% · 8 100"` is two numbers in one
 label and would have failed it. **The assertion pushed the markup somewhere
 better than the concatenation would have** — separate spans, one number each,
 and the shape rule keeps meaning what it says.
+
+## Trap #17: a finished event's page is exempt from every shared change
+
+The daily job rebuilds only pages whose CSV changed. That rule is **correct for
+DATA** — a finished event's numbers genuinely cannot move — and **wrong for
+PRESENTATION**, because presentation is shared. The trigger asks *"did this
+event's data change"* when the question is *"did anything this page renders
+with change"*.
+
+So `bordeaux.html` and `parisxxl.html` were frozen at whatever the build looked
+like on the day their events concluded, and structurally exempt from every
+later change to shared code or shared CSS.
+
+### The audit, measured rather than reasoned about
+
+Diffed both against a freshly-built pair. **20 differing lines each: 5 removed,
+15 added.** In full:
+
+| change | reached them? |
+|---|---|
+| **A6** — the scroll lock | **NO.** The page scrolled behind the gate. |
+| **D24/D29** — `overflow-x: clip` | **NO.** The nav never stuck. |
+| the footer's freshness stamp | moves on any rebuild; not a defect |
+| **the gate CSS, the overlay markup, the festipass check** | **yes — present and identical throughout** |
+| shared auth, nav shell, switcher, footer, suivi selector, projection restructure | yes, all identical |
+
+**The gate is not in the list. Those two pages were gated the whole time.** That
+is the answer that mattered today, and it is the good one.
+
+Both missing items post-date both events, and they are the only two shared
+changes since — so the exemption has cost exactly what the calendar predicts,
+no more. The v2 pages were never affected: `build_v2` runs unconditionally.
+
+### The rule this makes standing
+
+> **A change to shared code or shared CSS forces a full rebuild, not an
+> incremental one.**
+
+And the check to stop it recurring: `assert_redesign.sh` should run over ALL
+pages, and any page whose build predates the newest shared-asset change should
+fail — otherwise the next shared fix misses the same two pages and nobody
+notices until something else forces a rebuild.
+
+**Cutover consequence:** when `/v2/` becomes production the same rule applies to
+the same two pages, and *"it looked right when I checked"* will have been
+checked on a page that rebuilds.
+
+## Trap #18: a true summary about the wrong expectation
+
+`assert_redesign.sh` asserted `html,body{overflow-x:hidden`. D24 removed that
+value by ruling. The assertion kept demanding it and kept **passing**, because
+the pages it read still had it — the two that never rebuild.
+
+"ALL ASSERTIONS PASSED" was not a false statement. It was a **true statement
+about the wrong thing**, and I repeated it as confirmation across several turns.
+
+Now seen from four angles, all the same shape:
+
+- the smooth-scroll assertion that passed on a nav that did not stick
+- "45 comparisons, row for row" — true of the daily column, silent about the weekly
+- this one
+- and, from the other side, `check_mock_deviations` matching a signature per hunk
+
+**The checkable tell, not the philosophy:**
+
+> **When a ruling changes a value, grep the checks for the OLD value before
+> committing.**
+
+One `grep -rn hidden verify/` on the day D24 shipped would have found it.
+
+And the companion, which is the deployment-side of *which artefact does this
+check read*:
+
+> **"Shipped" means the pages that get rebuilt.**
+
+Both questions are the same question pointed at different halves of the
+pipeline — one at verification, one at deployment.
