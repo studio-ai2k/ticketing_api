@@ -139,8 +139,6 @@ body {
 
 @media (max-width:720px) {
   /* Suivi header: title on its own line, the three controls stay on one row */
-  #sec-suivi .card-header{flex-wrap:wrap}
-  #sec-suivi .card-header .section-title{flex:1 0 100%}
   .card-controls{width:100%;gap:6px;justify-content:flex-end}
   .cmp-trigger{padding:6px 8px;gap:5px}
   .cmp-name{max-width:15ch}
@@ -191,7 +189,7 @@ body {
 .wrap{max-width:1020px;margin:0 auto;padding:24px 20px 72px}
 .sec{margin-top:24px}
 .sec:first-of-type{margin-top:4px}
-.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+.sec-head{position:relative;display:flex;align-items:baseline;justify-content:space-between;gap:12px;
   flex-wrap:wrap;margin-bottom:11px}
 .sec-title{font-family:var(--ff-display);font-size:var(--fs-caption);font-weight:600;
   letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted)}
@@ -368,10 +366,10 @@ body {
 /* info tooltip */
 .info{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
   border-radius:50%;border:1px solid var(--border-h);font-size:9px;color:var(--text-dim);
-  cursor:help;position:relative;vertical-align:2px;margin-left:7px;font-style:italic;
+  cursor:help;position:static;vertical-align:2px;margin-left:7px;font-style:italic;
   font-family:var(--ff-display)}
-.info span{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
-  width:250px;background:var(--surface-2);border:1px solid var(--border-h);border-radius:9px;
+.info span{display:none;position:absolute;bottom:calc(100% + 8px);left:0;
+  width:min(330px,100%);background:var(--surface-2);border:1px solid var(--border-h);border-radius:9px;
   padding:11px 13px;font-size:var(--fs-tiny);font-style:normal;color:var(--text-muted);
   line-height:1.55;text-align:left;z-index:90;box-shadow:0 14px 34px rgba(0,0,0,.6)}
 .info:hover span,.info:focus span{display:block}
@@ -406,7 +404,7 @@ body {
 .dl-n{font-size:var(--fs-mini);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dl-u{font-size:var(--fs-micro);color:var(--text-muted);white-space:nowrap;overflow:hidden;
   text-overflow:ellipsis}
-@media (max-width:720px){ .dgrid,.dlinks{grid-template-columns:1fr} .info span{width:210px} }
+@media (max-width:720px){ .dgrid,.dlinks{grid-template-columns:1fr} }
 .sv-x{font-size:var(--fs-micro);color:var(--text-muted);margin-top:2px;font-variant-numeric:tabular-nums}
 .dtl-rev{margin-left:7px;font-family:var(--ff-body);font-size:var(--fs-micro);font-weight:400;
   color:var(--text-muted);font-variant-numeric:tabular-nums}

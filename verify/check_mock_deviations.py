@@ -93,6 +93,54 @@ AUTHORISED_CSS = [
             "Détails room for the next section instead of 2px",
      ".dt { padding: 8px 12px; font-size:var(--fs-tiny); font-weight: 500; color: var(--text-dim); white-space: nowrap; border: none; border-bottom: 2px solid transparent; background: none; font-family: inherit; cursor: pointer; transition: color .15s; }",
      ".dt { padding: 8px 10px; font-size:var(--fs-tiny); font-weight: 500; color: var(--text-dim); white-space: nowrap; border: none; border-bottom: 2px solid transparent; background: none; font-family: inherit; cursor: pointer; transition: color .15s; }"),
+    ('C3a', "C3 - THE CLAMP, and it is the entry that generalises. The tooltip "
+            "bubble was `left:50%; transform:translateX(-50%)` - centred on the "
+            "15px glyph - so the widest it could ever be was 2*min(glyph_x, "
+            "vw-glyph_x), set by whichever glyph sat nearest an edge. Measured "
+            "at 393px that bound is 213px on sec-overview. THE 210 IN THE SHEET "
+            "WAS NOT A LEGACY VALUE FROM NARROWER PHONES: it is one pixel under "
+            "the geometric limit and whoever set it measured. Anchoring to the "
+            "header row instead removes the bound entirely - and the bubble has "
+            "no caret, so its horizontal position never carried meaning. "
+            "Measured after: 0/10 overflowing at 393 AND at 360, where the old "
+            "rule overflowed once on sec-presence before C3 existed",
+     ".sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;",
+     ".sec-head{position:relative;display:flex;align-items:baseline;justify-content:space-between;gap:12px;"),
+    ('C3b', "C3 - the clamp's other half: .info stops being the containing "
+            "block so the bubble anchors to the header row. Two lines because "
+            "they are one decision needing an ancestor and a descendant to "
+            "agree; reverting either alone puts the overflow back",
+     "  cursor:help;position:relative;vertical-align:2px;margin-left:7px;font-style:italic;",
+     "  cursor:help;position:static;vertical-align:2px;margin-left:7px;font-style:italic;"),
+    ('C3c', "C3 - the clamp lands on this line as left:0 (was left:50% + "
+            "translateX(-50%)), and THE WIDTH RULING lands on the same line as "
+            "min(330px,100%) (was 250px). Two decisions, one line, because the "
+            "sheet declares position and width together. The 100% is the header "
+            "row, so the bubble can never be wider than its card and can never "
+            "leave the viewport - it self-narrows to 304px at 360. Heights at "
+            "393: sec-suivi 257 -> 164, sec-presence 210 -> 133, no copy cut",
+     ".info span{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);",
+     ".info span{display:none;position:absolute;bottom:calc(100% + 8px);left:0;"),
+    ('C3d', "C3 - the width ruling again: the mobile override is DELETED rather "
+            "than raised. With min(330px,100%) there is one width instead of "
+            "two, and the 100% does what the media query was approximating",
+     "  width:250px;background:var(--surface-2);border:1px solid var(--border-h);border-radius:9px;",
+     "  width:min(330px,100%);background:var(--surface-2);border:1px solid var(--border-h);border-radius:9px;"),
+    ('C3e', "C3 - same deletion, the media-query half",
+     "@media (max-width:720px){ .dgrid,.dlinks{grid-template-columns:1fr} .info span{width:210px} }",
+     "@media (max-width:720px){ .dgrid,.dlinks{grid-template-columns:1fr} }"),
+    ('C3f', "C3 - DEAD RULE DELETED. Written in a 720px media query for a "
+            "`.card-header` containing a `.section-title`, markup the mock has "
+            "never produced. Whoever wrote the mock designed the title-inside-"
+            "card arrangement and did not ship it. Confirmed NOT activated by "
+            "C3: with the note in a tooltip the Suivi header is a title and a "
+            "15px glyph, and the three controls sit on their own row unwrapped "
+            "at both widths. An unreachable rule is the CSS form of the "
+            "unreachable bound from trap #21",
+     "  #sec-suivi .card-header{flex-wrap:wrap}", None),
+    ('C3g', "C3 - the second dead rule, deleted with the first. Its own entry "
+            "so a partial revert names itself",
+     "  #sec-suivi .card-header .section-title{flex:1 0 100%}", None),
     ('D24', "D6 - overflow-x: clip instead of hidden. `hidden` makes body a "
             "SCROLL CONTAINER, so the sticky nav positioned against body and "
             "scrolled away with it: -353px after 1500px, on BOTH heads, with a "
@@ -506,6 +554,22 @@ def main():
     # directions - the old line must be gone and the new one present. A
     # deviation that is only half there is a broken edit, not a passing one.
     for cid, why, old_line, new_line in AUTHORISED_CSS:
+        # `new_line is None` authorises a pure DELETION. A rule can be wrong by
+        # existing - the two `#sec-suivi .card-header` rules were written for
+        # markup the mock never produced and were unreachable for months - and
+        # this list had no way to say so, because it demanded a replacement.
+        # Same shape as the deletion half of the mock's own ledger.
+        if new_line is None:
+            if old_line in removed and old_line not in added:
+                removed.remove(old_line)
+                print(f'ok    {cid}  {why}')
+            else:
+                failures.append(f'{cid} not applied as ruled')
+                print(f'FAIL  {cid}: authorised DELETION, but the line is '
+                      f'{"still present" if old_line not in removed else "re-added"}')
+                print(f'        want gone: {old_line.strip()!r}')
+                print(f'        {why}')
+            continue
         if old_line in removed and new_line in added:
             removed.remove(old_line)
             added.remove(new_line)

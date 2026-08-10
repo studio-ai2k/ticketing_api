@@ -3245,3 +3245,86 @@ pass 0 inlines; the mock's inline copy stays frozen.** C1a follows it. The
 consequence for renders: a render taken from the mock would not show a CSS
 ruling, and one taken from a v2 page would. Every render in this round came from
 `v2/rennes.html`.
+
+## C3, part 1: the tooltip clamp. The width was never the problem
+
+C3 is *titles into cards, subtext into the ℹ tooltip*. This commit is the CSS half
+only — the nine renderer edits are the next unit, and one open ruling blocks them
+(below).
+
+### The ruling's premise was wrong and the measurement said so
+
+The instruction was to widen the mobile bubble from 210px to ~330px, on the
+reading that 210 was "a value set for phones considerably narrower than the ones
+in use". It is not. The bubble was `left:50%; transform:translateX(-50%)` —
+centred on a 15px glyph — so its maximum width without leaving the viewport is
+
+```
+2 × min(glyph_x, vw − glyph_x)
+```
+
+set by whichever glyph sits nearest an edge. At 393px that is **213px**, on
+`sec-overview`. The sheet said 210. **One pixel under the geometric limit —
+whoever set it measured.** The comment on `C3a` says so, because the next person
+will read 210 and assume what the ruling assumed.
+
+The trade curve, brought back rather than solved:
+
+```
+bubble  vp    overflowing   tallest
+ 210    393     0 / 10        257
+ 250    393     2 / 10        210
+ 330    393     6 / 10        164
+ 210    360     1 / 10        257     ← pre-existing, nothing to do with C3
+ 330    360     8 / 10        164
+```
+
+Widening at all bought height and spent overflow, one for one.
+
+### The clamp, and why it costs nothing
+
+`.info span` has **no caret** — no `::before`, no `::after`, nothing anchored to
+the glyph. So the bubble's horizontal position carried no meaning, and the
+centring was spending the entire width budget to buy nothing.
+
+`.sec-head{position:relative}` + `.info{position:static}` + `left:0` +
+`width:min(330px,100%)`. The `100%` is the header row, so the bubble can never be
+wider than its card and therefore never leaves the viewport — **at any width, for
+any future section**. It self-narrows to 304px at 360 and 296px at 320. The
+`@media` override is deleted rather than raised: one width instead of two.
+
+Measured on the SHIPPED pages afterwards, three pages × four widths:
+**36/36 tooltips inside the viewport**, heights 86–173px. The pre-existing 360
+overflow on `sec-presence` is closed as a side effect.
+
+### AUTHORISED_CSS learned to authorise a DELETION
+
+`new_line = None`. The list demanded a replacement, so it had no way to say *this
+rule is wrong by existing* — which the two `#sec-suivi .card-header` rules were,
+written in a 720px media query for markup the mock never produced. Confirmed not
+activated by C3: with the note in a tooltip the Suivi header is a title and a
+15px glyph, and the three controls sit on their own row unwrapped at both widths.
+An unreachable rule is the CSS form of an unreachable bound.
+
+### Open, and it blocks the renderers
+
+**The tooltip renders in UPPERCASE, and it does so today.** `.sec-title` sets
+`text-transform:uppercase; letter-spacing:.07em`; `.info` lives inside it; and
+`.info span` resets `font-style` and `font-size` but not those two. Measured on
+the shipped page before any C3 change — all three existing tooltips inherit it.
+Legible at 46 characters, much less so at 296, and C3 takes it from three
+tooltips to nine. Adding the reset is a fourth ruling because it changes three
+already-approved tooltips. Not decided here.
+
+### Still to build
+
+Nine renderers emit their own `.sec-head` (all ten cards are runtime-filled — the
+`const host = getElementById(...)` form is what the first grep missed);
+`sec-plateformes` gets a card in markup, the only section where this is a markup
+edit; `sec-evenement` merges its own heading row; `sec-projection` untouched, C4's.
+The bubble merge uses `<br><br>` and **never a nested `<span>`** — `.info span` is
+a DESCENDANT selector, so a span inside the bubble is hidden and the bubble
+renders 24px tall with 296 characters in it. And the check, both directions: every
+`.sec` has exactly one heading row AFTER the renderers run, and no section-level
+`.sec-note` survives — scoped to `.sec-head`'s note, because `.sec-note` is also
+used inside card content (four in `sec-presence` alone).
