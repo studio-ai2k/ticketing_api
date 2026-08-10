@@ -13,6 +13,13 @@ retires.**
 **The old pages are kept as a served archive** (`legacy/`, §7), not deleted. That
 lowers the stake of every irreversible step below, and §1 says by how much.
 
+**The consequence of keeping the URLs: nothing breaks visibly.** Anyone holding a
+link to a dashboard silently starts seeing the redesign — which is what was asked
+for, and it means **no reader is ever told the page changed.** Two things follow.
+§5's recognisable-good run is the *only* signal that the switch happened
+correctly, because a wrong switch is equally silent. And the archive banner (§6.2)
+is the only place a reader can discover the old view still exists.
+
 ---
 
 ## 1. Cleanup as a separate commit — still yes, on a narrower argument
@@ -135,14 +142,34 @@ turn into a feature the redesign silently dropped."* Fix the reason, keep the
 removal, and note that `PAGE_PATHS` was never the complete list of
 location-dependent transforms — only the complete list of *path* ones.
 
-### (b) `check_mock_deviations`' page check already follows PAGE_PATHS
+### (b) `check_mock_deviations`' page check follows PAGE_PATHS — and P3 collides with it
 
 It imports the list rather than restating it, and its docstring was written for
-this day. With `PAGE_PATHS == []` it degrades to a straight equality between the
-inlined `<style>` and the file, which is a *stronger* assertion.
+this day. With `PAGE_PATHS == []` it would degrade to a straight equality between
+the inlined `<style>` and the file — a *stronger* assertion, and the first version
+of this plan stopped there.
 
-Residual: `check_pages()` validates only the `<style>` block. The two transforms
-in (a) are outside it and unchecked by anything.
+**It is not stronger once P3 lands, it is false.** Fixing the login background
+means pass 0 substitutes a per-event value *into the stylesheet* at build time, so
+each page's inlined `<style>` differs from `dashboard_redesign.css` — which is
+precisely what `check_pages` asserts does not happen. P3 and this section are the
+same decision seen twice.
+
+**Model the login background the way `PAGE_PATHS` was modelled**: a named
+transform, exported from `build_v2`, imported by `check_pages`, and applied to the
+file before comparing. Not an exception, not a tolerance. The failure mode
+otherwise is concrete and cheap to fall into — someone lands P3, `check_pages`
+fails on all six pages at once, and the least-effort way out is to loosen
+`check_pages`. That is the D24 assertion again, in the check that guards the
+stylesheet.
+
+So after cutover the check reads: *the inlined `<style>` equals the file through
+exactly the transforms `build_v2` declares.* Today that list has three entries and
+one purpose; then it will have one entry and a different purpose. The shape is
+what survives.
+
+Residual, unchanged: `check_pages()` validates only the `<style>` block. The two
+transforms in (a) are outside it and unchecked by anything.
 
 ### (c) `check_build_stamp` — see §2. Not a cutover decision, a pre-work item
 
@@ -227,9 +254,22 @@ Written so a **wrong** run is recognisable.
 
 **The one assertion that is only available once.** Immediately before the
 cutover, capture the six `v2/*.html`. The first post-cutover root pages must equal
-them byte-for-byte after removing the three `../` prefixes. Take the snapshot
-*during* the cutover, and take it **before** the archive banner is inserted
-(§7.2) so the two changes never have to be separated afterwards.
+them after removing the three `../` prefixes. Take the snapshot *during* the
+cutover, and take it **before** the archive banner is inserted (§6.2) so the two
+changes never have to be separated afterwards.
+
+**It is not byte-for-byte, and pretending it is would sink it.** P1 puts a
+shared-set hash in every v2 page, and that set contains `build_v2.py` — which the
+cutover *edits*, since deleting `PAGE_PATHS` and its loop is §3(a)'s entire
+content. The stamp therefore changes at cutover for an entirely legitimate reason,
+and it does so at the one moment the comparison exists and cannot be re-run. It is
+also the failure most likely to be waved through as "that's just the stamp", which
+is how a real difference gets waved through beside it.
+
+So **assert the difference instead of ignoring it**: exactly one differing line,
+that line matching `postprocess_html.STAMP_RE`, and nothing else. A second
+differing line then fails, which is the property "compare modulo the stamp" throws
+away.
 
 Then, on every run afterwards:
 
@@ -241,8 +281,12 @@ Then, on every run afterwards:
    exact, and `check_pages` running with an empty `PAGE_PATHS`.
 5. `check_b1_switch`: every candidate on every page, both grains.
 6. `check_eligibility`: P1–P3; P4 retired by name.
-7. Login background per page equals its config row (§2 P3) — and note this stays
-   unfalsifiable until two events are configured differently.
+7. Login background per page equals its config row (§2 P3). **Make it falsifiable
+   in the negative test rather than waiting for reality**: point one config row at
+   a different filename, assert the page follows it, set it back. Every other
+   check here is negative-tested; this one should not be excused because the data
+   happens to be uniform — uniform data is what made the bug invisible in the
+   first place.
 
 **The negative fingerprint, and its scope.** A *built* page containing
 `.dashboard {` was written by the old builder: that rule head is in
@@ -344,6 +388,10 @@ imported everywhere. Then:
 pages carry a stamp over a shared set that no longer exists, and are excluded
 because they are **not built**, not because they are old.
 
+**Status: specified, not shipped.** `check_build_stamp.py:88` and
+`assert_redesign.sh:12` still carry hand-written six-name lists as of this
+writing. Nothing in this section has been built.
+
 ### 6.4 The workflow pathspec — the archive must not be re-staged
 
 ```
@@ -360,6 +408,35 @@ happens to miss.
 
 Worth noting the pathspec is *already* wider than it reads — it is what stages
 `v2/*.html` today, which is intended but nowhere stated.
+
+---
+
+## 6.5 The cleanup is sound, but only if a file is proved dead before it is deleted
+
+The cleanup began as an instinct rather than a derived requirement, and it is a
+good one — for a sharper reason than tidiness. **Ambiguity about which file is
+authoritative has caused most of this project's real defects**: the badge that
+"already existed" in a mock copy that had moved, the stylesheet check validating a
+file the page did not carry, the year scan pointed at the wrong artefact, two
+production pages frozen for weeks. Dead files are that ambiguity sitting in the
+repo waiting for someone to read the wrong one.
+
+**But the method is the whole thing, and this plan has already demonstrated why.**
+§3(d) declared `dashboard_v6_8.css` retired because no v2 page contains it — and
+removing it breaks the v2 build. *"Looks unused" is not evidence.*
+
+Two rules for the cleanup commit:
+
+1. **Prove a file is dead by measurement, then delete it.** Mitigation (a) —
+   assert every file `postprocess_html.py` and `build_dashboard.py` read appears
+   in `SHARED_ASSETS` — is what converts the instinct into evidence, which is why
+   it is scheduled first. Anything mitigation (a) cannot speak to needs its own
+   probe, like the `mv`-and-build test in §3(d), recorded next to the deletion.
+2. **Prefer moving to `legacy/` over deleting, where both are available.**
+   `check_build_stamp` hashes the *path* as well as the contents, so a
+   wrongly-moved shared file fails every page loudly, while a wrongly-deleted file
+   outside `SHARED_ASSETS` fails nothing at all. Deletion is the asymmetric
+   direction; take the one that announces its own mistakes.
 
 ---
 
@@ -385,24 +462,34 @@ Written so someone can *use* the folder, not just identify it:
 ## 8. Ordering
 
 ```
-1  anchoring     live series (done) · three modes · the two lines of copy
+1  P1, P2        stamp in pass 0 · v2 half of check_build_stamp
+                 EARLY, not "before cutover". Trap #17 is live in v2 NOW: four
+                 live events rebuild daily and two finished ones do not, so
+                 v2/bordeaux.html and v2/parisxxl.html are accumulating the
+                 exemption production had. Every shared change between today and
+                 P1 misses those two pages, and nothing reports it.
+2  anchoring     live series (done) · three modes · the two lines of copy
                  P4 in check_eligibility retires here, named by the mode that did it
-2  C1, C2        section tab bars                        (render before building)
-3  C3, C4        card titles into cards · Projection Finale container
+3  C1, C2        section tab bars                        (render before building)
+4  C3, C4        card titles into cards · Projection Finale container
                  more than one round each, accepted knowingly
-4  pre-work      P1 stamp in pass 0 · P2 v2 half of check_build_stamp
-                 P3 login background templated per page
-                 config-derived page enumeration (§6.3) — before cutover, because
-                 it is what lets the checks survive v2/ disappearing
-5  CUTOVER       §3 · the once-only snapshot (§5), taken BEFORE the banner
+5  pre-work      P3 login background templated per page, WITH §3(b)'s named
+                 transform and §5.7's negative test — the three are one item
+                 config-derived page enumeration (§6.3), which is what lets the
+                 checks survive v2/ disappearing
+6  CUTOVER       §3 · the once-only snapshot (§5), taken BEFORE the banner, and
+                 asserted as "exactly one differing line, matching STAMP_RE"
                  legacy/ created: six pages + banners + README
                  workflow pathspec made explicit (§6.4)
-6  green run
-7  CLEANUP       mitigation (a) first
+7  green run
+8  CLEANUP       mitigation (a) first — it is also what would have caught §3(d)
                  then §3(d)(3): pass 0 stops inlining v6_8, the file moves to
                  legacy/, and the absent-file probe becomes a test
-                 dashboard_v6_6.css deleted or archived
+                 dashboard_v6_6.css moved rather than deleted (§6.5 rule 2)
 ```
+
+P1/P2 move to the front because they are the only item on this list whose cost
+*grows* while it waits.
 
 ---
 
