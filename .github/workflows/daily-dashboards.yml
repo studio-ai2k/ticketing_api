@@ -355,6 +355,7 @@ jobs:
             ${{ matrix.event.out }}
             v2/${{ matrix.event.out }}
             data/${{ matrix.event.id }}_merged.csv
+            series/${{ matrix.event.id }}.json
           if-no-files-found: error
           retention-days: 1
 
@@ -409,6 +410,21 @@ jobs:
           # B1's series files. Their own line, and NOT `|| true`: the v2 pages
           # fetch these by name, so a run that rebuilds the pages without them
           # ships six dashboards whose every comparison says "indisponible".
+          #
+          # This line staged NOTHING for as long as it existed, and was right
+          # anyway: `series/` was not in the build job's artifact list, so the
+          # commit job only ever saw the committed copies - and every series was
+          # immutable, being a finished edition's frozen history. Emitting series
+          # for LIVE editions turned a harmless no-op into a silent staleness:
+          # four files now change daily and none of them was reaching the repo.
+          # Fixed at the artifact, where the premise actually broke.
+          #
+          # Each build job uploads ONLY its own event's series file. A job holds
+          # exactly one freshly-fetched CSV and rebuilds every series from
+          # whatever else is committed, so uploading them all would let the last
+          # job to finish overwrite five other events with its stale copies -
+          # `merge-multiple: true` resolves collisions by arrival order, not by
+          # freshness.
           git add -- 'series/*.json'
           # Trap #17: a finished event's CSV never changes, so its page is
           # exempt from every shared-code and shared-CSS change unless
