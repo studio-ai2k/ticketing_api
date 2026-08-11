@@ -250,6 +250,26 @@ jobs:
           # the comparison menu - so the menu can only ever list a file that
           # exists. Cheap enough to redo per event (2.1s for all of them) and
           # much cheaper than making the ordering conditional.
+          # THE SERIES MUST SEE THE FRESH CSV, AND UNTIL NOW IT DID NOT.
+          # build_series.py takes no arguments: it rebuilds every series from
+          # whatever sits in data/ - and at this point data/ still holds the
+          # PREVIOUS run's CSV, because the staging copy happens several steps
+          # further down. Meanwhile build_v2.py below is handed the freshly
+          # fetched api_output/ CSV. So every commit shipped a series exactly
+          # one fetch cycle behind the page built beside it, and a reader
+          # comparing against a LIVE edition saw yesterday's candidate drawn
+          # against today's page.
+          #
+          # That is the same "two vintages in one chart" the mock's
+          # {cache:'no-cache'} exists to stop in the browser - while the
+          # pipeline was doing it upstream, where no cache header could help.
+          #
+          # Measured on 2026-08-11, all from commit db28b0b: epk series 126 vs
+          # its own CSV 139 paid, geneve 34 vs 37, bordeaux_oct 53 vs 61.
+          # check_b1_switch fails on it, which is how it surfaced - the client
+          # reads series/, the server side reads data/, and the two disagreed.
+          cp "api_output/${{ matrix.event.id }}_merged.csv" \
+             "data/${{ matrix.event.id }}_merged.csv"
           python scripts/build_series.py
           # v2/ - the redesign, published alongside production on the same
           # branch. Path derived here, not from output_filename, which is free

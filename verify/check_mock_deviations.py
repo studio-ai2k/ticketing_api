@@ -254,8 +254,8 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 1079
-BUDGET_REMOVED = 194
+BUDGET_ADDED = 1111
+BUDGET_REMOVED = 201
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
 AUTHORISED = [
@@ -880,6 +880,55 @@ AUTHORISED += [
            'eleven candidates in that menu, and one click reaches it with no '
            'exact_date involved',
      "const dif = r => r.b == null ? null : r.a - r.b;"),
+    # ---- (b) control labels on both cards --------------------------------
+    ('X9', 'EVERY CONTROL GETS A TITLE ABOVE IT, and both cards get the same '
+           'pair stacked: the dropdown says WHICH, the title says WHAT IT IS. '
+           '`.kc-k` is REUSED rather than a new rule invented - it is the '
+           'uppercase letterspaced --text-muted key label already above every '
+           'KPI value, the same relationship, and it already carries the 5px '
+           'bottom margin that relationship needs. The redesign invents no CSS; '
+           'searching the mock before writing a rule is the standing rule and '
+           'this is what the search found',
+     'function ctl(title, inner){'),
+    ('X9-decl', 'ctl is a DECLARATION, not a const arrow, and that is not '
+                'style. The renderers run during script execution, some of them '
+                'BEFORE that line, so a const put it in the temporal dead zone '
+                'and the whole Suivi card rendered EMPTY - innerHTML length 0 '
+                'and one console error, with the Projection half working. A '
+                'declaration hoists so position stops mattering. Found by '
+                'RENDERING the page: reading it would not have shown a blank '
+                'card',
+     '  return `<div class="ctl-stack"><div class="kc-k">${title}</div>${inner}</div>`;'),
+    ('X10', 'the four .cmp-eyebrow labels come out - réf., scén., vs, aligné '
+            'sur. With a title above each control they say the same thing '
+            'twice. MEASURED, because the handoff asked whether losing them '
+            'would rescue the long form at 393: it does NOT. '
+            '"Trajectoire Rennes 2025" truncates in .cmp-name at 393 '
+            'identically before and after, so the copy question survives and '
+            'still needs a ruling',
+     '<span class="cmp-name">${CSEL}</span>'),
+    ('X11', 'Suivi renders the candidate BEFORE the alignment, matching '
+            'Projection. The ruling is that the first label is the same on both '
+            'cards because it is the same choice; the existing order had them '
+            'opposite - Projection comparatif/méthode, Suivi alignement/'
+            'comparatif - which only shows once both carry titles',
+     '<div class="svctl-p">${cmpMenu()}${modeMenu()}</div>'),
+    ('X12', 'the two "Événement comparatif" call sites - Projection\'s menu() '
+            'and Suivi\'s cmpMenu(). ONE entry covers both, and that is the '
+            'same D15 caveat as X6: the line is identical in the two because '
+            'it is the same label naming the same choice, which is the whole '
+            'ruling. Source is not reshaped to give an entry its own diff',
+     "return ctl('Événement comparatif', `<div class=\"sw-wrap\""),
+    ('X12b', 'and the matching close, where the trigger template now ends '
+             'inside ctl() rather than at the return',
+     '</div></div>`);'),
+    ('X10-ref', 'the `réf.` eyebrow specifically. A PURE DELETION, so it is '
+                'matched against the LOCKED side - the other three eyebrows sit '
+                'in hunks that also add a line and are covered there. Its own '
+                'entry because it is the one whose removal was supposed to buy '
+                'width back at 393, and a silent revert would restore the '
+                'truncation this measured',
+     '<span class="cmp-eyebrow">réf.</span>'),
     ('X7', 'THE SUIVI ALIGNMENT SENTENCE, four variants driven by CSEL and '
            'AMODE. It replaces "l\'alignement s\'applique aux deux grains", a '
            'line that could never have been wrong because it made no claim the '
