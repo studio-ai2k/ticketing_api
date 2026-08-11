@@ -254,8 +254,8 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 790
-BUDGET_REMOVED = 191
+BUDGET_ADDED = 851
+BUDGET_REMOVED = 189
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
 AUTHORISED = [
@@ -576,6 +576,38 @@ AUTHORISED += [
               'themselves, so the header sits in the same rhythm - read from '
               'the existing value, not chosen',
      '<div class="card" id="logique" style="margin-bottom:12px"></div>'),
+    ('C4-detbot', 'C4/E revised - DÉTAILS SITS AT THE BOTTOM OF ITS CARD, '
+                  'centred, with the bare .ac-t treatment: no inline overrides, '
+                  'because every other accordion on the page does exactly this '
+                  '- "Courbe cumulative" on each day card, Revenus\' own '
+                  'toggle. It shipped briefly INSIDE the head row with the '
+                  'padding and border stripped, where on a phone it hung beside '
+                  'the second dropdown and read as a third control rather than '
+                  'a disclosure. Consistency bug, not a preference. '
+                  'TWO ENTRIES WERE DELETED for this, not reverted by accident: '
+                  'C4-det (the id-named .ac-b) and C4-ac (ac()\'s named-target '
+                  'fallback). Both existed ONLY because the toggle had left its '
+                  'sibling; with it back, ac() returns to nextElementSibling and '
+                  'the fallback would have been dormant code that looks needed '
+                  'and is not',
+     '<div class="ac-t" onclick="ac(this)"><span>Détails</span>'),
+    ('C4-total', 'ruling (d) - THE PROJECTION TOTAL: the three facts each day '
+                 'card gives, aggregated, which a reader currently assembles by '
+                 'hand. It sits directly under the two pickers that define it, '
+                 'and that POSITION is what separates it from Vélocité\'s "à ce '
+                 'rythme, N billets le jour J" - different calculations that '
+                 'will disagree, with the method named adjacent to the result. '
+                 'Sell-out is the LATEST per-day date, not a sum, because the '
+                 'event is not sold out until every day is; a day with no date '
+                 'gives the aggregate none (epk on coefficient: dimanche 8 048 '
+                 'of 10 000, so no date). A day with no projection is not '
+                 'dropped from the denominator - the jauge is summed over the '
+                 'same days and the count is stated (Genève: 1 of 2). Excluded '
+                 'days are NOT followed, deliberately: Présence\'s `on` map is '
+                 'scoped to that IIFE and THE DAY CARDS DO NOT FOLLOW IT '
+                 'EITHER, so a total that did would stop being the sum of what '
+                 'sits below it',
+     'const total = () => {'),
     ('C4-over', 'C4/E x ruling §1 - a FINISHED edition gets no pickers either. '
                 'Both control a forecast that no longer renders, so they would '
                 'be affordances that change nothing - the same class §1 was '
@@ -633,20 +665,11 @@ AUTHORISED += [
                'renderLogique creates it. Two entries, because reverting either '
                'alone leaves the picker empty or throws',
      "const pc = document.getElementById('projctl');"),
-    ('C4-det', 'C4/E - the Détails toggle and the methodology body it now names '
-               'by id rather than by adjacency',
-     '<div class="ac-b" id="proj-meth">'),
     ('C4-pm', 'C4/E - #projctl now lives in a head renderLogique emits, so it '
               'does not exist when the projection IIFE first runs. Exposed and '
               'guarded rather than the two modules being reordered: whichever '
               'runs second fills it',
      'window.projMenu = menu;'),
-    ('C4-ac', 'C4/E - ac() gains a named target. nextElementSibling stops being '
-              'true the moment a toggle moves into a header row, which is '
-              'exactly what E does to "Détails". Named target when given, '
-              'sibling otherwise, so the other call sites are untouched rather '
-              'than migrated',
-     "const b = (el.dataset.ac && document.getElementById(el.dataset.ac))"),
     ('OVER', 'ruling §1 - THE EDITION IS OVER AND THE PAGE SAYS SO. `run.py` '
              'has carried this guard in three places since before the redesign '
              '(`\'Terminé\' if days_remaining_display <= 0`); every v2 component '

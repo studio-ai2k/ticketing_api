@@ -188,6 +188,34 @@ what survives.
 Residual, unchanged: `check_pages()` validates only the `<style>` block. The two
 transforms in (a) are outside it and unchecked by anything.
 
+### (b2) The version goes to 7.0 — and it is TWO places, not one
+
+Ruled: at cutover the footer version becomes **7.0**, and that is a deliberate
+break rather than an increment. 6.x is the pipeline where `run.py`'s body reaches
+the page; 7.0 is where pass 0's does. The same bump applies to the project
+package so the two stay legible against each other.
+
+Until cutover, v2 shows **production's version unchanged**. v2 is built on the
+same pipeline, so inheriting the number asserts nothing false, and no v2 suffix
+is invented.
+
+Written down here because it is **two edits, not one**, and the second is the
+kind that sits on every page for a month reading the old number:
+
+| where | what | how it is found |
+|---|---|---|
+| `scripts/postprocess_html.py` | `DASHBOARD_VERSION = '6.8'` → `'7.0'` | the one real knob. `VERSION_OLD` is the TEMPLATE's literal (`Festiflow Dashboard v6`), not the current version, so it does **not** change |
+| `verify/check_footer_tz.py` | `v6.8` hardcoded **twice**, in expected footer strings | would fail the run loudly — which is the good case |
+
+`dashboard_template.html` ships the literal `Festiflow Dashboard v6` twice and is
+**not** modified: postprocess replaces the prefix, and the count of 2 is asserted
+at build time.
+
+`verify/check_v2_footer.py` reads `postprocess_html.DASHBOARD_VERSION` rather
+than restating it, so it follows the bump on its own. That is the shape the
+other two should have had, and the reason this table exists rather than a note
+saying "remember to bump the version".
+
 ### (c) `check_build_stamp` — see §2. Not a cutover decision, a pre-work item
 
 Its scope note gets rewritten to say the v2 pipeline is conditional and therefore
