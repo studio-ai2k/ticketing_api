@@ -491,3 +491,73 @@ jobs:
             sleep 3
           done
           [ -n "$pushed" ] || { echo "::error::could not push dashboards after 3 attempts"; exit 1; }
+
+      # AFTER THE PUSH, DELIBERATELY, AND NOT IN THE GATE ABOVE.
+      # The 28-hour outage this check exists for was CAUSED by a check in that
+      # gate. A stale-data alarm that also blocks the commit that would clear it
+      # is the same mistake twice, so this runs once the data is safely landed:
+      # it can turn the badge red, and it can never freeze the pipeline.
+      #
+      # It answers the question the footer cannot. "Données API HH:MM" is
+      # written when a page is REBUILT, so it moves only when something else
+      # already changed - and a stopped fetch and a stopped commit both leave it
+      # frozen at the last run that landed.
+      - name: Is the data actually fresh?
+        run: python verify/check_data_freshness.py
+
+  # THE BADGE HAS TO REACH SOMEONE. Trap #13 was a `git add` pathspec failing in
+  # this same job, diagnosed as "a signal that always fires carries no
+  # information" - and then the same job failed for seven consecutive runs and
+  # nobody noticed for a day, because the page cannot report it and no one
+  # watches Actions. The lesson did not enforce itself, so this does.
+  #
+  # ONE issue, reopened and commented rather than one per failure: seven
+  # notifications for one outage is how an alert becomes noise. It CLOSES itself
+  # on the next green run, so an open issue always means "broken right now"
+  # rather than "was broken once".
+  alert:
+    needs: commit
+    if: always() && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open, update or close the failure issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const failed = '${{ needs.commit.result }}' !== 'success';
+            const title = 'Daily dashboards: the pipeline is not landing data';
+            const {owner, repo} = context.repo;
+            const found = await github.rest.issues.listForRepo({
+              owner, repo, state: 'open', labels: 'pipeline-down', per_page: 20});
+            const issue = found.data.find(i => i.title === title);
+            const run = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            if (failed) {
+              const body = [
+                `The \`commit\` job did not succeed: **${{ needs.commit.result }}**.`,
+                ``,
+                `Run: ${run}`,
+                ``,
+                `Nothing new has reached \`main\`, so every dashboard is serving`,
+                `whatever the last successful run left behind. The footer's`,
+                `"Données API" stamp will NOT show this - it is written when a`,
+                `page is rebuilt, so it stays frozen at the last run that landed.`,
+                ``,
+                `This issue closes itself on the next green run.`,
+              ].join('\n');
+              if (issue) {
+                await github.rest.issues.createComment(
+                  {owner, repo, issue_number: issue.number, body});
+              } else {
+                await github.rest.issues.create(
+                  {owner, repo, title, body, labels: ['pipeline-down']});
+              }
+            } else if (issue) {
+              await github.rest.issues.createComment({owner, repo,
+                issue_number: issue.number,
+                body: `Recovered: the commit job succeeded. ${run}`});
+              await github.rest.issues.update({owner, repo,
+                issue_number: issue.number, state: 'closed',
+                state_reason: 'completed'});
+            }

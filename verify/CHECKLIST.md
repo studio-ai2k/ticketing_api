@@ -52,11 +52,40 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_v2_identity.py` | 2 (the shipped page; and the nav-form regression) |
 | `check_fixture_quarantine.py` | 3 |
 | `check_exact_date.py` | 4 (one per claim, broken separately) |
+| `check_data_freshness.py` | 2 (the outage reconstructed; and threshold below true age) |
 | `check_b1_switch.py` (diff absence) | 1 (the null coercion restored) |
 | `check_selector.js` (diff absence) | 2 (dead below the % filter; then failing a correct page on `J−25`) |
 | `check_anchor_modes.py` | 2 (the drift claim and the by-construction one) |
 
 ---
+
+## Is the pipeline still landing data?
+
+    python3 verify/check_data_freshness.py
+
+Asserts the newest ticket on every LIVE event is under 24 h old. It answers the
+question the footer cannot: `Données API HH:MM` is written when a page is
+REBUILT, so it moves only when something else already changed — and a stopped
+fetch and a stopped commit both leave it frozen at the last run that landed.
+
+**N = 24 is measured, not chosen.** Sales sleep, so the threshold has to clear
+the quietest real night. Longest gap between consecutive tickets on each live
+campaign over 30 days: geneve 16.1 h, rennes 12.9 h, bordeaux_oct 10.2 h,
+epk 8.2 h. 24 gives ~1.5× headroom over the binding one and would have caught
+the 28-hour outage.
+
+**Finished editions are excluded and that is load-bearing.** Their data is frozen
+by design and ages without bound — paris_xxl shows a 369 h gap. Including them
+would make this fire permanently, which carries exactly as much information as
+never firing.
+
+**It runs AFTER the push, never in the gate.** The outage it exists for was
+caused by a check in that gate. An alarm that also blocks the commit that would
+clear it is the same mistake twice.
+
+Negative tests: the real outage reconstructed by rolling rennes' timestamps back
+28 h (`29.1 h old`, exit 1), and a threshold below the true age (exit 1). Both
+return to exit 0 on restore, and the CSV was verified byte-identical after.
 
 ## WHICH CHECKS MAY RUN IN CI — the rule, and what breaking it cost
 
