@@ -1504,7 +1504,12 @@ let PSCEN = 0;
      by turning it on and never shows the alternative. */
   window.scenMenu = () => {
     if (!PX || !PX.cands[PSEL]) return '';
-    const L = [`Trajectoire ${PX.cands[PSEL].label}`, '× coef. vélocité'];
+    /* RULED: no edition name here. It used to read `Trajectoire ${label}`,
+       which truncated at 393 as "Trajectoire Rennes 2025" - and the measurement
+       settled it, because removing the .cmp-eyebrow labels did NOT buy back
+       enough width. The name is not lost: `Événement comparatif` now sits
+       directly above, naming the edition once, where this said it twice. */
+    const L = ['Trajectoire', '× coef. vélocité'];
     return ctl('Méthode', `<div class="sw-wrap" style="position:relative">
       <button class="cmp-trigger" data-sw-trigger>
         <span class="cmp-name">${L[PSCEN]}</span>

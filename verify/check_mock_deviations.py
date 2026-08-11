@@ -254,7 +254,7 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 1111
+BUDGET_ADDED = 1116
 BUDGET_REMOVED = 201
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
@@ -919,6 +919,15 @@ AUTHORISED += [
             'it is the same label naming the same choice, which is the whole '
             'ruling. Source is not reshaped to give an entry its own diff',
      "return ctl('Événement comparatif', `<div class=\"sw-wrap\""),
+    ('X13', 'RULED: the projection method labels lose the edition name - '
+            '"Trajectoire", not "Trajectoire Rennes 2025". That form truncated '
+            'at 393, and the measurement is what settled it: removing the four '
+            '.cmp-eyebrow labels did NOT buy back enough width, so the copy '
+            'question did not disappear on its own. The name is not lost, it is '
+            'de-duplicated - `Événement comparatif` now names the edition once, '
+            'directly above, where the trigger was saying it a second time. '
+            'Measured after: no truncated element at 393 or desktop',
+     "const L = ['Trajectoire', '× coef. vélocité'];"),
     ('X12b', 'and the matching close, where the trigger template now ends '
              'inside ctl() rather than at the return',
      '</div></div>`);'),
