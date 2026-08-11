@@ -254,8 +254,8 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 710
-BUDGET_REMOVED = 170
+BUDGET_ADDED = 790
+BUDGET_REMOVED = 191
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
 AUTHORISED = [
@@ -568,6 +568,85 @@ AUTHORISED += [
             'own key, so an unknown group renders badly-named rather than '
             'vanishing. verify/check_cand_groups.py asserts both ends',
      'const seen = [...new Set((D.cands || []).map(c => c.g))]'),
+    ('C4-mk', 'C4/E - THE HEADER CARD LEADS. #logique was a trailing third '
+              'card after the days, which is why "where does it go" needed its '
+              'own ruling under every other arrangement; at the top it stops '
+              'being an orphan and becomes the section header. margin-BOTTOM '
+              '12px, the same gap the day cards already carry between '
+              'themselves, so the header sits in the same rhythm - read from '
+              'the existing value, not chosen',
+     '<div class="card" id="logique" style="margin-bottom:12px"></div>'),
+    ('C4-over', 'C4/E x ruling §1 - a FINISHED edition gets no pickers either. '
+                'Both control a forecast that no longer renders, so they would '
+                'be affordances that change nothing - the same class §1 was '
+                'about. Found by check_finished_edition, which counted two '
+                'toggles still in the header of a section that projects '
+                'nothing; the check caught the interaction between two rulings '
+                'that were each correct alone',
+     "${OVER ? '' : `<div id=\"projctl\">"),
+    ('C4-head', 'C4/E - the section head is emitted by renderLogique, because '
+                'the card carrying it is that one. Three controls in the right '
+                'slot, all governing every day below: settings above content, '
+                'which reads as governing what follows. That is why B was '
+                'rejected - there the same controls sat inside Vendredi\'s card '
+                'while changing Samedi\'s numbers. At 393 the row wraps to title '
+                '/ controls; ruled acceptable because it wraps deliberately '
+                'rather than by accident. "Logique de projection" retires as a '
+                'NAME here - one string in one renderer, referenced by no tab, '
+                'no scroll-spy target and no check',
+     "secHead('sec-projection', undefined,"),
+    ('C4-heads', 'C4/E - and its HEADS entry. The tooltip is what stops '
+                 'sec-projection trading its EXEMPT entry for a NO_TOOLTIP one: '
+                 'check_section_heads wants exactly one .info per head, and an '
+                 'exemption swapped for another exemption is not a section '
+                 'passing the rule',
+     "'sec-projection':  {t:'Projection Finale',"),
+    ('C4-rm', 'C4/E - and the per-day segmented control is GONE from the card. '
+              'A removal-shaped hunk: the two .scen-b buttons came out and the '
+              'panes now follow the section-level PSCEN. Its own entry so the '
+              'deletion cannot be quietly undone - restoring those buttons '
+              'would restore the per-day independence C4-pscen removed on '
+              'purpose',
+     '<button class="scen-b on" onclick="scen(this,0)">Trajectoire'),
+    ('C4-pscen', 'C4/E - ONE scenario for the section, and this REMOVES A '
+                 'CAPABILITY. scen(btn,i) resolved btn.closest("[data-proj]"), '
+                 'so every day toggled independently - Vendredi on trajectoire '
+                 'while Samedi sat on coefficient, and a reader adding two cards '
+                 'could total two days computed under different models. Nothing '
+                 'read that state: no check, no export, no other renderer. '
+                 'Recorded as a REMOVAL rather than a move, because someone will '
+                 'miss it before they miss the bug',
+     'let PSCEN = 0;'),
+    ('C4-menu', 'C4/E - the trajectory picker: a FOURTH instance of the existing '
+                '.sw-wrap / .cmp-trigger / .sw-menu component, so it invents no '
+                'CSS. Chosen over the segmented control by measurement - at 393 '
+                'the segmented one took a row to itself, head 142px against 95 - '
+                'and over .dtog because a switch labelled "× coef. vélocité" '
+                'names only the state you get by turning it on and never shows '
+                'the alternative',
+     'window.scenMenu = () => {'),
+    ('C4-pane', 'C4/E - the panes follow PSCEN rather than each card\'s own '
+                'button state',
+     "style=\"display:${i===PSCEN?'block':'none'}\""),
+    ('C4-pm2', 'C4/E - and its other half: render() must tolerate #projctl not '
+               'existing yet, because on first load this IIFE runs before '
+               'renderLogique creates it. Two entries, because reverting either '
+               'alone leaves the picker empty or throws',
+     "const pc = document.getElementById('projctl');"),
+    ('C4-det', 'C4/E - the Détails toggle and the methodology body it now names '
+               'by id rather than by adjacency',
+     '<div class="ac-b" id="proj-meth">'),
+    ('C4-pm', 'C4/E - #projctl now lives in a head renderLogique emits, so it '
+              'does not exist when the projection IIFE first runs. Exposed and '
+              'guarded rather than the two modules being reordered: whichever '
+              'runs second fills it',
+     'window.projMenu = menu;'),
+    ('C4-ac', 'C4/E - ac() gains a named target. nextElementSibling stops being '
+              'true the moment a toggle moves into a header row, which is '
+              'exactly what E does to "Détails". Named target when given, '
+              'sibling otherwise, so the other call sites are untouched rather '
+              'than migrated',
+     "const b = (el.dataset.ac && document.getElementById(el.dataset.ac))"),
     ('OVER', 'ruling §1 - THE EDITION IS OVER AND THE PAGE SAYS SO. `run.py` '
              'has carried this guard in three places since before the redesign '
              '(`\'Terminé\' if days_remaining_display <= 0`); every v2 component '
@@ -771,6 +850,22 @@ def check_pages():
     return failures
 
 
+
+def _carried_block(prod_css, _norm):
+    """The page-footer block from production's sheet, normalised, as one run.
+
+    Located by its own comment banner rather than by line numbers, so an edit
+    above it in production's sheet does not silently change what is carried.
+    Returns '' if the banner is gone - which fails the carry rather than
+    passing an empty block, because a block that cannot be found is a block
+    that cannot be checked.
+    """
+    start = prod_css.find('/* \u2550\u2550\u2550 page footer \u2550\u2550\u2550 */')
+    if start < 0:
+        return ''
+    end = prod_css.find('\n/*', start + 1)
+    return _norm(prod_css[start:end if end > 0 else len(prod_css)])
+
 def main():
     for p in (LOCK_HTML, WORK_HTML, LOCK_CSS, WORK_CSS):
         if not p.exists():
@@ -874,9 +969,20 @@ def main():
             print(f'        {why}')
 
     prod_norm = _norm(prod_css)
+    # `.pgf-*` / `.pg-footer` joins `.db-*` as carried-across production chrome:
+    # v2 shipped an EMPTY #foot and therefore no footer at all, and production's
+    # markup was transplanted rather than the mock's .foot/.fi design being
+    # wired up, because stamp_footer.py matches on the .pgf-item structure.
+    # The block is carried as ONE CONTIGUOUS RUN, so its continuation lines and
+    # its @media wrapper - which start with neither prefix - are covered by
+    # membership in the run rather than by a per-line prefix test.
+    CARRIED = ('.db-',)
+    foot_block = _carried_block(prod_css, _norm)
+    if foot_block and foot_block in _norm(WORK_CSS.read_text(encoding='utf-8')):
+        added = [a for a in added if _norm(a) not in foot_block or not _norm(a)]
     stray = [a for a in added
              if a.strip()
-             and not (a.lstrip().startswith('.db-') and _norm(a) in prod_norm)]
+             and not (a.lstrip().startswith(CARRIED) and _norm(a) in prod_norm)]
     if removed:
         failures.append(f'stylesheet: {len(removed)} line(s) REMOVED from locked')
         print(f'FAIL  stylesheet removes {len(removed)} line(s) from locked - '

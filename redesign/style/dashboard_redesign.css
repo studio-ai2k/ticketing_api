@@ -678,3 +678,38 @@ button.sw-item{background:none;border:0;width:100%;text-align:left;
 .db-pw-dots{color:#fff; font-size:var(--fs-body); letter-spacing:4px; line-height:1;}
 .db-pw-placeholder{color:#4a4a6a; font-size:var(--fs-micro); font-family:'DM Sans',sans-serif;}
 .db-pw-error{font-size:var(--fs-caption); color:#e17055; margin-bottom:8px; min-height:14px; text-align:left;}
+
+/* ── CARRIED VERBATIM from style/dashboard_v6_8.css, page-footer block ──
+   Second instance of the .db-* class of deviation, and for the same reason:
+   this is production chrome the locked mock never contained. v2 shipped an
+   EMPTY #foot - the mock's own .foot/.fi design, which nothing has ever
+   written to - so v2 had no footer at all rather than a misplaced one.
+   Pass 0's seam runs from the nav close to the body close, and production's
+   footers live inside it, so they went with the body: fifth component lost to
+   that seam. (Written out in words on purpose. This sheet is INLINED into the
+   page, so a markup literal in a comment here is a markup literal in the
+   document - the first draft said the tag outright and check_v2_identity,
+   which locates the nav by searching for that exact string, found this comment
+   instead and stopped excluding the session switcher. Five pages then reported
+   a foreign identity that was the switcher doing its job.)
+   NOT restyled into .foot/.fi. stamp_footer.py matches on the .pgf-item
+   structure and postprocess imports its builder - one definition shared by
+   the emitter and the restamper. Rewriting the markup would have broken the
+   restamp four hours later on a quiet run, in silence, which is the exact
+   class this project keeps finding. */
+/* ═══ page footer ═══ */
+.pg-footer{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
+  gap:0 16px;margin-top:34px;padding:16px 0 6px;border-top:1px solid var(--border)}
+.pgf-item{display:inline-flex;align-items:center;gap:7px;padding:4px 0;white-space:nowrap}
+.pgf-ico{width:13px;height:13px;flex:0 0 auto;color:var(--text-dim);opacity:.8}
+.pgf-k{font-size:var(--fs-nano);letter-spacing:.09em;text-transform:uppercase;color:var(--text-dim)}
+.pgf-v{font-size:var(--fs-tiny);color:var(--text-muted);font-variant-numeric:tabular-nums}
+.pgf-sep{width:1px;height:11px;background:var(--border);flex:0 0 auto}
+.pgf-brand{font-size:var(--fs-tiny);color:var(--text-dim);letter-spacing:.02em}
+.pgf-ver{margin-left:7px;font-family:'JetBrains Mono',monospace;font-size:var(--fs-nano);
+  color:var(--text-muted);background:rgba(255,255,255,.05);border-radius:4px;padding:2px 6px}
+@media (max-width:480px){
+  .pg-footer{gap:0 10px}
+  .pgf-sep{display:none}
+  .pgf-item{flex:1 0 100%;justify-content:center}
+}

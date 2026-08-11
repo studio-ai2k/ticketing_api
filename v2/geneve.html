@@ -694,6 +694,41 @@ button.sw-item{background:none;border:0;width:100%;text-align:left;
 .db-pw-placeholder{color:#4a4a6a; font-size:var(--fs-micro); font-family:'DM Sans',sans-serif;}
 .db-pw-error{font-size:var(--fs-caption); color:#e17055; margin-bottom:8px; min-height:14px; text-align:left;}
 
+/* ── CARRIED VERBATIM from style/dashboard_v6_8.css, page-footer block ──
+   Second instance of the .db-* class of deviation, and for the same reason:
+   this is production chrome the locked mock never contained. v2 shipped an
+   EMPTY #foot - the mock's own .foot/.fi design, which nothing has ever
+   written to - so v2 had no footer at all rather than a misplaced one.
+   Pass 0's seam runs from the nav close to the body close, and production's
+   footers live inside it, so they went with the body: fifth component lost to
+   that seam. (Written out in words on purpose. This sheet is INLINED into the
+   page, so a markup literal in a comment here is a markup literal in the
+   document - the first draft said the tag outright and check_v2_identity,
+   which locates the nav by searching for that exact string, found this comment
+   instead and stopped excluding the session switcher. Five pages then reported
+   a foreign identity that was the switcher doing its job.)
+   NOT restyled into .foot/.fi. stamp_footer.py matches on the .pgf-item
+   structure and postprocess imports its builder - one definition shared by
+   the emitter and the restamper. Rewriting the markup would have broken the
+   restamp four hours later on a quiet run, in silence, which is the exact
+   class this project keeps finding. */
+/* ═══ page footer ═══ */
+.pg-footer{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
+  gap:0 16px;margin-top:34px;padding:16px 0 6px;border-top:1px solid var(--border)}
+.pgf-item{display:inline-flex;align-items:center;gap:7px;padding:4px 0;white-space:nowrap}
+.pgf-ico{width:13px;height:13px;flex:0 0 auto;color:var(--text-dim);opacity:.8}
+.pgf-k{font-size:var(--fs-nano);letter-spacing:.09em;text-transform:uppercase;color:var(--text-dim)}
+.pgf-v{font-size:var(--fs-tiny);color:var(--text-muted);font-variant-numeric:tabular-nums}
+.pgf-sep{width:1px;height:11px;background:var(--border);flex:0 0 auto}
+.pgf-brand{font-size:var(--fs-tiny);color:var(--text-dim);letter-spacing:.02em}
+.pgf-ver{margin-left:7px;font-family:'JetBrains Mono',monospace;font-size:var(--fs-nano);
+  color:var(--text-muted);background:rgba(255,255,255,.05);border-radius:4px;padding:2px 6px}
+@media (max-width:480px){
+  .pg-footer{gap:0 10px}
+  .pgf-sep{display:none}
+  .pgf-item{flex:1 0 100%;justify-content:center}
+}
+
 </style>
 </head>
 <body>
@@ -968,11 +1003,17 @@ function dbSubmit(){
 
   <div class="sec" id="sec-suivi"><div class="card" id="suivi"></div></div>
 
-  <div class="sec" id="sec-projection"><div class="sec-head"><div class="sec-title">Projection Finale</div>
-    <div id="projctl"></div></div>
-    <div id="proj"></div>
-    <div class="card" id="logique" style="margin-top:12px"></div></div>
+  <!-- C4/E - the header card LEADS. `#logique` was a trailing third card
+       after the days, which is why "where does it go" needed its own ruling
+       under every other arrangement; at the top it stops being an orphan and
+       becomes the section's header. margin-BOTTOM 12px, the same gap the day
+       cards already carry between themselves, so the header sits in the same
+       rhythm rather than closer or further. -->
+  <div class="sec" id="sec-projection">
+    <div class="card" id="logique" style="margin-bottom:12px"></div>
+    <div id="proj"></div></div>
 
+  <div class="pg-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">10/08 · 14:07</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 3.5V9H15"/></svg><span class="pgf-k">Données API</span><span class="pgf-v">12:10</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v6.8</span></span></div>
 </div><!-- /page-billetterie -->
 
 <div class="page" id="page-details">
@@ -1000,10 +1041,8 @@ function dbSubmit(){
     </div></div></div>
 
   <div class="sec" id="sec-donnees"><div class="card" id="det-data"></div></div>
+  <div class="pg-footer det-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">10/08 · 14:07</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 3.5V9H15"/></svg><span class="pgf-k">Données API</span><span class="pgf-v">12:10</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v6.8</span></span></div>
 </div><!-- /page-details -->
-
-
-  <div class="foot" id="foot"></div>
 </div><!-- /wrap -->
 
 
@@ -1031,6 +1070,8 @@ const HEADS = {
                       x:'Revenu = valeur faciale TTC : ce que reçoit le promoteur, TVA comprise. Les frais de réservation payés par l’acheteur viennent en sus et ne sont pas inclus ici.',
                       n:'valeur faciale TTC · hors frais de réservation'},
   'sec-velocite':    {t:'Vélocité actuelle'},
+  'sec-projection':  {t:'Projection Finale',
+                      x:'Projection par journée : les ventes de l\u2019édition de référence rejouées sur les jours restants.'},
   'sec-presence':    {t:'Présence attendue par jour',
                       x:'Nombre d’entrées estimées. Les pass multi-jours sont comptés une fois par jour (ex. un pass 2 jours = 2 entrées). Les invitations et jeux concours sont inclus.',
                       n:'décochez une journée pour l’exclure du total'},
@@ -1668,6 +1709,14 @@ function projChart(ch, col, scen, refLabel, cap){
    rule that survives an edition changing its weekdays. */
 const PX = D.projx;
 let PSEL = PX ? PX.default : null;
+/* C4/E - ONE scenario for the whole section, and this REMOVES A CAPABILITY.
+   `scen(btn,i)` resolved `btn.closest('[data-proj]')`, so every day toggled
+   independently: Vendredi could sit on trajectoire while Samedi sat on
+   coefficient, and a reader adding two cards could total two days computed
+   under different models. Nothing read that state - no check, no export, no
+   other renderer - so it was unused as well as unsound. Recorded as a removal
+   rather than a move, because someone will miss it before they miss the bug. */
+let PSCEN = 0;
 (function(){
   if (!PX) return;
   const COL = {samedi:'var(--day-0)', dimanche:'var(--day-1)',
@@ -1679,13 +1728,31 @@ let PSEL = PX ? PX.default : null;
 
   window.pickProj = k => { if(window.swCloseAll) window.swCloseAll(); PSEL = k;
     render(); if (window.renderLogique) window.renderLogique(); };
-  /* scenario toggle — the old definition went with the block this replaced */
-  window.scen = (btn, i) => {
-    const card = btn.closest('[data-proj]');
-    card.querySelectorAll('.scen-b').forEach(b => b.classList.remove('on'));
-    btn.classList.add('on');
-    card.querySelectorAll('.pane').forEach(p =>
-      p.style.display = (+p.dataset.i === i) ? 'block' : 'none');
+  /* C4/E - same shape as pickProj, because it is the same kind of control:
+     both re-render the days and the header that names the choice. */
+  window.pickScen = i => { if(window.swCloseAll) window.swCloseAll(); PSCEN = i;
+    render(); if (window.renderLogique) window.renderLogique(); };
+  /* C4/E - the trajectory picker: a FOURTH instance of the existing
+     .sw-wrap / .cmp-trigger / .sw-menu component, so it invents no CSS. Chosen
+     over the segmented control it replaces because at 393 the segmented one
+     took a row to itself - head 142px against 95 - and over the .dtog switch
+     because a switch labelled "× coef. vélocité" names only the state you get
+     by turning it on and never shows the alternative. */
+  window.scenMenu = () => {
+    if (!PX || !PX.cands[PSEL]) return '';
+    const L = [`Trajectoire ${PX.cands[PSEL].label}`, '× coef. vélocité'];
+    return `<div class="sw-wrap" style="position:relative">
+      <button class="cmp-trigger" data-sw-trigger>
+        <span class="cmp-eyebrow">scén.</span><span class="cmp-name">${L[PSCEN]}</span>
+        <svg class="sw-chev" width="10" height="10" viewBox="0 0 24 24" fill="none"
+          stroke="var(--text-dim)" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div class="sw-menu right" role="menu" aria-label="Changer de scénario">
+        <div class="sw-group">Scénario de projection</div>
+        ${L.map((lab,i)=>`<button class="sw-item${i===PSCEN?' active':''}" role="menuitem"
+          ${i===PSCEN?'aria-current="true"':''} onclick="pickScen(${i})">
+          <span class="sw-label">${lab}</span>
+          ${i===PSCEN?`<svg class="sw-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>`:''}</button>`).join('')}
+      </div></div>`;
   };
 
   function menu(){
@@ -1707,9 +1774,15 @@ let PSEL = PX ? PX.default : null;
       </div></div>`;
   }
 
+  /* C4/E - the reference picker now lives in a head that renderLogique emits,
+     so #projctl does not exist when this IIFE first runs. Exposed and guarded
+     rather than reordered: the two modules stay independent, and whichever
+     runs second fills it. */
+  window.projMenu = menu;
   function render(){
     const C = PX.cands[PSEL];
-    document.getElementById('projctl').innerHTML = menu();
+    const pc = document.getElementById('projctl');
+    if (pc) pc.innerHTML = menu();
     document.getElementById('proj').innerHTML = C.days.map((p, idx) => {
       const col = COL[p.day] || 'var(--day-2)';
       /* §1 - THE FLOOR, NOT THE ANSWER. Past the event there are no remaining
@@ -1756,7 +1829,7 @@ let PSEL = PX ? PX.default : null;
       const S = i => {
         const sc = i ? p.s2 : p.s1;
         const pct = Math.round(sc.tot / p.cap * 100);
-        return `<div class="pane" data-i="${i}" style="display:${i?'none':'block'}">
+        return `<div class="pane" data-i="${i}" style="display:${i===PSCEN?'block':'none'}">
           <div class="hero-top" style="margin-bottom:14px">
             <div><div class="hero-v" style="color:${col}">${nf(sc.tot)}<span class="hero-u">projetés
               · ${pct}% de la jauge</span></div></div>
@@ -1793,9 +1866,6 @@ let PSEL = PX ? PX.default : null;
         <div class="proj-h">
           <div class="eyebrow" style="color:${col}">${CAP(p.day)} <span class="proj-map">jour ${idx+1}
             · projeté depuis ${CAP(p.refday)} ${C.label}</span></div></div>
-        <div class="scen">
-          <button class="scen-b on" onclick="scen(this,0)">Trajectoire ${C.label}</button>
-          <button class="scen-b" onclick="scen(this,1)">× coef. vélocité</button></div>
         ${S(0)}${S(1)}
       </div>`;
     }).join('');
@@ -1821,10 +1891,28 @@ let PSEL = PX ? PX.default : null;
     const C = (D.projx && D.projx.cands) ? D.projx.cands[PSEL] : null;
     if (!C) { el.innerHTML = ''; return; }
     const days = (C.days || []).filter(p => p.s1);
+    /* C4/E - THE SECTION'S HEAD IS EMITTED HERE, because the card that carries
+       it is this one. Three controls in the right slot, all governing every day
+       below: the reference picker, the trajectory picker and the methodology
+       toggle. Settings above content, which reads as governing what follows -
+       and it is the reason B was rejected, where the same controls sat inside
+       Vendredi's card while changing Samedi's numbers.
+
+       "Logique de projection" as a NAME retires here; the head says Projection
+       Finale and the toggle says Détails. It was one string in one renderer -
+       no tab, no scroll-spy target, no check referenced it.
+
+       At 393 this row wraps to title / then the three controls. Ruled: it wraps
+       deliberately rather than by accident, which is the distinction that
+       mattered on the .svctl row. */
     el.innerHTML =
-    `<div class="ac-t" onclick="ac(this)" style="margin-top:0;border-top:0;padding-top:0">
-       <span>Logique de projection</span><span class="arrow">▼</span></div>
-     <div class="ac-b">
+    secHead('sec-projection', undefined,
+      `<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+         ${OVER ? '' : `<div id="projctl">${window.projMenu ? window.projMenu() : ''}</div>${window.scenMenu ? window.scenMenu() : ''}`}
+         <div class="ac-t" data-ac="proj-meth" onclick="ac(this)"
+           style="margin-top:0;border-top:0;padding:0;justify-content:flex-end;white-space:nowrap">
+           <span>Détails</span><span class="arrow">▼</span></div></div>`) +
+    `<div class="ac-b" id="proj-meth">
        <div class="eyebrow" style="margin:16px 0 12px">Méthodologie — Deux scénarios de projection</div>
        <div class="meth">
          <div class="meth-n">1. Trajectoire ${C.label}</div>
@@ -2558,7 +2646,12 @@ document.addEventListener('mouseleave', e => {
 
 
 function ac(el){
-  const b = el.nextElementSibling;
+  /* C4/E - `nextElementSibling` stops being true the moment a toggle moves
+     into a header row, which is exactly what E does to "Détails". A named
+     target when one is given, the sibling otherwise - so the other call sites
+     are untouched rather than migrated. */
+  const b = (el.dataset.ac && document.getElementById(el.dataset.ac))
+            || el.nextElementSibling;
   const open = b.classList.toggle('open');
   el.querySelector('.arrow').textContent = open ? '▲' : '▼';
 }

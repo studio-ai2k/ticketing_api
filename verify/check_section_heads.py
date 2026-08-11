@@ -33,9 +33,12 @@ live in. That is #18's question answered in advance — this check excludes
 
 SCOPE
 -----
-`sec-projection` is exempt BY NAME, not by pattern. It is C4's, and it is the one
-section that is not a card at all (`#projctl` + `#proj` + a `#logique` card).
-When C4 lands, delete the exemption rather than widening the selector around it.
+NO EXEMPTIONS. `sec-projection` used to hold the only one: it was not a card at
+all, being `#projctl` + `#proj` + a trailing `#logique` card, and the note here
+said to delete the exemption when C4 landed rather than widen the selector
+around it. C4/E landed and it was deleted. The section leads with a header card
+that carries the title, its tooltip and the three controls, and it passes the
+same assertion as the other nine.
 """
 
 import json
@@ -49,7 +52,15 @@ ROOT = Path(__file__).resolve().parent.parent
 V2 = ROOT / 'v2'
 CHROME = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
 
-EXEMPT = {'sec-projection'}          # C4's. By name, never by pattern.
+# EMPTY, and deliberately. `sec-projection` was the one section that was not
+# a card at all - `#projctl` + `#proj` + a trailing `#logique` card - and it
+# was exempt BY NAME with the instruction to DELETE the exemption when C4
+# landed rather than widen the selector around it. C4/E landed: the section
+# now leads with a header card carrying the title, the tooltip and all three
+# controls, so it satisfies the same rule as the other nine with nothing
+# special written for it. An exemption that outlives its cause becomes a rule
+# nobody can explain - which is why `EXEMPT_PAGES` below is empty too.
+EXEMPT = set()
 NO_TOOLTIP = {'sec-velocite'}        # has no note; ruled to gain no copy.
 
 # No page exemptions. `page-campagne` used to need one: an empty-state

@@ -275,24 +275,38 @@ jobs:
         if: steps.change.outputs.changed != 'true' || matrix.event.fetch != 'true'
         run: |
           OUT="${{ matrix.event.out }}"
+          # v2 carries production's footer markup verbatim, so it restamps with
+          # the same call. It is listed here and not left to the rebuild step:
+          # this whole step exists BECAUSE a quiet run skips the rebuild, and
+          # the v2 page is skipped by exactly the same condition. A footer that
+          # exists and never refreshes is worse than none - it asserts a sync
+          # time that stopped being true, which is the class this project keeps
+          # finding, and it was misdiagnosed twice on production before M1.
+          TARGETS="$OUT v2/$OUT"
           if [ "${{ matrix.event.fetch }}" = "true" ]; then
             # Fetched, nothing moved. Bump the check time.
             # TZ=Europe/Paris, not bare date: the runner is UTC, so a bare
             # date stamps a time that reads as Paris and is 1-2h slow
             # depending on the season. Same class of bug as the last-ticket
             # time, different cause - this one is our own clock, not run.py's.
-            python scripts/stamp_footer.py "$OUT" --checked "$(TZ=Europe/Paris date +%H:%M)"
+            for f in $TARGETS; do
+              python scripts/stamp_footer.py "$f" --checked "$(TZ=Europe/Paris date +%H:%M)"
+            done
           else
             # Finished event: nothing was fetched, so the check stamp must not
             # move. Switch to the frozen label instead, keeping whatever freeze
             # date the published page already carries - a force_rebuild would
             # otherwise overwrite it with a fresh "Données API" stamp implying
             # a fetch that never happened.
+            # The freeze date is read from the PRODUCTION page for both, so
+            # the two never disagree about when the numbers stopped moving.
             prev=$(git show "HEAD:$OUT" 2>/dev/null \
                    | python scripts/stamp_footer.py - --read-frozen || true)
-            python scripts/stamp_footer.py "$OUT" --frozen "${prev:-$(TZ=Europe/Paris date +%d/%m)}"
+            for f in $TARGETS; do
+              python scripts/stamp_footer.py "$f" --frozen "${prev:-$(TZ=Europe/Paris date +%d/%m)}"
+            done
           fi
-          if git diff --quiet -- "$OUT"; then
+          if git diff --quiet -- $TARGETS; then
             echo "stamped=false" >> "$GITHUB_OUTPUT"
             echo "::notice::${{ matrix.event.id }} footer already current"
           else

@@ -289,6 +289,61 @@ def _family(event_id):
 
 TABS_RE = re.compile(r'<div class="dept-tabs-bg"[^>]*>.*?</div>\s*</div>', re.DOTALL)
 
+# Production's page footers. `.pg-footer` contains spans and svgs but no nested
+# <div>, so the first `</div>` is its own.
+FOOTER_RE = re.compile(r'<div class="pg-footer[^"]*">.*?</div>', re.DOTALL)
+# The mock's own footer: an empty div nothing has ever written to.
+MOCK_FOOT_RE = re.compile(r'\s*<div class="foot" id="foot"></div>')
+
+
+def transplant_footer(page, prod):
+    """Give the page production's two footers, one per page div.
+
+    THE SEAM, FIFTH COMPONENT. `</nav>`..`</body>` is where production's
+    footers live, so they went with the body - after the nav markup, the
+    sw-block export, the section bar and the finished-edition guard. The
+    diagnosis we carried for weeks was that a stray `</div>` had put `#foot`
+    inside `page-details`, so the stamp rendered on a page nobody reads. That
+    was beside the point: production has no `#foot` AT ALL, and v2's `#foot`
+    is the MOCK's empty div. v2's footer was never misplaced - it was never
+    there, which is why stamp_footer.py exited 1. That exit was the assertion
+    working, not a wrong path.
+
+    Production's markup is transplanted rather than the mock's `.foot`/`.fi`
+    design being wired up, for the same reason the nav is: the mock is a
+    RENDERING of the real thing, never a source, and here the real thing also
+    carries a contract. `stamp_footer.py` matches `.pgf-item` structure and
+    `postprocess_html.py` imports its builder - one definition serving the
+    emitter and the restamper. A restyled footer would still LOOK right and
+    would stop being restampable, which fails four hours later on a quiet run
+    rather than here.
+
+    TWO footers, not one, because stamp_footer requires exactly two matches.
+    v2 could have carried a single always-visible one - `#foot` sits outside
+    both page divs - but that would have meant editing the shared contract to
+    accept a count, and the file is production's as much as ours.
+    """
+    feet = FOOTER_RE.findall(prod)
+    if len(feet) != 2:
+        raise SystemExit(
+            f'pass 0: production has {len(feet)} .pg-footer block(s), want 2. '
+            'One per page. A miss here ships a page whose freshness stamp '
+            'nothing updates - which is worse than no stamp, because it '
+            'asserts a sync time that stopped being true.')
+    for marker, foot in zip(('</div><!-- /page-billetterie -->',
+                             '</div><!-- /page-details -->'), feet):
+        if page.count(marker) != 1:
+            raise SystemExit(
+                f'pass 0: page marker {marker!r} matched {page.count(marker)} '
+                'time(s), want 1')
+        page = page.replace(marker, f'  {foot}\n{marker}', 1)
+    page, n = MOCK_FOOT_RE.subn('', page, count=1)
+    if n != 1:
+        raise SystemExit(
+            'pass 0: the mock\'s empty #foot was not found to remove. Leaving '
+            'it would ship an empty bordered strip under the real footer.')
+    return page
+
 
 def transplant_tabs(page, mock):
     """Give the page the MOCK's section bar, buttons and all.
@@ -364,6 +419,10 @@ def apply_v2_body(page, payload, identity=()):
     # retire at cutover and their tab bar is not ours to move. So the markup is
     # transplanted here, v2-only, exactly as the body is.
     out = transplant_tabs(out, mock)
+
+    # `page` is the production page as run.py built it - the footers are read
+    # from there, before the seam threw them away, not rebuilt here.
+    out = transplant_footer(out, page)
 
     css = SHEET.read_text(encoding='utf-8')
     out, sn = STYLE_RE.subn(lambda m: '<style>\n' + css + '\n</style>', out, count=1)

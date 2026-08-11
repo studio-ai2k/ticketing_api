@@ -110,7 +110,13 @@ const { chromium } = require('playwright');
         finished: s.querySelectorAll('.empty-t').length,
         // a forecast figure is a scenario pane; none of them survive OVER
         panes: s.querySelectorAll('.pane').length,
-        scen: s.querySelectorAll('.scen-b').length,
+        // The scenario CONTROL moved into the section header under C4/E, so it
+        // is no longer inside #proj at all. Counted from the header, where it
+        // now lives: a control that governs every day belongs in the container
+        // that holds every day. Looking for `.scen-b` inside #proj found zero
+        // after E landed and reported a live edition as "forecast gone".
+        scen: document.querySelectorAll(
+          '#sec-projection .sec-head [data-sw-trigger]').length,
       };
     });
     await p.evaluate(() => { const b = document.getElementById('btn-details'); if (b) b.click(); });

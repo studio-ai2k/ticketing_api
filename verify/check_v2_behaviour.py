@@ -313,8 +313,18 @@ def main(argv):
         if flat:
             why.append(f"A3 the projected curve is a {r['scen'][0]['pts']}-point "
                        f"line on card(s) {', '.join(flat)}")
-        if r['projItems'] < 2:
+        # A4 is scoped to LIVE editions. A finished one projects nothing under
+        # ruling §1, so C4/E suppresses both pickers there rather than leaving
+        # affordances that change nothing - and the selector correctly renders
+        # zero. Third check to need this scoping after the same change, which
+        # is itself the signal: suppressing a control touches every assertion
+        # that took its presence for granted.
+        if live and r['projItems'] < 2:
             why.append(f"A4 the projection selector renders {r['projItems']} item(s)")
+        if not live and r['projItems']:
+            why.append(f"A4 a finished edition still offers {r['projItems']} "
+                       f"projection candidate(s) - a control over a forecast "
+                       f"that is not rendered")
         if r['cuts'] < (2 if live else 1):
             why.append(f"A2 {r['cuts']} separator(s) in Suivi")
         if r['navTop'] is not None and abs(r['navTop']) > 2:
