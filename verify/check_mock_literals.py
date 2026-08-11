@@ -62,6 +62,12 @@ STRUCTURAL = {
     'CMAP',       # D11 - label -> candidate, derived
     'SERIES',     # D12 - the fetch cache, starts empty
     'MOS', 'DYS', 'COL', 'MO',
+    # Full French month names, for the Suivi alignment sentence. Same class as
+    # MOS beside it: the CALENDAR, not the edition, so it is identical on every
+    # page by construction rather than by luck. MOS is the abbreviated set the
+    # table cells use ("9 aoû"); this is the prose set ("9 août 2026"), and the
+    # sentence is prose.
+    'MOSL',
     'PCOL', 'PRGB',   # platform colour maps: DICE purple, Shotgun green
     # The anchoring modes: three keys and their French labels, identical on
     # every page because they describe the CONTROL, not the edition. The keys

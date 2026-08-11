@@ -879,6 +879,11 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
         # the shipped HTML does not, and the alternative is a filename-to-id
         # map maintained by hand next to the one in the config.
         'id': event,
+        # The event's DISPLAY name, for the Suivi alignment sentence, which now
+        # names both editions ("Rennes 2026 vs Rennes 2025"). Straight from
+        # `event_name`, because `family` will not do: it is title-cased from the
+        # id and renders `Paris Xxl`.
+        'name': (cur_cfg.get('event_name') or '').strip(),
         # Launch anchoring's two inputs. `lead` is ours; the candidate's is in
         # its own series file under the same name and the same definition, so a
         # launch offset is `s.lead - D.lead` and nothing else crosses. `amode` is

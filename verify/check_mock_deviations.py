@@ -254,7 +254,7 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 1019
+BUDGET_ADDED = 1079
 BUDGET_REMOVED = 194
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
@@ -513,10 +513,17 @@ AUTHORISED += [
             'invented. Starts on D.amode, the config row, so the mode is not '
             'stated in a second place',
      'function modeMenu()'),
-    ('AN5', 'anchoring - the one line of copy: the alignment governs both '
-            'grains. The launch clause is conditional because the em-dash note '
-            'is only true in that mode',
-     'L’alignement s’applique aux deux grains'),
+    # AN5 RETIRED, not reverted. It authorised "L'alignement s'applique aux deux
+    # grains", which X7 replaces with the four-variant sentence. The entry is
+    # removed rather than left to fail as a MISSING deviation, because the line
+    # it described no longer exists in either file - and a ledger entry for a
+    # deviation that is gone is the same lie in the other direction.
+    #
+    # The reason the line went rather than moving to the tooltip: it could never
+    # have been wrong. It made no claim the table could contradict, which is
+    # exactly how `exact_date` shipped green and meaningless underneath it. Its
+    # launch clause survives, inside alignNote's launch variant, where it is the
+    # only mode it was ever true of.
     ('C1-sec-velocite', 'C1/C2 - anchor on "Vélocité actuelle". One tab per section means every section needs a target; seven had none. Markup, one attribute, no rendered change - and one entry each rather than one covering all seven, so a reverted anchor names itself',
      '<div class="sec" id="sec-velocite">'),
     ('C1-sec-presence', 'C1/C2 - anchor on "Présence attendue par jour". One tab per section means every section needs a target; seven had none. Markup, one attribute, no rendered change - and one entry each rather than one covering all seven, so a reverted anchor names itself',
@@ -873,6 +880,31 @@ AUTHORISED += [
            'eleven candidates in that menu, and one click reaches it with no '
            'exact_date involved',
      "const dif = r => r.b == null ? null : r.a - r.b;"),
+    ('X7', 'THE SUIVI ALIGNMENT SENTENCE, four variants driven by CSEL and '
+           'AMODE. It replaces "l\'alignement s\'applique aux deux grains", a '
+           'line that could never have been wrong because it made no claim the '
+           'table could contradict - which is why exact_date shipped doing '
+           'something else for weeks under it. The new line says "9 aout 2026 '
+           'contre 9 aout 2025" directly above a column showing those dates, so '
+           'a reader can falsify it at a glance. Writing the sentence is what '
+           'found five defects in that mode; the sentence IS the test. The old '
+           '"both grains move together" line is DROPPED rather than moved to '
+           'the tooltip - it answers a question only reachable by noticing a '
+           'disagreement the per-row design can no longer produce',
+     'function alignNote(){'),
+    ('X7-fmt', 'full French month names for the sentence. The mock carries only '
+               'the abbreviated MOS ("aou"), which is right for a table cell '
+               'and wrong in prose',
+     "const MOSL = ['janvier','février','mars','avril','mai','juin','juillet','août',"),
+    ('X8', 'the live-edition sentence becomes j_minus ONLY. It used to show '
+           'under exact_date too, where its reason is the wrong one: a calendar '
+           'alignment does not miss because the candidate J-x has not arrived. '
+           'Under exact_date a live candidate is necessarily a 2026 edition, so '
+           'N = 0, and the alignment sentence already says what the comparison '
+           'is; where the campaigns genuinely miss each other the gap banner '
+           'names the side that ran out. The exact_date variant of this '
+           'sentence is ABSENCE, not different wording',
+     "        && AMODE === 'j_minus')"),
     ('X6-head', 'the dRow/wRow head reading through `dif`. ONE ENTRY COVERS BOTH '
                 'FUNCTIONS and D15 warns against exactly that - but the line is '
                 'character-for-character identical in the two, because the change '
