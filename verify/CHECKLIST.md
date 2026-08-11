@@ -52,6 +52,8 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_v2_identity.py` | 2 (the shipped page; and the nav-form regression) |
 | `check_fixture_quarantine.py` | 3 |
 | `check_exact_date.py` | 4 (one per claim, broken separately) |
+| `check_b1_switch.py` (diff absence) | 1 (the null coercion restored) |
+| `check_selector.js` (diff absence) | 2 (dead below the % filter; then failing a correct page on `J−25`) |
 | `check_anchor_modes.py` | 2 (the drift claim and the by-construction one) |
 
 ---

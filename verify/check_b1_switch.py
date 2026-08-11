@@ -27,6 +27,22 @@ rendering as ordinary numbers with nothing to notice.
 So the snap is asserted directly as well: constant across every row of a pair,
 equal to the closed form, and — because a rule that is always zero is a rule
 that has never run — at least one non-zero snap must appear across the set.
+
+NEGATIVE TEST for the diff-absence assertion (CHECKLIST step 2)
+--------------------------------------------------------------
+Restoring `dif` in the mock to the null-coercing `r => r.a - r.b` and rebuilding
+makes this fail, exit 1:
+
+    [j_minus] Elektric Park 2023: 1 row(s) with no counterpart render a Diff
+              anyway, e.g. "+134" against an em-dash
+    [j_minus] Bordeaux Juin 2026: 2 row(s) ... e.g. "+175"
+
+Restoring the fix clears every one of them. Both halves were run scoped to
+epk.html alone — the other five pages moved aside — because the whole-set
+assertions (64/66 daily and weekly) are properties of all six pages and cannot
+hold on one. That scoping is stated rather than hidden: under it the mode
+difference reports 11/11 of 11 and fails, which is the check being right about
+a set it was not given.
 """
 
 import json
