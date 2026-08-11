@@ -1084,6 +1084,28 @@ const pc  = (a,b) => b ? a/b*100 : 0;
 const sign = v => (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
 const CAP = D.cap, A = D.cur, B = D.ref, JX = D.jx;
 
+/* §1 - THE EDITION IS OVER, AND THE PAGE HAS TO SAY SO.
+   `run.py` has carried this guard since before the redesign existed, in three
+   places: `'Terminé' if days_remaining_display <= 0 else f'J-{...}'`. Every v2
+   component re-derived `J−${JX}` from D.jx WITHOUT it. That is why parisxxl
+   currently reads "PARIS 130326 · Terminé" in the nav - transplanted production
+   markup, which inherited the guard - and "En vente · J−-2" in the badge two
+   inches below it. One page, two components, opposite answers, because only one
+   of them came through run.py.
+
+   `<= 0`, NOT `< 0`. At JX === 0 the required-rate divides by zero and renders
+   "∞ /j"; the projection's `Math.max(…, 0)` turns the negative case into a quiet
+   "0 /j" instead, which is the worse of the two because it looks like an answer.
+   No page sits at 0 today - and every edition passes through it for exactly one
+   day, so this is latent rather than absent. The boundary matches run.py's.
+
+   SAME is separate from JXL because "au même J−-1" is not fixed by relabelling
+   the number: past the event there is no J−x to be at the same point of. COPY
+   NOT RULED - Leo has not seen "en fin de campagne". */
+const OVER = JX <= 0;
+const JXL  = OVER ? 'Terminé' : `J−${JX}`;
+const SAME = OVER ? 'en fin de campagne' : `au même J−${JX}`;
+
 
 const PCOL = {Shotgun:'var(--sg-green)', DICE:'var(--dice-blue)'};
 const PRGB = {Shotgun:'167,139,250', DICE:'251,191,36'};
@@ -1177,7 +1199,7 @@ const soldPct = pc(A.pres_tot != null ? A.pres_tot : A.n, CAP);
           <div class="hero-net">${k(netHT(A.rev))}<span class="hero-netu">net HT après TVA ${(VAT*100).toFixed(1).replace('.',',')}%</span></div>
         </div>
       </div>
-      <div class="hero-right"><span class="badge amber">J−${JX}</span></div>
+      <div class="hero-right"><span class="badge amber">${JXL}</span></div>
     </div>
 
     <div class="rb">
@@ -1193,7 +1215,7 @@ const soldPct = pc(A.pres_tot != null ? A.pres_tot : A.n, CAP);
                  title="Au niveau de ${YR} : ${nf(B.n)}"></div>
                <div class="mb-seg" style="width:${soldPct-refPct}%;background:var(--cur)"
                  title="Avance sur ${YR} : +${nf(A.n-B.n)}"></div>
-               <div class="mb-mark" style="left:${refPct}%" title="${YR} au même J−${JX}"></div>`
+               <div class="mb-mark" style="left:${refPct}%" title="${YR} ${SAME}"></div>`
             : `<div class="mb-seg" style="width:${soldPct}%;background:var(--cur)"></div>`}
         </div>
         <div class="mb-key">
@@ -1299,8 +1321,16 @@ const soldPct = pc(A.pres_tot != null ? A.pres_tot : A.n, CAP);
    curve — a velocity figure without its trend is a number without a verb. */
 (function(){
   const note = document.getElementById('velnote');
-  if (note) note.textContent = `${JX} jours restants · événement les 16–17 octobre ${YC}`;
-  const need = Math.ceil((CAP - A.n) / JX);
+  /* the event-date literal stays in ONE place: pass 0 substitutes it per event
+     and asserts it matches exactly once. Branching around the whole string put
+     it in twice and failed the build - correctly. */
+  if (note) note.textContent =
+    `${OVER ? 'Édition terminée' : `${JX} jours restants`} · événement les 16–17 octobre ${YC}`;
+  /* OVER: (CAP - A.n) / JX is negative past the event and Infinity at JX===0.
+     bordeaux rendered "Rythme requis -17 802 / jour". There is no rate that
+     fills a jauge for a day that has happened, so the row states the shortfall
+     it ended on instead of a rate to reach it. */
+  const need = OVER ? null : Math.ceil((CAP - A.n) / JX);
 
   /* rolling mean for any window, computed from the daily rows */
   const rows = D.daily.filter(r => !r.fut).sort((a,b) => b.jx - a.jx);
@@ -1336,7 +1366,11 @@ const soldPct = pc(A.pres_tot != null ? A.pres_tot : A.n, CAP);
   };
 
   const cur7  = A.vel[7];
-  const proj  = A.n + cur7 * JX;
+  /* OVER: `A.n + cur7 * JX` with a negative JX projects BELOW current sales -
+     bordeaux read "À ce rythme, 26 130 billets le jour J" against 26 698 already
+     sold. The extrapolation has no meaning once the day it extrapolates to has
+     passed, so the final figure replaces it rather than being recomputed. */
+  const proj  = OVER ? A.n : A.n + cur7 * JX;
   const short = Math.max(CAP - proj, 0);
   const rate = (k, v, sub, col) => `<div class="vr">
       <div class="vr-k">${k}</div>
@@ -1346,15 +1380,19 @@ const soldPct = pc(A.pres_tot != null ? A.pres_tot : A.n, CAP);
   document.getElementById('vel').innerHTML = secHead('sec-velocite') + `
     <div class="vrow">
       ${rate('Rythme actuel', cur7, '7 derniers jours')}
-      ${rate('Rythme requis', need, `pour remplir les ${nf(CAP)} places`, 'var(--amber)')}
+      ${OVER ? `<div class="vr"><div class="vr-k">Résultat final</div>
+          <div class="vr-v" style="color:var(--amber)">${nf(A.n)}<span class="vr-u">/ ${nf(CAP)}</span></div>
+          <div class="vr-s">${(A.n/CAP*100).toFixed(0)}% de la jauge</div></div>`
+        : rate('Rythme requis', need, `pour remplir les ${nf(CAP)} places`, 'var(--amber)')}
       ${HAS_CMP
-        ? rate(`Rythme ${YR}`, B.vel[7], `au même J−${JX}`, 'var(--ref)')
+        ? rate(`Rythme ${YR}`, B.vel[7], SAME, 'var(--ref)')
         : rate('Vendus à ce jour', Math.round(A.n/ (D.daily.filter(r=>!r.fut&&r.a>0).length||1)),
                'moyenne depuis la mise en vente')}
     </div>
-    <div class="vproj">À ce rythme, <b>${nf(proj)} billets</b> le jour J —
+    <div class="vproj">${OVER ? `Édition terminée — <b>${nf(A.n)} billets</b> vendus au total` : `À ce rythme, <b>${nf(proj)} billets</b> le jour J`} —
       ${(proj/CAP*100).toFixed(0)}% de la jauge${short
-        ? `, il en manquerait <b>${nf(short)}</b>` : `, sold out atteint`}.</div>
+        ? `, il en ${OVER ? 'a manqué' : 'manquerait'} <b>${nf(short)}</b>`
+        : `, sold out atteint`}.</div>
     ${block(3)}${block(14)}
     <div class="ac-t" onclick="ac(this)"><span>Autres fenêtres</span><span class="arrow">▼</span></div>
     <div class="ac-b">${block(7)}${block(30)}
@@ -1396,7 +1434,7 @@ const soldPct = pc(A.pres_tot != null ? A.pres_tot : A.n, CAP);
       <div class="hero-top">
         <div><div class="hero-v">${nf(tot)}<span class="hero-u">/ ${nf(cap)} entrées</span></div>
           <div class="hero-sub">${yoy!==null
-            ? `<span class="${yoy>=0?'pos':'neg'}">${sign(yoy)}</span> vs ${YR} au même J−${D.jx} · `
+            ? `<span class="${yoy>=0?'pos':'neg'}">${sign(yoy)}</span> vs ${YR} ${SAME} · `
             : ''}${cap?(tot/cap*100).toFixed(1):0}% de la jauge${excl
               ? ` · ${excl} journée${excl>1?'s':''} exclue${excl>1?'s':''}` : ''}</div></div>
       </div>
@@ -1674,6 +1712,34 @@ let PSEL = PX ? PX.default : null;
     document.getElementById('projctl').innerHTML = menu();
     document.getElementById('proj').innerHTML = C.days.map((p, idx) => {
       const col = COL[p.day] || 'var(--day-2)';
+      /* §1 - THE FLOOR, NOT THE ANSWER. Past the event there are no remaining
+         days to replay a reference onto, so the section states the outcome and
+         projects nothing. Every forecast figure lives inside S(i), which this
+         return never reaches - so "sur ${PX.jx} jours", "de J−${PX.jx} à J−0"
+         and the required rate all go with it rather than each needing a guard.
+
+         BEFORE THIS, the numbers did not look broken. bordeaux's Vendredi read
+         "15 390 projetés · 86% de la jauge" against 15 416 already sold: a
+         projection UNDER the actual, printed with the same confidence as a real
+         one. The required rate read "0 /j" because Math.max(…, 0) clamped a
+         negative - the clamp turned a visibly wrong number into a plausible one.
+
+         Degrades exactly like the missing-reference card below: same .card, same
+         eyebrow, same .empty / .empty-t / .empty-s, same kg-2 beneath. One shape
+         for "this cannot be projected", whatever the reason.
+
+         The RETROSPECTIVE Leo has specified replaces this block. It is not this
+         commit, and this must not be the thing that makes it look done. */
+      if (OVER) return `<div class="card" style="margin-bottom:12px">
+        <div class="eyebrow" style="color:${col};margin-bottom:13px">${CAP(p.day)}</div>
+        <div class="empty"><div class="empty-t">Édition terminée</div>
+          <div class="empty-s">Cette journée a eu lieu — il n’y a plus de jours à
+            projeter. Les ventes ci-dessous sont définitives.</div></div>
+        <div class="kg kg-2" style="margin-top:14px">
+          <div class="kc"><div class="kc-k">Ventes finales</div><div class="kc-v">${nf(p.now)}</div>
+            <div class="kc-s">${(p.now/p.cap*100).toFixed(0)}% de la jauge</div></div>
+          <div class="kc"><div class="kc-k">Jauge</div><div class="kc-v">${nf(p.cap)}</div>
+            <div class="kc-s">capacité de la journée</div></div></div></div>`;
       if (!p.s1) return `<div class="card" style="margin-bottom:12px">
         <div class="eyebrow" style="color:${col};margin-bottom:13px">${CAP(p.day)}</div>
         <div class="empty"><div class="empty-t">Pas de journée correspondante</div>
@@ -1762,7 +1828,7 @@ let PSEL = PX ? PX.default : null;
        <div class="eyebrow" style="margin:16px 0 12px">Méthodologie — Deux scénarios de projection</div>
        <div class="meth">
          <div class="meth-n">1. Trajectoire ${C.label}</div>
-         <div class="meth-t">Réplique exacte des ventes de ${C.label} sur les J−${D.jx} restants.
+         <div class="meth-t">Réplique exacte des ventes de ${C.label} sur les jours restants${OVER ? ' — cette édition n’en a plus' : ` (J−${D.jx})`}.
            Les ventes journalières observées à la même distance de son propre événement sont
            ajoutées au cumul actuel. Aucun ajustement — projection conservatrice basée sur
            l’historique brut.</div>
@@ -1770,7 +1836,7 @@ let PSEL = PX ? PX.default : null;
        <div class="meth">
          <div class="meth-n">2. ${C.label} × coef. de vélocité</div>
          <div class="meth-t">La courbe de ventes de ${C.label} est multipliée par le ratio de
-           vélocité 14 j, cette édition contre la sienne au même J−${D.jx}. Un coef. &gt; 1
+           vélocité 14 j, cette édition contre la sienne ${SAME}. Un coef. &gt; 1
            signifie que cette édition vend plus vite que sa référence au même stade.</div>
        </div>
        ${days.length ? `<div class="eyebrow" style="margin:20px 0 10px">Application par journée</div>
@@ -2519,7 +2585,7 @@ function ac(el){
   host.innerHTML = secHead('sec-evenement', undefined,
     `<div class="dhero"><span class="dhero-n">Genève ${YC}</span>
       <span class="dhero-s">Madame Loyal · 2<sup>e</sup> édition</span>
-      <span class="badge amber" style="margin-left:8px">En vente · J−${D.jx}</span></div>`) + `
+      <span class="badge amber" style="margin-left:8px">${D.jx <= 0 ? 'Terminé' : `En vente · J−${D.jx}`}</span></div>`) + `
     <div class="dgrid">
       <div><div class="dcol-h">Lieu et dates</div>
         ${row('Lieu','Palexpo','Geneve')}

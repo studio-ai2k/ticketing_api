@@ -254,8 +254,8 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 634
-BUDGET_REMOVED = 160
+BUDGET_ADDED = 710
+BUDGET_REMOVED = 170
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
 AUTHORISED = [
@@ -568,6 +568,56 @@ AUTHORISED += [
             'own key, so an unknown group renders badly-named rather than '
             'vanishing. verify/check_cand_groups.py asserts both ends',
      'const seen = [...new Set((D.cands || []).map(c => c.g))]'),
+    ('OVER', 'ruling §1 - THE EDITION IS OVER AND THE PAGE SAYS SO. `run.py` '
+             'has carried this guard in three places since before the redesign '
+             '(`\'Terminé\' if days_remaining_display <= 0`); every v2 component '
+             're-derived J−x from D.jx without it. The tell: parisxxl read '
+             '"PARIS 130326 · Terminé" in the transplanted nav and "En vente · '
+             'J−-2" in the badge below it. <= 0 not < 0 - at exactly 0 the '
+             'required rate divides by zero and renders "∞ /j", latent because '
+             'every edition passes through 0 for one day. SAME is separate from '
+             'JXL because past the event there is no J−x to be at the same point '
+             'of. COPY NOT RULED: "en fin de campagne" is mine, not Leo\'s',
+     'const OVER = JX <= 0;'),
+    ('OVER-b', 'ruling §1 - the hero badge takes the guarded label', 
+     '<span class="badge amber">${JXL}</span>'),
+    ('OVER-m', 'ruling §1 - the mini-bar reference mark, hover text', 
+     'title="${YR} ${SAME}"'),
+    ('OVER-y', 'ruling §1 - Présence year-on-year subtitle', 
+     'vs ${YR} ${SAME} · '),
+    ('OVER-s', 'ruling §1 - Vélocité reference rate subtitle', 
+     'rate(`Rythme ${YR}`, B.vel[7], SAME,'),
+    ('OVER-n', 'ruling §1 - the Vélocité note. Written as one template with the '
+               'branch INSIDE it: branching around the whole string put the '
+               'event-date literal in twice and pass 0 failed the build, which '
+               'is the identity guard working', 
+     "${OVER ? 'Édition terminée' : `${JX} jours restants`} · événement"),
+    ('OVER-r', 'ruling §1 - the required rate is not computed past the event. '
+               'bordeaux rendered "Rythme requis -17 802 / jour"', 
+     'const need = OVER ? null : Math.ceil((CAP - A.n) / JX);'),
+    ('OVER-rf', 'ruling §1 - and the row states the result it ended on instead', 
+     '<div class="vr-k">Résultat final</div>'),
+    ('OVER-p', 'ruling §1 - `A.n + cur7 * JX` projects BELOW current sales at a '
+               'negative JX: bordeaux read 26 130 against 26 698 sold', 
+     'const proj  = OVER ? A.n : A.n + cur7 * JX;'),
+    ('OVER-v', 'ruling §1 - so the sentence states the total rather than a rate', 
+     'Édition terminée — <b>${nf(A.n)} billets</b> vendus au total'),
+    ('OVER-t', 'ruling §1 - and its tense follows. "il en manquerait" is a '
+               'conditional about a day that has already happened', 
+     "il en ${OVER ? 'a manqué' : 'manquerait'}"),
+    ('OVER-pf', 'ruling §1 - PROJECTION FINALE PROJECTS NOTHING. Every forecast '
+                'figure lives inside S(i), which this early return never reaches, '
+                'so "sur -1 jours", "de J−-1 à J−0" and the required rate all go '
+                'with it rather than each needing its own guard. Degrades in the '
+                'same shape as the missing-reference card immediately below. The '
+                'retrospective Leo specified REPLACES this block - this is the '
+                'floor, and must not be what makes that look done', 
+     'if (OVER) return `<div class="card" style="margin-bottom:12px">'),
+    ('OVER-me', 'ruling §1 - the methodology sentence names no J−x it does not have', 
+     'sur les jours restants${OVER ?'),
+    ('OVER-d', 'ruling §1 - the Détails badge, which is the one that contradicted '
+               'the nav switcher three lines above it', 
+     "${D.jx <= 0 ? 'Terminé' : `En vente · J−${D.jx}`}"),
     ('SV0', 'SUIVI ROW - the markup half: the two pickers wrapped in .svctl-p '
             'so .svctl has two children instead of three',
      '<div class="svctl-p">'),
@@ -608,8 +658,13 @@ AUTHORISED += [
                      'margin-left:auto inside the dhero row to margin-left:8px '
                      'beside the event name, because the head already flexes '
                      'the two apart. Its own entry - the pill is the piece a '
-                     'reader would notice missing',
-     'style="margin-left:8px">En vente'),
+                     'reader would notice missing. SIGNATURE NARROWED by ruling '
+                     '§1, which rewrote the pill\'s TEXT on the same line: this '
+                     'entry asserts the pill\'s POSITION and OVER-d asserts what '
+                     'it now says. Trap #22 a second time - one line, two '
+                     'rulings - and resolvable here only because the two '
+                     'decisions happen to be about different parts of it',
+     '<span class="badge amber" style="margin-left:8px">'),
     ('C3-days', 'C3 - Jours', "days.innerHTML = secHead('sec-jours')"),
     ('C3-cmp', 'C3 - Comparaison. The ternary gains a paren because the head is '
                'concatenated before it',
