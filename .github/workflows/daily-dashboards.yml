@@ -503,13 +503,7 @@ jobs:
       # already changed - and a stopped fetch and a stopped commit both leave it
       # frozen at the last run that landed.
       - name: Is the data actually fresh?
-        # TEMPORARY, AND REVERTED IN THE NEXT COMMIT. `--max-age-hours 0` makes
-        # this fail against real, fresh data, which is how the alert job's three
-        # states get proved: created, commented-not-duplicated, closed. The
-        # alert had never once executed its failure path, which is the same
-        # shape as the browser checks that could never run where they were
-        # installed - and that is what cost 28 hours.
-        run: python verify/check_data_freshness.py --max-age-hours 0
+        run: python verify/check_data_freshness.py
 
   # THE BADGE HAS TO REACH SOMEONE. Trap #13 was a `git add` pathspec failing in
   # this same job, diagnosed as "a signal that always fires carries no
