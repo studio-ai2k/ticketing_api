@@ -455,20 +455,29 @@ jobs:
           # pair whose campaign lengths differ most - run on a pair where
           # they nearly match, the same test passes while showing nothing.
           python verify/check_anchor_modes.py
-          # C1/C2. The section bar is nav markup, so the pass-0 seam leaves
-          # it behind and it is transplanted instead - a mock change that
-          # does not reach the page renders as a correct page with the
-          # wrong labels. Also asserts the 393px fit that ruling B bought.
-          NODE_PATH=/opt/node22/lib/node_modules python verify/check_section_bars.py
-          # C3. Both directions, and AFTER the renderers run: every card on
-          # the page has its innerHTML replaced, so a head in the markup is
-          # wiped silently and the page still renders.
-          NODE_PATH=/opt/node22/lib/node_modules python verify/check_section_heads.py
-          # Third viewport-edge defect of the same shape (C7's readout, .info's
-          # tooltip, .sw-menu). Any box positioned from an ANCHOR rather than
-          # from the viewport needs a clamp, and the absence is invisible
-          # until the anchor is near an edge.
-          NODE_PATH=/opt/node22/lib/node_modules python verify/check_float_clamp.py
+          # THE THREE BROWSER CHECKS ARE NOT HERE, AND MUST NOT BE PUT BACK
+          # WITHOUT A BROWSER. check_section_bars, check_section_heads and
+          # check_float_clamp each drive playwright and each hardcodes
+          # CHROME = '/opt/pw-browsers/chromium-1194/…', with NODE_PATH pointing
+          # at /opt/node22/lib/node_modules. Both are DEV-CONTAINER paths. A
+          # GitHub runner has neither, and this job installs neither, so the
+          # first line of the three died on `FileNotFoundError: 'node'`.
+          #
+          # They were added in b03a9cc and the very next scheduled run, #36 on
+          # 2026-08-10 16:41Z, failed. So did #37 through #42: seven consecutive
+          # runs, ~28 hours, every one of them fetching and building correctly
+          # and then failing at the gate. Nothing was committed in that window,
+          # which is why the footer read "Données API 00:06" against CSVs
+          # carrying tickets from 10/08 14:43 - the stamp had not frozen, the
+          # COMMIT had.
+          #
+          # check_selector.js already carries this rule in its own header:
+          # "Needs playwright and the preinstalled chromium; it is therefore NOT
+          # wired into verify/assert_redesign.sh". The same reasoning applies to
+          # any check that drives a browser. They live in verify/CHECKLIST.md
+          # and are run by hand.
+          #
+          # The gate that remains is everything that runs on python alone.
           if git diff --cached --quiet; then
             echo "Nothing changed - nothing to commit"
             exit 0

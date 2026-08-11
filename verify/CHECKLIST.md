@@ -58,6 +58,35 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 
 ---
 
+## WHICH CHECKS MAY RUN IN CI — the rule, and what breaking it cost
+
+**A check that drives a browser does not go in the workflow.** `check_selector.js`
+has carried this in its own header since it was written: *"Needs playwright and
+the preinstalled chromium; it is therefore NOT wired into
+`verify/assert_redesign.sh`"*. It applies to every browser check, not just that
+one.
+
+`check_section_bars`, `check_section_heads` and `check_float_clamp` were wired
+into the daily workflow's commit gate in `b03a9cc`. Each hardcodes
+`CHROME = '/opt/pw-browsers/chromium-1194/…'` and needs
+`NODE_PATH=/opt/node22/lib/node_modules` — **dev-container paths**. A GitHub
+runner has neither and the job installs neither, so the first of the three died
+on `FileNotFoundError: 'node'`.
+
+The very next scheduled run failed, and so did the six after it: **seven
+consecutive runs over ~28 hours, every one fetching and building correctly and
+then failing at the gate.** Nothing was committed in that window. The visible
+symptom was a footer reading `Données API 00:06` against CSVs carrying tickets
+from `10/08 14:43` — and the stamp had not frozen, the **commit** had.
+
+Two things to take from it:
+
+- **The gate runs on python alone.** Anything needing a browser is manual, in
+  this file, run before a push.
+- **A check that cannot run is worse than no check.** It fails 100% of the time,
+  so its signal carries no information — and here it took the whole pipeline
+  down with it, silently, because nothing watches a red badge.
+
 ## After any change to the Suivi renderer
 
     NODE_PATH=<dir with playwright> node verify/check_selector.js epk.html
