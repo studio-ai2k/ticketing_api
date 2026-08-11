@@ -258,6 +258,21 @@ Shipping the cutover without the preview path leaves a window where production i
 live, branches are mandatory, and nothing is viewable. That window has no safe
 length.
 
+**AND IT IS A SMALLER JOB THAN THIS SECTION FIRST PRICED IT.** GitHub Pages is
+already enabled on this repo and already deploying from `main` — `pages build and
+deployment` has run 188 times. An earlier note here said "no Pages, no
+`gh-pages`, no deploy workflow"; that was wrong, and wrong in an instructive way.
+It checked for a workflow FILE and for a `gh-pages` BRANCH, found neither, and
+concluded about the mechanism as a whole — but Pages can deploy from a branch
+with no workflow of its own, through GitHub's built-in job. Checking one
+mechanism and concluding about all of them is the same shape as a check that
+cannot see the defect it was written for.
+
+What that changes: the preview path does not need hosting built, only a
+published location for a branch build. The conclusion above is unaffected —
+`/v2/` on `main` is still the staging area today, and a branch is still
+unreviewable without somewhere to publish it.
+
 ### (d) What the old pipeline still feeds — measured, and CORRECTED
 
 The first version of this table had one column. It needed two, and the missing
