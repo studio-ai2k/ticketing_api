@@ -42,7 +42,7 @@ import io
 import shutil
 import sys
 import tempfile
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -88,13 +88,53 @@ def main():
     jd = [(r['jx'], r['b']) for r in out['j_minus'][0]['daily']]
     xd = [(r['jx'], r['b']) for r in out['exact_date'][0]['daily']]
 
-    if jw != xw:
-        failures.append('exact_date weekly != j_minus weekly')
-        print('   FAIL  exact_date and j_minus differ at the WEEKLY grain. They '
-              'differ by')
-        print('         the weekday snap alone, which cannot survive division by 7.')
-    else:
-        print('   ok    exact_date weekly == j_minus weekly (the snap rounds away)')
+    # ---- exact_date's weekly grain, RE-DERIVED --------------------------
+    # This used to assert `exact_date weekly == j_minus weekly`, on the spec's
+    # claim that the two modes differ by the weekday snap alone. That claim was
+    # false and this check was one of the places it was written down: the mode
+    # did raw J−X with the snap off, which IS j_minus's weekly column, so the
+    # assertion passed by encoding the defect.
+    #
+    # The expectation is now DERIVED from the calendar drift rather than
+    # remembered, so it stays right on a pair where the drift is a multiple of
+    # 7 and the two columns legitimately coincide.
+    #
+    #   j_minus  buckets a reference day by  (ref_ev - d) // 7
+    #   exact    buckets it by               (cur_ev - calFwd(d, N)) // 7
+    #                                      = (ref_ev - d + Y_d) // 7
+    #   Y_d = G - (calFwd(d, N) - d),  the two events' distance apart WITHIN
+    #   the calendar year. On epk_2026 vs epk_2023: G = 1100, N = 3, Y = 4.
+    #
+    # Y_d is constant at 4 across this reference campaign because every one of
+    # its days has 2024-02-29 inside its three-year window. That is the whole
+    # reason a constant offset LOOKED sound: the pairs where Y_d varies are the
+    # 2024 editions, and `build_series` emits no 2024 series.
+    cur_ev = dp.run.load_event_config(str(ROOT / 'event_config.csv'))
+    _cur = cur_ev[EVENT]['event_date_first']
+    _ref = cur_ev[REF]['event_date_first']
+    N = _cur.year - _ref.year
+    drift = {(_cur - dp.cal_shift(d, N)).days - (_ref - d).days
+             for d in (_ref, _ref - timedelta(days=200), _ref - timedelta(days=400))}
+    Y = sorted(drift)[0]
+    print(f'   calendar drift Y = {Y} day(s), Y mod 7 = {Y % 7}'
+          f'{"" if len(drift) == 1 else f"  (NOT constant: {sorted(drift)})"}')
+    if Y % 7:
+        if jw == xw:
+            failures.append('exact_date weekly == j_minus weekly')
+            print('   FAIL  exact_date and j_minus render the SAME weekly column, '
+                  'but the two')
+            print(f'         events sit {Y} days apart in the calendar year and '
+                  f'{Y} is not a')
+            print('         multiple of 7, so a calendar match must bucket the '
+                  'reference differently.')
+            print('         This is the shape the old assertion had backwards.')
+        else:
+            print('   ok    exact_date weekly != j_minus weekly, as a drift of '
+                  f'{Y} requires')
+    elif jw != xw:
+        failures.append('exact_date weekly != j_minus weekly at zero drift')
+        print(f'   FAIL  the drift is {Y}, a multiple of 7, so the two modes must '
+              'bucket alike')
 
     if jd == xd:
         failures.append('exact_date daily == j_minus daily on a snapped pair')
@@ -104,6 +144,36 @@ def main():
     else:
         print('   ok    exact_date daily != j_minus daily (the snap is what they '
               'differ by)')
+
+    # ---- the by-construction property, which is the point of the design -----
+    # A daily row reads reference date `db`. The weekly grain buckets that same
+    # reference date independently. Under `exact_date` both go through the same
+    # calendar mapping, so the bucket the weekly grain gives that date MUST be
+    # the bucket the daily row sits in. Nothing keeps the two in step; they are
+    # one operation, and this is what says so.
+    #
+    # It can fail: point the weekly grain at the reference's own event (the old
+    # rule) and every row with a non-zero drift lands one or more buckets out.
+    for m in ('exact_date', 'j_minus', 'days_since_launch'):
+        D = out[m][0]
+        al = dp.anchor(m, _cur, _ref, D['lead'],
+                       (_ref - date.fromisoformat(
+                           min(r['db'] for r in D['daily'] if r['db']))).days
+                       if any(r['db'] for r in D['daily']) else 0)
+        off = [r for r in D['daily']
+               if r['db'] and al.week_of(date.fromisoformat(r['db'])) != r['jx'] // 7]
+        if m == 'exact_date' and off:
+            failures.append('exact_date grains disagree')
+            print(f'   FAIL  {len(off)} daily row(s) read a reference date the '
+                  f'weekly grain puts in')
+            print(f'         another bucket, e.g. jx {off[0]["jx"]} (week '
+                  f'{off[0]["jx"] // 7}) reads {off[0]["db"]}, bucketed at '
+                  f'{al.week_of(date.fromisoformat(off[0]["db"]))}')
+        elif m == 'exact_date':
+            print(f'   ok    the two grains agree on every one of '
+                  f'{sum(1 for r in D["daily"] if r["db"])} matched rows: the '
+                  f'reference date a daily row reads is bucketed into that '
+                  f'row\'s own week')
 
     if lw == jw:
         failures.append('days_since_launch weekly == j_minus weekly')

@@ -112,7 +112,7 @@ const { chromium } = require('playwright');
         const rows = [...document.querySelectorAll('#suivi .sv:not(.sv-solo)')];
         const num = s => s.replace(/[^0-9]/g, '');
         return {
-          err: !!document.querySelector('#suivi .empty-t'),
+          err: (document.querySelector('#suivi .empty-t') || {}).textContent || null,
           rows: rows.map(r => {
             const l = r.querySelector('.sv-l');
             if (!l) return null;
@@ -167,29 +167,34 @@ def _sides(event, cand, cutoff, cfg_all, mode):
     cur_lead = (cfg['event_date_first'] - min(cur_n)).days if cur_n else 0
     c_lead = (ccfg['event_date_first'] - min(c_n)).days if c_n else 0
     _rows = [{**r, 'order_date': r['_d']} for r in crows]
+    align = dp.anchor(mode, cfg['event_date_first'],
+                      ccfg['event_date_first'], cur_lead, c_lead)
     # The same-point cut is RAW in every mode - run.py's two filters, neither
-    # snapped. exact_date shares j_minus's cut because they differ by the snap
-    # alone, which the cut never had.
+    # snapped. `exact_date` used to share j_minus's cut on the reasoning that
+    # they differ by the snap alone, which the cut never had. They no longer do:
+    # the same point in a calendar comparison is the reference's counterpart of
+    # our cutoff DATE, so it takes its own cut, mirroring dashboard_payload.
     if mode == 'days_since_launch':
         cut_rows = run.filter_tickets_to_same_point_dsl(
             _rows, cutoff,
             cfg['event_date_first'] - timedelta(days=cur_lead),
             ccfg['event_date_first'] - timedelta(days=c_lead))
+    elif mode == 'exact_date':
+        _m = align.ref_date(cutoff)
+        cut_rows = [r for r in _rows if r['order_date'] <= _m]
     else:
         cut_rows = run.filter_tickets_to_same_point(
             _rows, cutoff, cfg['event_date_first'], ccfg['event_date_first'])
     c_cut = max((r['order_date'] for r in cut_rows), default=None)
-    off, wshift = dp.anchor(mode, cfg['event_date_first'],
-                            ccfg['event_date_first'], cur_lead, c_lead)
-    return cfg, ccfg, cur_n, cur_rev, c_n, c_rev, off, wshift, c_cut
+    return cfg, ccfg, cur_n, cur_rev, c_n, c_rev, align, c_cut
 
 
 def expected(event, cand, cutoff, cfg_all, mode='j_minus'):
     """The reference column, from the server-side implementation."""
     (cfg, ccfg, cur_n, cur_rev, c_n, c_rev,
-     off, _wshift, c_cut) = _sides(event, cand, cutoff, cfg_all, mode)
+     align, c_cut) = _sides(event, cand, cutoff, cfg_all, mode)
     first = min(cur_n) if cur_n else cutoff
-    rows = dp.daily_rows(cur_n, cur_rev, c_n, c_rev, cutoff, first, off, c_cut,
+    rows = dp.daily_rows(cur_n, cur_rev, c_n, c_rev, cutoff, first, align, c_cut,
                          cfg['event_date_first'], ccfg['event_date_first'],
                          max(c_n) if c_n else None)
     # EVERY row, with the same em-dash sentinel the template now renders for
@@ -220,11 +225,11 @@ def expected_weekly(event, cand, cutoff, cfg_all, mode='j_minus'):
     difference, which reaches fifteen weeks and must not be dropped.
     """
     (cfg, ccfg, cur_n, cur_rev, c_n, c_rev,
-     _off, wshift, c_cut) = _sides(event, cand, cutoff, cfg_all, mode)
+     align, c_cut) = _sides(event, cand, cutoff, cfg_all, mode)
     cap = sum(d['day_capacity'] for d in cfg['days'])
     rows = dp.weekly_rows(cur_n, cur_rev, c_n, c_rev, cfg['event_date_first'],
                           ccfg['event_date_first'], cutoff, c_cut,
-                          (cfg['event_date_first'] - cutoff).days, cap, wshift)
+                          (cfg['event_date_first'] - cutoff).days, cap, align)
     out = []
     for r in rows:
         if r['sb']:
@@ -274,7 +279,7 @@ def main():
         return 1
 
     cfg_all = run.load_event_config(str(ROOT / 'event_config.csv'))
-    failures, snaps, weeks = [], [], [0]
+    failures, snaps, weeks, empties = [], [], [0], [0]
     MODES_SEEN = set()
     BYMODE = {}
     import io
@@ -305,12 +310,29 @@ def main():
                 continue
             mode, label = key.split('\0', 1)
             cid = cmap.get(label)
-            if got['err']:
+            if got['err'] and 'indisponible' in got['err']:
                 bad.append(f'[{mode}] {label}: rendered the unavailable banner')
                 continue
             with contextlib.redirect_stdout(io.StringIO()):
                 want, snap, srv_rows, c_last = expected(event, cid, cutoff,
                                                         cfg_all, mode)
+            # THE NO-OVERLAP EMPTY STATE, HELD TO THE SERVER'S OWN ANSWER.
+            # Reachable only under `exact_date`, where two campaigns lined up by
+            # calendar date can miss each other entirely. It must appear when
+            # the server finds no matched row and must NOT appear when it finds
+            # one - a banner that says "aucune date commune" over a table that
+            # has rows is worse than either failure alone, and a table of
+            # em-dashes with no banner is the plausible-empty-table shape this
+            # project keeps finding.
+            srv_empty = not any(r['b'] is not None for r in srv_rows)
+            shown = bool(got['err'] and 'commune' in got['err'])
+            if shown != srv_empty:
+                bad.append(
+                    f'[{mode}] {label}: the no-overlap empty state is '
+                    f'{"shown" if shown else "absent"} but the server finds '
+                    f'{"no" if srv_empty else "at least one"} matched row')
+            elif shown:
+                empties[0] += 1
             if mode == 'j_minus':
                 snaps.append((name, cid, snap))
             label = f'[{mode}] {label}'
@@ -384,17 +406,40 @@ def main():
     for k, (nd, nw, tot) in sorted(diffs.items()):
         print(f'  {k}: daily differs on {nd}/{tot} pair(s), '
               f'weekly on {nw}/{tot}')
-    if diffs.get('j_minus vs exact_date', [0])[0] == 0:
-        failures.append('exact_date renders identically to j_minus everywhere')
-        print('  FAIL  exact_date never differs from j_minus at the daily grain, '
-              'yet 21 pairs have a non-zero snap - the mode is not reaching the '
-              'client')
-    if diffs.get('j_minus vs exact_date', [0, 1])[1] != 0:
-        failures.append('exact_date differs from j_minus at the weekly grain')
-        print('  FAIL  exact_date differs from j_minus WEEKLY. Those two modes '
-              'differ by the weekday snap alone, which cannot survive division '
-              'by 7 - a difference here means a shift was applied where the '
-              'arithmetic says there is none')
+    # ---- exact_date, RE-DERIVED FROM THE CALENDAR RULE -------------------
+    # These two numbers used to be 21/45 daily and 0/45 weekly. BOTH were
+    # properties of the BROKEN mode: 21 was the non-zero-snap count, because
+    # `exact_date` was j_minus with the snap turned off, and 0 was what you get
+    # when the weekly shift is zero on both sides. They could not have been
+    # adjusted into correctness - the rule underneath them changed.
+    #
+    # Derived independently from the four formulas, before this check was run:
+    #
+    #   daily   a pair differs unless the calendar drift Y equals the weekday
+    #           snap smod7(G) on every row of the pair
+    #   weekly  a pair differs unless Y is a multiple of 7
+    #
+    # over all 66 reachable page x candidate pairs that gives 64 daily and 64
+    # weekly. The two that do not differ are the pairs whose drift happens to
+    # coincide with their snap. Predicted 64/64; observed below.
+    XD, XW = 64, 64
+    xd, xw, xt = diffs.get('j_minus vs exact_date', [0, 0, 0])
+    if (xd, xw) != (XD, XW):
+        failures.append(f'exact_date differs on {xd}/{xw}, want {XD}/{XW}')
+        print(f'  FAIL  exact_date vs j_minus differs on {xd} daily and {xw} '
+              f'weekly of {xt} pair(s);')
+        print(f'        the calendar rule predicts {XD} and {XW}.')
+        print('        DO NOT edit these two numbers to match. They are derived '
+              'from the')
+        print('        four formulas, and a number nudged until the check goes '
+              'green is')
+        print('        exactly what let the broken mode ship green for weeks.')
+    else:
+        print(f'  ok    exact_date differs from j_minus on {xd}/{xt} daily and '
+              f'{xw}/{xt} weekly, as the calendar drift predicts')
+    if empties[0]:
+        print(f'  ok    the no-overlap empty state agreed with the server on '
+              f'{empties[0]} pair(s) where the two campaigns share no date')
     dsl = diffs.get('j_minus vs days_since_launch', [0, 0, 0])
     if dsl[1] == 0:
         failures.append('days_since_launch never moves the weekly column')

@@ -51,6 +51,8 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_v2_gate.py` | 1 (the page that actually shipped) |
 | `check_v2_identity.py` | 2 (the shipped page; and the nav-form regression) |
 | `check_fixture_quarantine.py` | 3 |
+| `check_exact_date.py` | 4 (one per claim, broken separately) |
+| `check_anchor_modes.py` | 2 (the drift claim and the by-construction one) |
 
 ---
 
@@ -65,6 +67,29 @@ numbers, every left column header names the selection and reverts.
 
 Its two negative tests are load-bearing — reintroduce the `textContent` parse
 and the single-label update to confirm it still fires. **Do not remove them.**
+
+## After any change to an anchoring mode
+
+    python3 verify/check_exact_date.py
+    python3 verify/check_anchor_modes.py
+
+`exact_date` did raw J−X with the weekday snap turned off — a third thing,
+neither of the two its own label names — and shipped that way through a spec, a
+mirrored client and a check reporting 198/198. `check_exact_date` runs on
+`bordeaux_oct`, whose gaps against seven of its candidates are multiples of 7,
+because a zero snap is what made the defect invisible: there the broken mode WAS
+`j_minus`, byte for byte. **A negative test on the pair where the effect is
+largest would have passed against the broken code.**
+
+It asserts four things and each was broken separately to confirm it fires — the
+first break does not exercise the third claim, because breaking both grains the
+same way leaves them agreeing with each other while both are wrong.
+
+`check_anchor_modes` derives its expectation from the calendar drift rather than
+remembering a number, so it stays right on a pair whose drift is a multiple of
+7 and whose two modes therefore legitimately coincide. Its old assertion —
+`exact_date weekly == j_minus weekly` — was one of the places the false spec was
+written down, and it passed by encoding the defect.
 
 ## After any change to the comparison offsets or to run.py
 

@@ -254,7 +254,7 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 851
+BUDGET_ADDED = 954
 BUDGET_REMOVED = 189
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
@@ -813,6 +813,37 @@ AUTHORISED += [
                     'exception, because one rule is what a later reader can apply',
      '<div class="card" id="det-plat">'),
     ('C3-dd', 'C3 - Données', "dd.innerHTML = secHead('sec-donnees')"),
+    # ---- exact_date becomes a calendar operation -------------------------
+    # Four entries for one ruling, one per reader of the old offset, because a
+    # single signature would authorise whichever hunk difflib happened to draw
+    # around it. Weakness #2 of this ledger, paid for rather than argued with.
+    #
+    # These lines land INSIDE hunks that were already authorised, which is
+    # weakness #3: a modification to an already-added line changes neither the
+    # added nor the removed count for THAT line, so nothing but the budget saw
+    # this change coming. The budget is what caught it, and these entries are
+    # what make it matchable afterwards.
+    ('X1', 'exact_date is a date operation. The mode did raw J−X with the '
+           'weekday snap turned off — a third thing, neither of the two its '
+           'label names — and rendered bordeaux_oct identically to Jour J. '
+           '`anchorOf` now returns the whole mode: both grains, the labels and '
+           'the cut, mirroring dashboard_payload.Align',
+     'refJx: jx => evd - calShift(evo - jx, -N),'),
+    ('X2', 'exact_date: the calendar shift itself, mirroring '
+           'dashboard_payload.cal_shift. 29 February -> 28 February, and the '
+           'month is checked rather than trusted because Date.UTC rolls 29 Feb '
+           'into 1 March on a common year instead of throwing',
+     'const calShift = (dn, n) => {'),
+    ('X3', 'exact_date: the weekly grain maps the reference day FORWARD N '
+           'calendar years and buckets it by OUR event, so the reference bucket '
+           'is our bucket by construction. This is the departure from '
+           'reference_suivi_candidates.py, amended in the same commit',
+     'weekOf: jr => Math.floor((evo - calShift(evd - jr, N)) / 7),'),
+    ('X4', 'exact_date: the no-overlap empty state, naming the side that ran '
+           'out. Two campaigns lined up by calendar date can miss each other '
+           'entirely — 19 of 66 pairs today — and a generic "aucune donnée" '
+           'would be indistinguishable from a fetch that failed',
+     "<div class=\"empty-t\">Aucune date commune</div>"),
     ('C1', 'the billetterie section bar indexes EVERY section - six tabs in '
            'section order, relabelled. Ruled as a rule rather than a chosen '
            'set: one tab per section is something a later reader can apply. '

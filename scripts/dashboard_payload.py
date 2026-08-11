@@ -294,21 +294,109 @@ def cumulative(counts, anchor, span, cap):
 MODES = ('j_minus', 'days_since_launch', 'exact_date')
 
 
-def anchor(mode, cur_ev, ref_ev, cur_lead, ref_lead):
-    """(daily offset in days, weekly bucket shift) for an anchoring mode.
+def cal_shift(d, n):
+    """Same month and day, `n` years on. 29 February -> 28 February.
 
-    The daily offset is subtracted from a current-side row DATE to reach the
-    reference's matched date. The weekly shift is subtracted from the reference's
-    own J−x before bucketing.
+    NOT `timedelta`. A calendar match is a date operation, and the constant-day
+    approximation of it is only correct until a 29 February falls inside the
+    span - which is why `exact_date` carries a per-row mapping rather than one
+    offset. See `Align` below.
+
+    The 29 February rule is lossy in one direction and that is deliberate:
+    `cal_shift(cal_shift(d, -N), N) == d` for every date EXCEPT 29 February,
+    and there only when N is not a multiple of 4. Measured over 2024-2029 for
+    N = 1..4: two failures each at N = 1, 2, 3 (2024-02-29 and 2028-02-29) and
+    none at N = 4, where the counterpart leap day exists.
+    """
+    try:
+        return d.replace(year=d.year + n)
+    except ValueError:          # 29 February onto a common year
+        return date(d.year + n, 2, 28)
+
+
+class Align:
+    """The whole of one anchoring mode: both grains and the labels.
+
+    ONE OBJECT BECAUSE THE FAILURE THIS REPLACES WAS TWO RULES KEPT IN STEP.
+    `exact_date` shipped for weeks as a daily rule that did one thing and a
+    weekly rule that did another, and the mode's own label named a third. The
+    four readers of the old `(offset, wshift)` pair each re-derived the mapping
+    from those two integers; here they ask this object instead, so there is no
+    longer a place for the grains to disagree.
+
+      ref_date(day)   our row's date       -> the reference date it reads
+      week_of(d)      a reference date     -> the weekly bucket it falls in
+      week_span(w)    a weekly bucket      -> the reference dates it covers
+      ref_jx(day)     our row's date       -> the reference's own J-x
+
+    The constant-offset modes are unchanged and expressed here without loss:
+    `ref_date` is a subtraction and `week_of` buckets by the reference's OWN
+    event, which is what they have always done.
+    """
+
+    def __init__(self, offset=None, wshift=0, ref_ev=None, cur_ev=None, N=None):
+        self.offset = offset        # None for exact_date: there is no constant
+        self.wshift = wshift
+        self.ref_ev = ref_ev
+        self.cur_ev = cur_ev
+        self.N = N                  # set only for exact_date
+
+    @property
+    def calendar(self):
+        return self.N is not None
+
+    def ref_date(self, day):
+        if self.calendar:
+            return cal_shift(day, -self.N)
+        return day - timedelta(days=self.offset)
+
+    def ref_jx(self, day):
+        return (self.ref_ev - self.ref_date(day)).days
+
+    def week_of(self, d):
+        """Which bucket a REFERENCE date falls in.
+
+        The calendar case maps the reference day FORWARD N years and buckets it
+        by OUR event, so the reference's bucket is our bucket by construction
+        rather than by two rules agreeing. The one exception is our own
+        29 February row, whose reference day is shared with 28 February: it
+        lands one bucket out when the week boundary happens to fall between the
+        two, which is 1 event-date position in 7. Measured on a constructed
+        straddle pair, since no reachable pair has a 29 February today.
+        """
+        if self.calendar:
+            return (self.cur_ev - cal_shift(d, self.N)).days // 7
+        return ((self.ref_ev - d).days - self.wshift) // 7
+
+    def week_span(self, w):
+        """The reference dates bucket `w` covers, for the row label.
+
+        Calendar case: the inverse of `week_of`, so the span a row is labelled
+        with is the span it counted. Both endpoints are mapped back
+        independently - across a 29 February the reference window really is six
+        days where ours is seven, and saying so is more honest than adding six
+        to the start.
+        """
+        if self.calendar:
+            sa = self.cur_ev - timedelta(days=(w + 1) * 7 - 1)
+            return (cal_shift(sa, -self.N),
+                    cal_shift(sa + timedelta(days=6), -self.N))
+        sb = self.ref_ev - timedelta(days=self.wshift + (w + 1) * 7 - 1)
+        return sb, sb + timedelta(days=6)
+
+
+def anchor(mode, cur_ev, ref_ev, cur_lead, ref_lead):
+    """An `Align` for an anchoring mode.
+
+    For the two constant-offset modes the offset is subtracted from a
+    current-side row DATE to reach the reference's matched date, and the weekly
+    shift is subtracted from the reference's own J−x before bucketing.
 
     WHY THE WEEKLY SHIFT EXISTS, AND ONLY FOR ONE MODE
     --------------------------------------------------
     Weekly used to take no offset and no snap in every mode, on the reasoning
     that the daily offset is a WEEKDAY SNAP of at most ±3 days and cannot
-    survive division by 7. That is true of `j_minus` and of `exact_date` — the
-    two differ by the snap alone, so at weekly granularity they are the same
-    column, and the specified exact-date rule
-    `(cand_ev − (our_date − gap)) // 7` expands to exactly `jx // 7`.
+    survive division by 7. That is true of `j_minus`.
 
     It is NOT true of `days_since_launch`, where the offset is the difference in
     CAMPAIGN LENGTHS: −59, +98 and +105 days on the six live pairs. Fifteen weeks
@@ -316,28 +404,69 @@ def anchor(mode, cur_ev, ref_ev, cur_lead, ref_lead):
     weeks while the weekly table does not move at all, and the two halves of one
     mode disagree about what the mode is.
 
-    So: the mode governs both grains. `j_minus` and `exact_date` shift by 0
-    because their offsets are sub-week, not because weekly ignores the mode.
+    AND IT WAS NEVER TRUE OF `exact_date`, WHICH IS WHY THAT MODE IS NOW A DATE
+    OPERATION
+    --------------------------------------------------------------------------
+    This function used to return `(gap, 0)` for `exact_date` and the paragraph
+    above used to claim the mode was `j_minus` minus the weekday snap. It was
+    not. `m = day - gap` expands to a reference J−x of exactly our own J−x, so
+    the mode did raw J−X with the snap turned off — a third thing, neither of
+    the two its label names (`Date exacte`, `même J−x, date à date`). On
+    `bordeaux_oct` it rendered the same table as `Jour J`, its reference column
+    reading 24 August 2025 against our 9 August 2026 where date-to-date reads
+    9 August 2025.
+
+    It survived a spec, a mirrored client and a check reporting 198/198 because
+    the spec asserted that turning the snap off WAS the calendar match. Turning
+    the snap off gives raw J−X; the conclusion did not follow from the premise
+    and both were written down as one sentence.
+
+    A calendar match is a date operation, so `exact_date` gets a per-row mapping
+    and no offset at all. NOT a constant offset plus an assertion that it stays
+    constant: that assertion goes red today on 20 unreachable pairs — every 2024
+    edition, all straddling 2024-02-29, invisible only because `build_series`
+    emits no 2024 series. Per-row makes the correctness structural, so there is
+    nothing left to assert and the 20 violations stop existing rather than being
+    tolerated.
+
+    `j_minus` and `days_since_launch` are UNCHANGED. Their offsets are exact
+    constants, not incidental ones.
 
     `daily_offset` does the launch case unchanged - its own docstring already
     says the anchors are event dates for a finished candidate and FIRST-SALE
-    dates for a live one. Only `exact_date` is outside it, being the raw gap with
-    no snap at all.
+    dates for a live one.
     """
-    gap = (cur_ev - ref_ev).days
     if mode == 'exact_date':
-        return gap, 0
+        # N >= 0, asserted before the data can reach it. Zero candidates today
+        # have a later event year than their page, which makes this exactly the
+        # profile of `jr >= 0` and the weekly `w >= 0`: unreachable, and both of
+        # those shipped wrong numbers once an assumption moved. `cal_shift`
+        # would happily run backwards; the arithmetic below would not mean
+        # anything if it did.
+        N = cur_ev.year - ref_ev.year
+        if N < 0:
+            raise ValueError(
+                f'exact_date needs the reference edition to be the older one: '
+                f'our event {cur_ev} is in {cur_ev.year}, the reference '
+                f'{ref_ev} is in {ref_ev.year} (N = {N})')
+        return Align(cur_ev=cur_ev, ref_ev=ref_ev, N=N)
     if mode == 'days_since_launch':
-        return (daily_offset(cur_ev - timedelta(days=cur_lead),
-                             ref_ev - timedelta(days=ref_lead)),
-                ref_lead - cur_lead)
-    return daily_offset(cur_ev, ref_ev), 0
+        return Align(offset=daily_offset(cur_ev - timedelta(days=cur_lead),
+                                         ref_ev - timedelta(days=ref_lead)),
+                     wshift=ref_lead - cur_lead, ref_ev=ref_ev, cur_ev=cur_ev)
+    return Align(offset=daily_offset(cur_ev, ref_ev), wshift=0,
+                 ref_ev=ref_ev, cur_ev=cur_ev)
 
 
-def daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first, offset, ref_cut,
+def daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first, align, ref_cut,
                cur_ev, ref_ev, ref_last=None):
     """One row per day from `first` to the EVENT, with the reference matched by
-    the proven daily offset. `b`/`rb` are None where the reference has no day.
+    `align`. `b`/`rb` are None where the reference has no day.
+
+    `align` replaced a bare integer offset when `exact_date` became a calendar
+    operation. This is a local change because the mapping was always applied to
+    a DATE here, never to a J−x: `align.ref_date(day)` is the same shape as the
+    subtraction it replaces.
 
     TWO THINGS THAT LOOK LIKE ONE
     -----------------------------
@@ -364,7 +493,7 @@ def daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first, offset, ref_cut,
     end = max(cutoff, cur_ev)
     while day <= end:
         fut = day > cutoff
-        m = day - timedelta(days=offset) if offset is not None else None
+        m = align.ref_date(day) if align is not None else None
         a, ra = (0, 0) if fut else (cur_n.get(day, 0), cur_rev.get(day, 0))
         # Like-for-like truncation is a rule about the PAST: compare the two
         # editions only as far as ours has run. Past the cutoff there is no
@@ -404,14 +533,24 @@ def daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first, offset, ref_cut,
 
 
 def weekly_rows(cur_n, cur_rev, ref_n, ref_rev, cur_ev, ref_ev, cutoff, ref_cut,
-                cur_jx, cap, wshift=0):
-    """Bucketed by each side's OWN distance from its event, shifted by `wshift`
-    on the reference side. The two grains do not share the daily MAPPING, but
-    they do share the MODE - see `anchor()` for why that is not a contradiction.
+                cur_jx, cap, align=None):
+    """Bucketed by `align.week_of`. The two grains do not share the daily
+    MAPPING, but they do share the MODE - see `anchor()` for why that is not a
+    contradiction.
 
-    `wshift` is 0 for `j_minus` and `exact_date`, whose offsets are a weekday
-    snap and cannot survive division by 7, and is the campaign-length difference
-    for `days_since_launch`, where it reaches fifteen weeks.
+    Under the two constant-offset modes each side buckets by its OWN distance
+    from its own event, shifted by `wshift` on the reference side: 0 for
+    `j_minus`, whose offset is a weekday snap that cannot survive division by 7,
+    and the campaign-length difference for `days_since_launch`, where it reaches
+    fifteen weeks.
+
+    Under `exact_date` the reference is bucketed by OUR event date, after being
+    mapped forward N calendar years. That is a DEPARTURE from
+    `redesign/reference_suivi_candidates.py`, which has been the authority on
+    the weekly grain all project and states that each side buckets by its own
+    event. It is correct for a calendar comparison - the whole claim of the mode
+    is that a reference date and our date are the same date - and the spec is
+    amended in the same commit rather than left to disagree.
 
     `fut` is `w <= cur_jx // 7`: the week TODAY SITS IN is already future,
     because it has not finished. That is a different rule from the daily grain,
@@ -428,22 +567,42 @@ def weekly_rows(cur_n, cur_rev, ref_n, ref_rev, cur_ev, ref_ev, cutoff, ref_cut,
             ca[w][0] += k
             ca[w][1] += cur_rev.get(d, 0)
     for d, k in ref_n.items():
-        w = ((ref_ev - d).days - wshift) // 7
+        w = align.week_of(d)
         # Same split as the daily grain: truncate at the same point for the
         # weeks already lived, and run to the reference's own event for the
         # weeks still ahead.
         keep = (d <= ref_cut) if w > w0 else (d <= ref_ev)
-        # AND w >= 0, WHICH ONLY BITES ONCE wshift IS NON-ZERO. With no shift,
-        # `keep` already implies `d <= ref_ev` and therefore `w >= 0`, so this
-        # was unreachable and correct by accident. Under `days_since_launch` the
-        # candidate's campaign can be 105 days longer than ours, which puts its
-        # EVENT fifteen weeks past ours in launch-aligned time - geometrically
-        # right, and fifteen rows of "S−−1" … "S−−15" on the page. Measured:
-        # 15 such rows on epk under launch, 0 under j_minus.
+        # AND w >= 0. DECIDED HERE RATHER THAN CARRIED ACROSS, because what it
+        # does changed when `exact_date` became a calendar operation.
         #
-        # The daily grain never had to say this because it maps the reference
-        # onto OUR rows, and our rows stop at our event. The weekly grain is a
-        # union, so it is the one place the extra weeks can surface.
+        # It used to bite only under `days_since_launch`, where the candidate's
+        # campaign can run 105 days longer than ours and its EVENT lands fifteen
+        # weeks past ours in launch-aligned time - geometrically right, and
+        # fifteen rows of "S−−1" … "S−−15" on the page. Under `j_minus` `keep`
+        # already implies `d <= ref_ev` and therefore `w >= 0`, so it was
+        # unreachable and correct by accident. That is the same profile as
+        # `jr >= 0`, which shipped wrong numbers the moment live candidates
+        # reached the menu.
+        #
+        # Under `exact_date` it now bites hard: a reference day whose calendar
+        # counterpart falls after OUR event gets a negative bucket. Measured
+        # across all 66 reachable page x candidate pairs, 30 of them have at
+        # least one such week and one has 31 of them.
+        #
+        # KEPT, and it is now load-bearing rather than accidental. The reason is
+        # not "negative weeks look wrong" - it is that the DAILY grain cannot
+        # show those days at all. Daily maps the reference onto OUR rows and our
+        # rows stop at our event, so a reference day past our event has nowhere
+        # to land. The weekly grain is a union and is the one place it could
+        # surface. Dropping the bound would make the two grains cover different
+        # spans of the same comparison, which is precisely the disagreement the
+        # per-row design exists to make impossible.
+        #
+        # The cost is real and worth naming: on `bordeaux_oct` vs
+        # `halloween_2025` this hides the reference's last three weeks, which
+        # are its heaviest. They are hidden at the daily grain too, by the same
+        # rule and for the same reason - a date after our event is outside a
+        # date-to-date comparison by definition.
         if ref_cut and keep and w >= 0:
             cb[w][0] += k
             cb[w][1] += ref_rev.get(d, 0)
@@ -467,10 +626,13 @@ def weekly_rows(cur_n, cur_rev, ref_n, ref_rev, cur_ev, ref_ev, cutoff, ref_cut,
         if has_b:
             bb += b
         sa = cur_ev - timedelta(days=(w + 1) * 7 - 1)
-        # The reference label comes from ITS OWN event date and its own shift,
-        # never from ours. `- wshift` is the same term the bucket was built
-        # with, so the span a row is labelled with is the span it counted.
-        sb = ref_ev - timedelta(days=wshift + (w + 1) * 7 - 1)
+        # The reference label is the exact inverse of the rule the bucket was
+        # built with, so the span a row is labelled with is the span it counted.
+        # Under the constant-offset modes that is the reference's own event date
+        # and its own shift; under `exact_date` it is our week's span mapped back
+        # N calendar years. Both live in `Align.week_span` so the label cannot
+        # be derived from a different rule than the bucket.
+        sb, eb = align.week_span(w)
         out.append({'w': w, 'a': a, 'b': b, 'ra': round(ra),
                     'rb': round(rb) if rb is not None else None,
                     'pa': round(a / ta * 100, 1),
@@ -479,7 +641,7 @@ def weekly_rows(cur_n, cur_rev, ref_n, ref_rev, cur_ev, ref_ev, cutoff, ref_cut,
                     'cb': round(bb / tb * 100, 1) if has_b else None,
                     'sa': sa.isoformat(), 'ea': (sa + timedelta(days=6)).isoformat(),
                     'sb': sb.isoformat() if has_b else None,
-                    'eb': (sb + timedelta(days=6)).isoformat() if has_b else None,
+                    'eb': eb.isoformat() if has_b else None,
                     'fut': w <= w0})
     return out
 
@@ -654,6 +816,13 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
         ref_lead = ((ref_cfg['event_date_first'] - min(_ref_n_all)).days
                     if _ref_n_all else 0)
 
+    # ONE `Align` for the whole build. The cut, both grains and the labels all
+    # ask it, so there is no second place the mode can be interpreted - which is
+    # the failure `exact_date` shipped with for weeks.
+    align = (anchor(mode, cur_cfg['event_date_first'],
+                    ref_cfg['event_date_first'], cur_lead, ref_lead)
+             if ref_cfg else None)
+
     ref_cut = None
     if ref_rows and ref_cfg:
         # §1 route (c): run.py's own same-point filters, not reimplementations -
@@ -673,6 +842,24 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
                 _rows, cutoff,
                 cur_cfg['event_date_first'] - timedelta(days=cur_lead),
                 ref_cfg['event_date_first'] - timedelta(days=ref_lead))
+        elif mode == 'exact_date':
+            # `exact_date` NO LONGER SHARES `j_minus`'s CUT, and this is the one
+            # place that inheritance was load-bearing rather than cosmetic.
+            #
+            # The old comment above was right about its own premise: the cut is
+            # raw in every mode, and `exact_date` could share `j_minus`'s
+            # because "the two differ by the snap alone, which the cut never
+            # had". They no longer differ by the snap alone. The same point in a
+            # CALENDAR comparison is the reference's counterpart of our cutoff
+            # date, not its counterpart J−x, and on a straddle those are
+            # different days.
+            #
+            # Same rule as the other two - keep what the edition had sold by the
+            # matched moment - expressed through the mapping this mode actually
+            # uses. run.py is untouched: it carries the two filters it carries,
+            # and neither of them is this one.
+            _m = align.ref_date(cutoff)
+            ref_rows_cut = [r for r in _rows if r['order_date'] <= _m]
         else:
             ref_rows_cut = run.filter_tickets_to_same_point(
                 _rows, cutoff, cur_cfg['event_date_first'],
@@ -721,19 +908,15 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
     ref_n, ref_rev = series(ref_rows) if ref_rows else (Counter(), Counter())
     first = min(cur_n) if cur_n else cutoff
     span = (cutoff - first).days
-    offset, wshift = (anchor(mode, cur_cfg['event_date_first'],
-                             ref_cfg['event_date_first'], cur_lead, ref_lead)
-                      if ref_cfg else (None, 0))
-
     D['daily'] = daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first,
-                            offset, ref_cut, cur_cfg['event_date_first'],
+                            align, ref_cut, cur_cfg['event_date_first'],
                             ref_cfg['event_date_first'] if ref_cfg else None,
                             max(ref_n) if ref_n else None)
     D['weekly'] = weekly_rows(cur_n, cur_rev, ref_n, ref_rev,
                               cur_cfg['event_date_first'],
                               ref_cfg['event_date_first'] if ref_cfg else None,
                               cutoff, ref_cut, D['jx'], D['cap'],
-                              wshift) if ref_cfg else []
+                              align) if ref_cfg else []
     D['maxjx'] = max((r['jx'] for r in D['daily']), default=span)
     # The last ten days LIVED, not the last ten rows: with future rows in the
     # list the tail is all `–`.

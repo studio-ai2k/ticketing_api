@@ -40,6 +40,32 @@ candidate needs two anchors, not one:
 So every candidate carries BOTH `offset` (daily) and `first` (weekly). Using
 the offset for the weekly grain would silently mis-align every row.
 
+AMENDED: THE WEEKLY RULE ABOVE IS `j_minus`'s, NOT EVERY MODE'S
+--------------------------------------------------------------
+"Each side buckets its own tickets by its own event date" is true of `j_minus`
+and of `days_since_launch` (which adds a shift), and it is NOT true of
+`exact_date`. Under a calendar comparison the reference day is mapped forward N
+calendar years and bucketed by OUR event date, so its bucket is our bucket by
+construction.
+
+That is a real departure from this document, which has been the authority on
+the weekly grain all project, and it is written down here rather than left to be
+discovered:
+
+    A spec that disagrees with the code is how the 13,03% conflict survived the
+    whole life of the project.
+
+Why the departure is correct rather than convenient: the claim `exact_date`
+makes is that a reference date and one of our dates are THE SAME DATE. Bucketing
+the reference by its own event would mean the daily grain matched by calendar
+date while the weekly grain matched by campaign position — one mode meaning two
+things, which is the defect this mode already shipped once.
+
+The exception, stated because it is real: our own 29 February row shares its
+reference day with 28 February, so on a leap-straddling pair it can land one
+bucket out. That happens for one event-date position in seven and no reachable
+pair has a 29 February today.
+
 TWO ANCHORS, CHOSEN BY THE CANDIDATE
 ------------------------------------
 A finished candidate anchors on its event date: J-X against J-X, which is what
