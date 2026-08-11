@@ -1,5 +1,12 @@
 # Claude Code Handoff — API Fetch Proof Run
 
+> **Starting a new session? Read `HANDOFF_CC3.md` first.** This file is the
+> standing reference — constraints, the merged CSV contract, the open
+> questions. `HANDOFF_CC3.md` is the work IN FLIGHT: the `exact_date`
+> defect and its complete unbuilt design, the queue behind it, and the
+> things that will not be obvious from the code. It names the last green
+> tree so you start from a known state rather than inferring one.
+
 ## Mission
 Build `fetch_csv.py` that pulls live ticket data from Shotgun and DICE APIs and writes a merged CSV in the exact format `run.py` already consumes. Test with Rennes 2026. Do NOT modify any production files.
 
