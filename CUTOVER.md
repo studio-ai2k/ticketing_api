@@ -221,6 +221,43 @@ saying "remember to bump the version".
 Its scope note gets rewritten to say the v2 pipeline is conditional and therefore
 covered, rather than unconditional and therefore exempt.
 
+### (c2) A PREVIEW PATH — required BY the cutover, not after it
+
+**Build this as part of the cutover. From the moment it lands, the working
+pattern cannot function without it.**
+
+Today `/v2/` *is* the staging area, and that is why work goes straight to `main`:
+a push publishes to a path that is not production, and Leo has a URL he can open
+on his phone within one daily run. A branch adds a second staging layer on top of
+one that already exists, and it costs exactly what the `exact_date` session
+showed — the reviewing seat verified `main` and reported the work missing, Leo
+could not open the pages at all, and a self-contained copy of `v2/epk.html` had
+to be hand-built with the twelve series pre-seeded so the page's own `fetch`
+never fired.
+
+That hand-built copy is the thing to notice. It was one added line plus a seed
+block and otherwise byte-identical, and it was still **a transformed artefact
+being used to judge an untransformed one** — the class of mistake this project
+has already been bitten by (`check_v2_identity` and the locked mock exist because
+of it).
+
+**At cutover this inverts.** `v2/` becomes production, so a push to `main`
+becomes a deploy, and work must move to a branch. But a branch is only reviewable
+if its build is published somewhere Leo can open — otherwise every visual ruling
+needs a hand-built preview, and every visual defect on this project without
+exception was found by Leo opening a page.
+
+So the ordering is not optional:
+
+    now -> cutover     work on main; preflight, push, Leo opens /v2/
+    AT cutover         the preview path ships WITH it
+    after cutover      branch; publish the branch build to the preview path;
+                       merge once Leo has looked
+
+Shipping the cutover without the preview path leaves a window where production is
+live, branches are mandatory, and nothing is viewable. That window has no safe
+length.
+
 ### (d) What the old pipeline still feeds — measured, and CORRECTED
 
 The first version of this table had one column. It needed two, and the missing
@@ -525,6 +562,10 @@ Written so someone can *use* the folder, not just identify it:
 6  CUTOVER       §3 · the once-only snapshot (§5), taken BEFORE the banner, and
                  asserted as "exactly one differing line, matching STAMP_RE"
                  legacy/ created: six pages + banners + README
+                 THE PREVIEW PATH (§3(c2)) SHIPS HERE. Not after. The moment
+                 v2/ is production, branches become mandatory and nothing is
+                 viewable without it — and every visual defect on this project
+                 was found by Leo opening a page.
                  workflow pathspec made explicit (§6.4)
 7  green run
 8  CLEANUP       mitigation (a) first — it is also what would have caught §3(d)
