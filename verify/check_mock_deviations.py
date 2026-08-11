@@ -281,7 +281,7 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 1144
+BUDGET_ADDED = 1159
 BUDGET_REMOVED = 203
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)

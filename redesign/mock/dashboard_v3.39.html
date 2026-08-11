@@ -2347,8 +2347,23 @@ function alignNote(){
    THE YEAR STOPS BEING AN IDENTIFIER WHEN BOTH SIDES ARE 2026. That is the N=0
    case, five of eleven candidates on every page, so the reference column falls
    back to naming the EDITION - which is what the reader picked anyway. */
+/* RULED, after rendering three. "(même jour de campagne)" was 26 characters in
+   a three-column header and wrapped to two lines at 393 and 360, taking the
+   header from 22px to 44px. Measured alternatives:
+
+     (même jour de vente)   still wraps, 44px, 2 lines
+     (même campagne)        still wraps, 44px, 2 lines
+     (campagne)             ONE line, 27px, at both widths
+
+   A column header is a label, not a definition - the sentence directly above
+   already says "jour 69 de campagne contre jour 69" in full.
+
+   It breaks the "(même X)" shape of the other two, and that is fine: the
+   reader never sees two left headers at once. The parallel that matters is
+   with "(actuel)" in the SAME ROW, which is also one bare word - and against
+   that, "(campagne)" reads better than "(même …)" ever did. */
 function alignWord(){
-  return AMODE === 'days_since_launch' ? 'même jour de campagne'
+  return AMODE === 'days_since_launch' ? 'campagne'
        : AMODE === 'exact_date'        ? 'même date'
        : 'même J−x';
 }
