@@ -281,8 +281,8 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 1116
-BUDGET_REMOVED = 201
+BUDGET_ADDED = 1144
+BUDGET_REMOVED = 203
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
 AUTHORISED = [
@@ -946,6 +946,26 @@ AUTHORISED += [
             'it is the same label naming the same choice, which is the whole '
             'ruling. Source is not reshaped to give an entry its own diff',
      "return ctl('Événement comparatif', `<div class=\"sw-wrap\""),
+    ('X14', 'THE COLUMN HEADERS NAME THE ALIGNMENT THAT IS ON. They read '
+            '"2025 (même jour)" against "2026 (actuel)" whichever of the three '
+            'the picker had - already wrong under Ouverture, where the '
+            'correspondence is the same campaign DAY and not the same day, and '
+            'worse under Date exacte at N=0, where it rendered "2026 (MÊME '
+            'JOUR)" against "2026 (ACTUEL)": two identical years labelled as '
+            'opposites, directly above a sentence saying both sides are the '
+            'same date. THE YEAR STOPS BEING AN IDENTIFIER when both sides are '
+            '2026, so the reference column falls back to naming the EDITION - '
+            'which is what the reader picked anyway. Five of eleven candidates '
+            'on every page are N=0',
+     'function hdrRef(future){'),
+    ('X14-fut', 'the À VENIR header too. Its own entry because it is a separate '
+                'line that could be reverted alone, leaving the lived rows '
+                'naming the alignment and the future rows still saying "2023 '
+                '(référence)" - half-fixed reads as fixed',
+     "H(hdrRef(true),'J−X',YC + ' (à venir)') +"),
+    ('X14-w', 'the alignment word itself, its own entry because it is the part '
+              'a later reader would edit',
+     "function alignWord(){"),
     ('X13', 'RULED: the projection method labels lose the edition name - '
             '"Trajectoire", not "Trajectoire Rennes 2025". That form truncated '
             'at 393, and the measurement is what settled it: removing the four '

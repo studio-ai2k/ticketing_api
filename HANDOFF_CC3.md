@@ -353,7 +353,29 @@ becoming an architecture.
 
 The habit, which costs nothing: **before quoting a probe's number, run it once
 against a case that must violate. If it reports zero there too, the probe is
-empty.** That is the same move as "a negative test on the pair where the effect is
+empty.**
+
+### The same habit, generalised: state the claim you are making
+
+A probe, a watcher and a measurement all state a claim, and **the claim they
+state must be the one you are making.** Three instances in one session, all
+failing toward a false green:
+
+- a watcher on "main moved" when the question was "did the BOT commit" — it
+  tripped on my own push and read as the pipeline recovering
+- a watcher comparing against a 40-char SHA whose tail I invented rather than
+  captured, so the inequality was true on its first iteration and reported
+  success instantly
+- a width sum over both children of a row whose entire point is that they sit on
+  SEPARATE rows, reporting "OVERFLOWS by 37" for a layout that fits with 84px
+  spare
+
+None of these was a wrong answer to the right question. Each was a right answer
+to a question adjacent to the one being asked, which is worse, because the
+number looks fine and nothing about it invites a second look. The probe habit
+says run it once against a case that must violate; this is the same move applied
+to the predicate rather than the data — **if your check cannot distinguish your
+own action from the event you are waiting for, it has not been tested at all.** That is the same move as "a negative test on the pair where the effect is
 smallest cannot fail", applied one level earlier. The `bordeaux_2025` control run
 in §2 is what makes the 7 mean something.
 

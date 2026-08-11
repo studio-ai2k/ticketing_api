@@ -1852,6 +1852,11 @@ let CSEL = 'Elektric Park 2023';
    `#suivi` came back with innerHTML length 0 and one console error. A
    declaration hoists, so position stops mattering. Found by rendering the page;
    reading it would not have shown a blank card. */
+/* THE WIDTH LEVER, for whoever hits this next: the control row is as wide as
+   its TITLES, not its controls. "Événement comparatif" measures 162px against
+   its own 134px trigger, so the title is what sets the stack width. If the row
+   ever stops fitting, the label is what gives - shortening it buys more than
+   anything done to the control beneath it. */
 function ctl(title, inner){
   return `<div class="ctl-stack"><div class="kc-k">${title}</div>${inner}</div>`;
 }
@@ -2331,6 +2336,27 @@ function alignNote(){
     : `la date d’événement.`);
 }
 
+/* THE COLUMN HEADERS NAME THE ALIGNMENT THAT IS ON, not one of the three.
+   They read "2025 (MÊME JOUR)" against "2026 (ACTUEL)" whatever the picker
+   said - already wrong under Ouverture, where the correspondence is the same
+   campaign DAY and not the same day, and worse under Date exacte at N = 0,
+   where it renders "2026 (MÊME JOUR)" against "2026 (ACTUEL)": two identical
+   years labelled as opposites, directly above a sentence saying both sides are
+   the same date.
+
+   THE YEAR STOPS BEING AN IDENTIFIER WHEN BOTH SIDES ARE 2026. That is the N=0
+   case, five of eleven candidates on every page, so the reference column falls
+   back to naming the EDITION - which is what the reader picked anyway. */
+function alignWord(){
+  return AMODE === 'days_since_launch' ? 'même jour de campagne'
+       : AMODE === 'exact_date'        ? 'même date'
+       : 'même J−x';
+}
+function hdrRef(future){
+  const label = (CYR === YC) ? CSEL : CYR;
+  return future ? `${label} (référence)` : `${label} (${alignWord()})`;
+}
+
 function renderSuivi(){
   const isD = GRAIN === 'jour';
   const rows = isD ? D.daily : D.weekly;
@@ -2429,7 +2455,7 @@ function renderSuivi(){
          ${AMODE === 'exact_date' ? `L’alignement <em>Date exacte</em> compare
            les mêmes dates calendaires ; essayez <em>Jour J</em> pour comparer
            les mêmes J−x.` : ''}</div></div>` : ''}
-     ${HAS_CMP ? H('2023 (même jour)','Diff','2026 (actuel)') : H('','','2026 (actuel)')}
+     ${HAS_CMP ? H(hdrRef(),'Diff',YC + ' (actuel)') : H('','',YC + ' (actuel)')}
      <button class="show-more-btn more" onclick="tog('past')" id="b-past">Voir les ${past.length}
        ${isD?'jours précédents':'semaines précédentes'}</button>
      <div class="box" id="past" style="display:none;max-height:400px;overflow-y:auto">
@@ -2437,7 +2463,7 @@ function renderSuivi(){
      <div id="sep-past" style="display:none">${CUT('Précédent')}</div>
      ${now.map(R).join('')}
      ${fut.length ? CUT('À venir') +
-       H('2023 (référence)','J−X','2026 (à venir)') +
+       H(hdrRef(true),'J−X',YC + ' (à venir)') +
        `<button class="show-more-btn more" onclick="tog('fut')" id="b-fut">Voir les ${fut.length}
           ${isD?'jours restants':'semaines restantes'}</button>
         <div class="box" id="fut" style="display:none;max-height:340px;overflow-y:auto">

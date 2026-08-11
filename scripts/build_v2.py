@@ -241,12 +241,13 @@ def event_identity(cfg, ref_cfg, ref_label):
         # CYR, not YR: the header year follows the SELECTED comparison, which
         # B1 made mutable. YR is the configured reference and stops being the
         # right answer the moment someone picks another edition.
-        ("${HAS_CMP ? H('2023 (même jour)','Diff','2026 (actuel)') "
-         ": H('','','2026 (actuel)')}",
-         "${HAS_CMP ? H(CYR + ' (même jour)','Diff',YC + ' (actuel)') "
-         ": H('','',YC + ' (actuel)')}"),
-        ("H('2023 (référence)','J−X','2026 (à venir)')",
-         "H(CYR + ' (référence)','J−X',YC + ' (à venir)')"),
+        # THE TWO HEADER SUBSTITUTIONS ARE GONE, and their absence is the fix.
+        # They rewrote a hardcoded year into CYR/YC, which solved the identity
+        # half - rennes no longer headed its reference column "2023" - and left
+        # the SEMANTIC half untouched: the label still said "(même jour)"
+        # whichever of the three alignments was on. The mock now computes both
+        # headers itself from AMODE, CYR, YC and CSEL, so there is no literal
+        # here to substitute and nothing for this list to keep in step.
         ("let CSEL = 'Elektric Park 2023'",
          "let CSEL = " + repr(ref_label or '—')),
         # The CANDS group literal used to be substituted here. D12 replaced the
