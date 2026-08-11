@@ -503,11 +503,73 @@ jobs:
             exit 0
           fi
           git commit -m "Auto-update dashboards · $(date -u +%Y-%m-%d)"
+          # A GENERATED PAGE IS NEVER TEXT-MERGED.
+          #
+          # This retry used to be `git pull --rebase`, which asks git to
+          # reconcile two INDEPENDENTLY GENERATED 250 KB HTML pages line by
+          # line. Git loses: run #46 hit content conflicts in
+          # v2/bordeaux_oct.html, v2/geneve.html and v2/rennes.html, retried
+          # three times and exited 1 - with every check in that run passing. It
+          # failed at the push, and nothing landed.
+          #
+          # The rule this project already states is that a conflict in a
+          # generated file is resolved by REBUILDING from the mock, never by
+          # merging, because a text-merged page is a file no generator produced.
+          # This was the one place that could not follow it. Now it does.
           pushed=""
           for attempt in 1 2 3; do
             if git push; then pushed=1; break; fi
             echo "push rejected (attempt $attempt) - rebasing onto origin/main"
-            git pull --rebase --autostash origin main || break
+            # THE FETCHED CSVs, PRESERVED ACROSS THE REBASE. `data/` here holds
+            # what the build jobs fetched, carried in their artifacts. A rebase
+            # replaces it with origin's committed copies, and rebuilding from
+            # THOSE would reintroduce the one-cycle vintage skew fixed a few
+            # steps above. So they are set aside and put back before any
+            # rebuild reads them.
+            rm -rf /tmp/fetched && mkdir -p /tmp/fetched
+            cp data/*_merged.csv /tmp/fetched/ 2>/dev/null || true
+            git fetch origin main || break
+            if ! git rebase origin/main; then
+              unresolved=$(git diff --name-only --diff-filter=U)
+              echo "conflicts: $unresolved"
+              for f in $unresolved; do
+                case "$f" in
+                  v2/*.html|*.html|series/*.json)
+                    # Take a side ARBITRARILY - it is about to be overwritten by
+                    # a rebuild. Which side wins does not matter; that no merge
+                    # happens is the whole point.
+                    git checkout --ours -- "$f" 2>/dev/null \
+                      || git checkout --theirs -- "$f" ;;
+                  *)
+                    echo "::error::conflict in $f, which is not a generated \
+                    artefact - this needs a human, not a rebuild"
+                    git rebase --abort || true
+                    exit 1 ;;
+                esac
+              done
+              cp /tmp/fetched/*_merged.csv data/ 2>/dev/null || true
+              python scripts/build_series.py
+              html=$(echo "$unresolved" | tr ' ' '\n' | grep -E '\.html$' || true)
+              if [ -n "$html" ]; then
+                python scripts/rebuild_pages.py $html || {
+                  echo "::error::rebuild did not resolve the conflict"
+                  git rebase --abort || true
+                  exit 1
+                }
+              fi
+              git add -A
+              # FAIL LOUDLY rather than push something no generator produced.
+              if git diff --name-only --diff-filter=U | grep -q .; then
+                echo "::error::still unresolved after rebuild"
+                git rebase --abort || true
+                exit 1
+              fi
+              GIT_EDITOR=true git rebase --continue || {
+                echo "::error::rebase --continue failed after rebuild"
+                git rebase --abort || true
+                exit 1
+              }
+            fi
             sleep 3
           done
           [ -n "$pushed" ] || { echo "::error::could not push dashboards after 3 attempts"; exit 1; }
