@@ -168,6 +168,36 @@ AUTHORISED_CSS = [
     ('C3g', "C3 - the second dead rule, deleted with the first. Its own entry "
             "so a partial revert names itself",
      "  #sec-suivi .card-header .section-title{flex:1 0 100%}", None),
+    ('SV6', "SUIVI ROW, REVERSED: two rows, matching Projection. Grain "
+            "toggle alone on row one, RIGHT-aligned; the two pickers side by "
+            "side on row two, LEFT-aligned. Leo's earlier arrangement (SV2-SV4, "
+            "retired above) put the grain left and stacked the pickers right at "
+            "<=720px; he overruled it on consistency, because Projection is the "
+            "newer pattern and two cards showing the same class of control "
+            "should not be arranged differently. Measured after: row two is "
+            "253px against 337 available at 393 and 304 at 360 - fits with 84 "
+            "and 51px spare - and the longest label truncates on .cmp-name's "
+            "existing ellipsis rather than anything added",
+     ".svctl{display:flex;align-items:center;justify-content:space-between;gap:10px;",
+     ".svctl{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}"),
+    ('SV7', "the second half of that rule. The two children align to opposite "
+            "ends of the column, which is what makes it two rows rather than a "
+            "stack: grain to the end, pickers to the start",
+     "  flex-wrap:wrap;margin-bottom:14px}",
+     ".svctl>.scen{align-self:flex-end}"),
+    ('SV8', "and the picker group's own alignment, added rather than edited "
+            "because the locked sheet has no line for it",
+     None, ".svctl>.svctl-p{align-self:flex-start}"),
+    ('SO1', "the .cmp-trigger mobile padding MOVES below the base rule it kept "
+            "losing to. check_source_order found it defeated: media queries add "
+            "no specificity, so the base .cmp-trigger at L423 outranked this at "
+            "L143 purely on source order, and the tighter mobile sizing someone "
+            "wrote had NEVER applied. Ruled: honour it, not delete it - the row "
+            "had grown a title line above each control since it was written, "
+            "and nobody had seen the intent tried. Measured: each trigger 6px "
+            "narrower at <=720px, nothing reflows, head height unchanged",
+     "  .cmp-trigger{padding:6px 8px;gap:5px}",
+     "@media (max-width:720px){ .cmp-trigger{padding:6px 8px;gap:5px} }"),
     ('SV1', "SUIVI ROW - the two pickers get their own flex group. .svctl was "
             "space-between with THREE children, so free space was distributed "
             "BETWEEN all three and the two pickers were pushed apart on a wide "
@@ -176,22 +206,19 @@ AUTHORISED_CSS = [
             "separated from. Two children now: grain group left, picker group "
             "right, pickers adjacent at the group's own gap",
      None, ".svctl-p{display:flex;align-items:center;gap:10px}"),
-    ('SV2', "SUIVI ROW - mobile is an EXPLICIT column, not a wrap that lands "
-            "that way. The three items are 121+141+139 plus two gaps = 421 "
-            "against 337 available at 393, so they cannot share a line. "
-            "`flex-wrap` with space-between produced the hard-left landing Leo "
-            "reported: free space goes BETWEEN first-line items and the wrapped "
-            "one starts at the container's start edge. Reproducing the intended "
-            "result by tuning a wrap would be a layout correct by coincidence, "
-            "which is the class this project has paid for three times",
-     None, "@media (max-width:720px){ .svctl{flex-direction:column;align-items:stretch;flex-wrap:nowrap} }"),
-    ('SV3', "SUIVI ROW - grain buttons on their own row, LEFT-aligned, and "
-            "margin-bottom zeroed because the column gap now owns the spacing",
-     None, "@media (max-width:720px){ .svctl>.scen{align-self:flex-start;margin-bottom:0} }"),
-    ('SV4', "SUIVI ROW - the picker group stacks RIGHT-aligned beneath it. "
-            "Three rows: left, right, right - Leo's arrangement stated as a "
-            "layout rather than arrived at",
-     None, "@media (max-width:720px){ .svctl-p{flex-direction:column;align-items:flex-end} }"),
+    # SV2, SV3 and SV4 RETIRED, not lost. They authorised Leo's first
+    # arrangement of this row: at <=720px an explicit column, grain buttons
+    # left, pickers stacked right. He has REVERSED it on consistency - the
+    # Projection card is the newer pattern and two cards showing the same class
+    # of control should not be arranged differently. Recorded as a reversal
+    # rather than left to look like drift.
+    #
+    # The measurement that forced the first arrangement no longer applies: it
+    # was 421px of content against 337 available with THREE items sharing a
+    # line. The new arrangement puts the grain toggle on its own row, so row two
+    # carries two items at 253px against 337 - it fits with 84px spare at 393
+    # and 51px at 360, with the longest candidate label truncating on the
+    # ellipsis that was already in the sheet.
     ('TS1', "TYPE SCALE - the mobile values. Measured, not felt: the DOMINANT "
             "size on the page was --fs-micro at 11px across 35 uses, against "
             "budgetflow's 13px workhorse in the same app, and the floor was 9px "

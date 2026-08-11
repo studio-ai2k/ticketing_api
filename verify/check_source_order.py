@@ -63,7 +63,16 @@ COMMENT = re.compile(r'/\*.*?\*/', re.DOTALL)
 #
 # Pinned means: reported every run, exits 0, and ANY OTHER defeat fails. When
 # the ruling lands, empty this and it becomes strict and stays strict.
-PINNED = {('.cmp-trigger', 'padding'), ('.cmp-trigger', 'gap')}
+# EMPTIED, and that is the ruling landing rather than the pin being abandoned.
+# `.cmp-trigger`'s mobile padding and gap were pinned while the fix needed a
+# call: deleting would have admitted the rule never applied, honouring it makes
+# the controls 6px narrower each at <=720px. Honouring won - the row had grown a
+# title line above each control since the rule was written, and nobody had ever
+# seen the intent tried. The declaration now sits BELOW the base rule it kept
+# losing to, so it wins on the same source order that used to defeat it.
+#
+# Empty means strict: any defeat now fails.
+PINNED = set()
 
 
 def strip_comments(text):
