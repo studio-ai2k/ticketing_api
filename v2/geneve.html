@@ -508,8 +508,16 @@ body {
   .ck-key{gap:4px 10px;flex-wrap:nowrap}
   .ck-key .kc-s{font-size:var(--fs-tiny)}
   .ck-read{gap:7px;flex:0 0 auto}
-  .ck-jx{font-size:var(--fs-tiny)}
-  .ck-va,.ck-vb{font-size:var(--fs-tiny)}
+  /* .ck-jx and .ck-va/.ck-vb ASKED FOR --fs-tiny here and were DEFEATED by
+     their own base rules a few lines below, which are later in source order at
+     equal specificity. Deleted rather than reordered, and the distinction is
+     the whole entry: repairing the order would have shipped 13px -> 11px on
+     three readouts Leo had just ruled UP two steps. The rule was wrong, its
+     defeat was doing what we wanted, and fixing the bug would have shipped the
+     regression. Deleting is the option with zero visual consequence - measured
+     13px before and after at 560 and 393 - and it is also what the typography
+     ruling implies. Trap #21 from the other side: not a premise that went
+     stale, but a defect whose only effect was to be overridden. */
 }
 .ck-jx{font-size:var(--fs-micro);color:var(--text-muted)}
 .ck-va{font-family:var(--ff-display);font-size:var(--fs-mini);font-weight:600;color:var(--cur)}
@@ -1013,7 +1021,7 @@ function dbSubmit(){
     <div class="card" id="logique" style="margin-bottom:12px"></div>
     <div id="proj"></div></div>
 
-  <div class="pg-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">10/08 · 14:07</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 3.5V9H15"/></svg><span class="pgf-k">Données API</span><span class="pgf-v">12:52</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v6.8</span></span></div>
+  <div class="pg-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">10/08 · 14:07</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 3.5V9H15"/></svg><span class="pgf-k">Données API</span><span class="pgf-v">14:50</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v6.8</span></span></div>
 </div><!-- /page-billetterie -->
 
 <div class="page" id="page-details">
@@ -1041,7 +1049,7 @@ function dbSubmit(){
     </div></div></div>
 
   <div class="sec" id="sec-donnees"><div class="card" id="det-data"></div></div>
-  <div class="pg-footer det-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">10/08 · 14:07</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 3.5V9H15"/></svg><span class="pgf-k">Données API</span><span class="pgf-v">12:52</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v6.8</span></span></div>
+  <div class="pg-footer det-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">10/08 · 14:07</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 3.5V9H15"/></svg><span class="pgf-k">Données API</span><span class="pgf-v">14:50</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v6.8</span></span></div>
 </div><!-- /page-details -->
 </div><!-- /wrap -->
 

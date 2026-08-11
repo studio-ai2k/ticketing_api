@@ -416,9 +416,24 @@ AUTHORISED_CSS += [
      ".ck-vb{font-family:var(--ff-display);font-size:var(--fs-caption);font-weight:600;color:var(--ref)}",
      ".ck-vb{font-family:var(--ff-display);font-size:var(--fs-mini);font-weight:600;color:var(--ref)}"),
     ('D28c', "D1(a) - the mobile override, which would otherwise be LARGER than "
-             "the desktop size it was just reduced below",
+             "the desktop size it was just reduced below. NOW A DELETION: the "
+             "rule never took effect. Its base rule sits a few lines BELOW it at "
+             "equal specificity, so source order defeated it and .ck-va/.ck-vb "
+             "have always rendered at --fs-mini. Ruled deleted rather than "
+             "reordered - repairing the order would have shipped 13px -> 11px "
+             "on readouts the typography ruling had just taken UP two steps. "
+             "The rule was wrong, its defeat was doing what we wanted, and "
+             "fixing the bug would have shipped the regression. Measured 13px "
+             "at 560 and 393 before and after: zero visual consequence",
      "  .ck-va,.ck-vb{font-size:var(--fs-micro)}",
-     "  .ck-va,.ck-vb{font-size:var(--fs-tiny)}"),
+     None),
+    ('TS6', "the same deletion for .ck-jx, and its own entry because it is its "
+            "own line and could be restored alone. Never had an AUTHORISED_CSS "
+            "entry at all - it was locked-mock content that source order had "
+            "been quietly discarding since before this ledger existed, which is "
+            "why the source-order check is worth building",
+     "  .ck-jx{font-size:var(--fs-tiny)}",
+     None),
 ]
 
 AUTHORISED += [

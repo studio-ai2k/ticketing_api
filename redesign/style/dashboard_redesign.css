@@ -493,8 +493,16 @@ body {
   .ck-key{gap:4px 10px;flex-wrap:nowrap}
   .ck-key .kc-s{font-size:var(--fs-tiny)}
   .ck-read{gap:7px;flex:0 0 auto}
-  .ck-jx{font-size:var(--fs-tiny)}
-  .ck-va,.ck-vb{font-size:var(--fs-tiny)}
+  /* .ck-jx and .ck-va/.ck-vb ASKED FOR --fs-tiny here and were DEFEATED by
+     their own base rules a few lines below, which are later in source order at
+     equal specificity. Deleted rather than reordered, and the distinction is
+     the whole entry: repairing the order would have shipped 13px -> 11px on
+     three readouts Leo had just ruled UP two steps. The rule was wrong, its
+     defeat was doing what we wanted, and fixing the bug would have shipped the
+     regression. Deleting is the option with zero visual consequence - measured
+     13px before and after at 560 and 393 - and it is also what the typography
+     ruling implies. Trap #21 from the other side: not a premise that went
+     stale, but a defect whose only effect was to be overridden. */
 }
 .ck-jx{font-size:var(--fs-micro);color:var(--text-muted)}
 .ck-va{font-family:var(--ff-display);font-size:var(--fs-mini);font-weight:600;color:var(--cur)}
