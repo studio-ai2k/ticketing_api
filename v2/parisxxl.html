@@ -155,7 +155,6 @@ body {
 @media (max-width:720px) {
   /* Suivi header: title on its own line, the three controls stay on one row */
   .card-controls{width:100%;gap:6px;justify-content:flex-end}
-  .cmp-trigger{padding:6px 8px;gap:5px}
   .cmp-name{max-width:15ch}
   #sec-suivi .toggle-btn{padding:6px 11px}
   .cmp-menu{min-width:0;width:min(280px,calc(100vw - 34px));right:0;left:auto}
@@ -430,16 +429,15 @@ body {
   font-variant-numeric:tabular-nums}
 .meth-t{font-size:var(--fs-micro);color:var(--text-muted);line-height:1.65}
 .meth-t b{color:var(--text)}
-.svctl{display:flex;align-items:center;justify-content:space-between;gap:10px;
-  flex-wrap:wrap;margin-bottom:14px}
-@media (max-width:720px){ .svctl{flex-direction:column;align-items:stretch;flex-wrap:nowrap} }
-@media (max-width:720px){ .svctl>.scen{align-self:flex-start;margin-bottom:0} }
-@media (max-width:720px){ .svctl-p{flex-direction:column;align-items:flex-end} }
+.svctl{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.svctl>.scen{align-self:flex-end}
+.svctl>.svctl-p{align-self:flex-start}
 .cmp-trigger{display:flex;align-items:center;gap:7px;background:transparent;
   border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;
   font-family:inherit;font-size:var(--fs-micro);font-weight:600;color:var(--text-muted);
   white-space:nowrap;max-width:100%}
 .cmp-eyebrow{color:var(--text-dim);font-weight:500}
+@media (max-width:720px){ .cmp-trigger{padding:6px 8px;gap:5px} }
 .cmp-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:22ch}
 .cmp-meta{font-size:var(--fs-micro);color:var(--text-muted);font-variant-numeric:tabular-nums}
 .sw-group{font-size:var(--fs-tiny);letter-spacing:.09em;text-transform:uppercase;
@@ -1021,7 +1019,7 @@ function dbSubmit(){
     <div class="card" id="logique" style="margin-bottom:12px"></div>
     <div id="proj"></div></div>
 
-  <div class="pg-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">30/03 · 15:01</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg><span class="pgf-k">Données figées</span><span class="pgf-v">11/08</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v6.8</span></span></div>
+  <div class="pg-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">30/03 · 15:01</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 3.5V9H15"/></svg><span class="pgf-k">Données API</span><span class="pgf-v">00:03</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v6.8</span></span></div>
 </div><!-- /page-billetterie -->
 
 <div class="page" id="page-details">
@@ -1049,7 +1047,7 @@ function dbSubmit(){
     </div></div></div>
 
   <div class="sec" id="sec-donnees"><div class="card" id="det-data"></div></div>
-  <div class="pg-footer det-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">30/03 · 15:01</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg><span class="pgf-k">Données figées</span><span class="pgf-v">11/08</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v6.8</span></span></div>
+  <div class="pg-footer det-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">30/03 · 15:01</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 3.5V9H15"/></svg><span class="pgf-k">Données API</span><span class="pgf-v">00:03</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v6.8</span></span></div>
 </div><!-- /page-details -->
 </div><!-- /wrap -->
 
