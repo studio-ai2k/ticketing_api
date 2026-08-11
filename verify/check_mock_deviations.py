@@ -254,8 +254,8 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 954
-BUDGET_REMOVED = 189
+BUDGET_ADDED = 1019
+BUDGET_REMOVED = 194
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
 AUTHORISED = [
@@ -843,7 +843,47 @@ AUTHORISED += [
            'out. Two campaigns lined up by calendar date can miss each other '
            'entirely — 19 of 66 pairs today — and a generic "aucune donnée" '
            'would be indistinguishable from a fetch that failed',
-     "<div class=\"empty-t\">Aucune date commune</div>"),
+     "${gapShown ? `<div class=\"empty\" style=\"margin:12px 0\">"),
+    ('X5', 'RULED: the banner fires on what the READER CAN SEE, not on whether '
+           'the table has any matched row at all. rennes vs Bordeaux Juin 2026 '
+           'has twelve matched rows, every one of them behind "Voir les 60 '
+           'jours precedents", so the visible table was em-dashes with no '
+           'explanation - indistinguishable from a broken comparison and worse '
+           'than the state that HAS a banner, because it looks like data. '
+           'Suppressed where the live-edition sentence already explains the '
+           'same em-dashes: two rules correct alone are wrong where they meet, '
+           'and the note naming the CAUSE wins over the one naming the symptom',
+     "const gapShown = HAS_CMP && !CMPERR && CMPGAP && !liveNoted"),
+    ('X6', 'RULED: NO COUNTERPART, NO DIFF. `r.a - r.b` coerced null to 0, so a '
+           'row with no reference rendered "+134" in green - a number that '
+           'looks like a comparison and is a restatement of one side. Third '
+           'instance of null coercing to zero in a rendered figure after '
+           'nf(null) printing 0 and a live candidate future rendering 0; both '
+           'were ruled fixes. The guard is `!= null` and NOT falsy: `b === 0` '
+           'is a REAL zero (a day inside the covered range before the '
+           'candidate opened) whose diff is honest arithmetic - 49 of the 90 '
+           'blank-looking rows on epk vs bordeaux_oct_2026 - and em-dashing '
+           'those would delete a legitimate comparison to fix a different bug. '
+           'THE COUNT IS PER CANDIDATE, NOT PER PAGE, and saying so matters '
+           'because opening epk shows almost none: on its DEFAULT candidate '
+           '(epk_2023, 261 days of history) it is 1 lived row of 130. Switch '
+           'candidate and it is 62 for rennes_2026, 41 for bordeaux_oct_2026, '
+           '41 for geneve_2026. So it is not a mode problem and not a '
+           'default-view problem - B1 made it reachable at scale by putting '
+           'eleven candidates in that menu, and one click reaches it with no '
+           'exact_date involved',
+     "const dif = r => r.b == null ? null : r.a - r.b;"),
+    ('X6-head', 'the dRow/wRow head reading through `dif`. ONE ENTRY COVERS BOTH '
+                'FUNCTIONS and D15 warns against exactly that - but the line is '
+                'character-for-character identical in the two, because the change '
+                'IS the same change, and the boundary this project draws is that '
+                'source is not reshaped to give an entry its own diff. The line '
+                'budget is what bounds it; this note is what makes the gap '
+                'visible instead of silent',
+     "const d = dif(r), p = r.b ? (r.a - r.b)/r.b*100 : 0;"),
+    ('X6-cell', 'the diff CELL, in both dRow and wRow, for the same reason and '
+                'with the same caveat as X6-head',
+     ": `${difCell(d)}"),
     ('C1', 'the billetterie section bar indexes EVERY section - six tabs in '
            'section order, relabelled. Ruled as a rule rather than a chosen '
            'set: one tab per section is something a later reader can apply. '

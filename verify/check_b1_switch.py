@@ -100,7 +100,9 @@ const { chromium } = require('playwright');
           const nn = q ? q.cloneNode(true) : null;
           if (nn) nn.querySelectorAll('span').forEach(s => s.remove());
           const txt = nn ? nn.textContent.trim() : '';
-          return [d ? d.textContent.trim() : '', txt === '—' ? '—' : num(txt)];
+          const df = r.querySelector('.sv-c .sv-df');
+          return [d ? d.textContent.trim() : '', txt === '—' ? '—' : num(txt),
+                  df ? df.textContent.trim() : null];
         }).filter(Boolean);
       };
       await p.evaluate(() => grain('semaine'));
@@ -120,7 +122,9 @@ const { chromium } = require('playwright');
             const nn = n ? n.cloneNode(true) : null;
             if (nn) nn.querySelectorAll('span').forEach(s => s.remove());
             const txt = nn ? nn.textContent.trim() : '';
-            return [d ? d.textContent.trim() : '', txt === '—' ? '—' : num(txt)];
+            const df = r.querySelector('.sv-c .sv-df');
+            return [d ? d.textContent.trim() : '', txt === '—' ? '—' : num(txt),
+                    df ? df.textContent.trim() : null];
           }).filter(Boolean),
           header: (document.querySelector('#suivi .sv-h span') || {}).textContent,
         };
@@ -279,6 +283,11 @@ def main():
         return 1
 
     cfg_all = run.load_event_config(str(ROOT / 'event_config.csv'))
+    # `live` as the CLIENT sees it: the series file's own flag, which is what
+    # the live-edition sentence branches on.
+    SERIES_LIVE = {}
+    for f in (ROOT / 'series').glob('*.json'):
+        SERIES_LIVE[f.stem] = json.loads(f.read_text(encoding='utf-8')).get('live')
     failures, snaps, weeks, empties = [], [], [0], [0]
     MODES_SEEN = set()
     BYMODE = {}
@@ -324,21 +333,62 @@ def main():
             # has rows is worse than either failure alone, and a table of
             # em-dashes with no banner is the plausible-empty-table shape this
             # project keeps finding.
-            srv_empty = not any(r['b'] is not None for r in srv_rows)
+            # RULED: the banner fires on what the READER CAN SEE, so the
+            # expectation is the VISIBLE window, not the whole table. Those are
+            # different conditions and the difference is the point - rennes vs
+            # bordeaux_2026 has twelve matched rows, every one behind "Voir les
+            # 60 jours precedents", so a whole-table rule leaves the visible
+            # em-dashes unexplained. The window is the renderer's own split:
+            # not fut, and jx <= D.jx + 8.
+            #
+            # SUPPRESSED where the live-edition sentence already explains the
+            # same em-dashes. Two rules correct alone are wrong where they meet.
+            vis = [r for r in srv_rows
+                   if not r['fut'] and r['jx'] <= D['jx'] + 8]
+            # j_minus ONLY. The live sentence also shows under exact_date,
+            # where its reason - the candidate's J-x not having arrived - is
+            # not why a CALENDAR alignment misses, so the banner stays there.
+            live_noted = bool(SERIES_LIVE.get(cid)) and mode == 'j_minus'
+            # Launch alignment is out of scope: blank rows at the bottom are
+            # what that mode DOES, and its own sentence says so. 18 of the 45
+            # pairs the first version fired on were launch, every one correct.
+            if mode == 'days_since_launch':
+                live_noted = True
+            want_banner = (not any(r['b'] is not None for r in vis)
+                           and not live_noted)
             shown = bool(got['err'] and 'commune' in got['err'])
-            if shown != srv_empty:
+            if shown != want_banner:
                 bad.append(
-                    f'[{mode}] {label}: the no-overlap empty state is '
-                    f'{"shown" if shown else "absent"} but the server finds '
-                    f'{"no" if srv_empty else "at least one"} matched row')
+                    f'[{mode}] {label}: the no-overlap banner is '
+                    f'{"shown" if shown else "absent"} but the visible window '
+                    f'has {"no" if not any(r["b"] is not None for r in vis) else "a"} '
+                    f'matched row (live-edition note '
+                    f'{"showing" if live_noted else "not showing"})')
             elif shown:
                 empties[0] += 1
             if mode == 'j_minus':
                 snaps.append((name, cid, snap))
             label = f'[{mode}] {label}'
             MODES_SEEN.add(mode)
-            g = [tuple(x) for x in got['rows']]
+            cells = [tuple(x) for x in got['rows']]
+            g = [c[:2] for c in cells]
             w = list(want)
+            # NO COUNTERPART, NO DIFF - asserted on the RENDERED cell.
+            # `r.a - r.b` coerced null to 0, so a row with no reference showed
+            # a green "+134": a number that looks like a comparison and is a
+            # restatement of one side. The arithmetic was internally consistent,
+            # which is why an assertion of the form "diff == right - left"
+            # passes it - 0 is a legal value for the reference. So this asserts
+            # ABSENCE where the operand is absent, not correctness of the
+            # subtraction. Third instance of null coercing to zero in a rendered
+            # figure on this project; the other two were ruled fixes.
+            stray_diff = [c for c in cells if c[0] == '—' and c[1] == '—'
+                          and c[2] not in (None, '—')]
+            if stray_diff:
+                bad.append(
+                    f'{label}: {len(stray_diff)} row(s) with no counterpart '
+                    f'render a Diff anyway, e.g. "{stray_diff[0][2]}" against '
+                    f'an em-dash - that is one side restated, not a comparison')
             # The rendered set is what is in the DOM; compare as sequences of
             # (date, count) after dropping rows the template renders blank.
             if g != w:
@@ -351,7 +401,14 @@ def main():
             seen.add(tuple(g[:12]))
             with contextlib.redirect_stdout(io.StringIO()):
                 wantw = expected_weekly(event, cid, cutoff, cfg_all, mode)
-            gotw = [tuple(x) for x in (got.get('weekly') or [])]
+            wcells = [tuple(x) for x in (got.get('weekly') or [])]
+            gotw = [c[:2] for c in wcells]
+            stray_w = [c for c in wcells if c[0] == '—' and c[1] == '—'
+                       and c[2] not in (None, '—')]
+            if stray_w:
+                bad.append(f'{label} WEEKLY: {len(stray_w)} row(s) with no '
+                           f'counterpart render a Diff anyway, e.g. '
+                           f'"{stray_w[0][2]}"')
             if gotw != wantw:
                 i = next((k for k, (x, y) in enumerate(zip(gotw, wantw)) if x != y),
                          min(len(gotw), len(wantw)))

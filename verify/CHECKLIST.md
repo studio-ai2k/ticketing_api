@@ -68,6 +68,26 @@ numbers, every left column header names the selection and reverts.
 Its two negative tests are load-bearing — reintroduce the `textContent` parse
 and the single-label update to confirm it still fires. **Do not remove them.**
 
+## After any change to a rendered figure that can be ABSENT
+
+    NODE_PATH=/opt/node22/lib/node_modules python3 verify/check_b1_switch.py
+
+Null coercing to zero in a rendered figure is now the **third** instance on this
+project: `nf(null)` printing 0, a live candidate's future rendering 0 instead of
+an em-dash, and `r.a - r.b` rendering `+134` in green against a row with no
+counterpart. All three were arithmetically consistent and all three shipped.
+
+**The assertion has to be about ABSENCE, not about correctness.** "Diff equals
+right minus left" passes the bug, because `0` is a legal value for the reference
+and the subtraction stays internally consistent while the number is one side
+restated. `check_b1_switch` therefore asserts, on the rendered cell, that a row
+whose reference is an em-dash has an em-dash in Diff too.
+
+The guard is `!= null` and **not** falsy. `b === 0` is a real zero — a day inside
+the covered range before the candidate opened — and its diff is honest
+arithmetic: 49 of the 90 blank-looking rows on epk vs `bordeaux_oct_2026`.
+Em-dashing those would delete a legitimate comparison to fix a different bug.
+
 ## After any change to an anchoring mode
 
     python3 verify/check_exact_date.py

@@ -75,11 +75,51 @@ const CHROME = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
     for (const row of document.querySelectorAll('#suivi-jour .dtl-row[data-cur]')) {
       const diffEl = row.querySelector('.dtl-center .dtl-diff');
       const pct = row.querySelector('.dtl-center .dtl-pct');
-      if (!diffEl || !pct || !/%$/.test(pct.textContent)) continue;
+      if (!diffEl) continue;
       const l = count(row.querySelector('.dtl-left .dtl-sales'));
       const r = count(row.querySelector('.dtl-right .dtl-sales'));
-      if (l === null || r === null) continue;
-      const shown = parseInt(diffEl.textContent.replace(/[^0-9-]/g, ''), 10);
+      const shownTxt = diffEl.textContent.trim();
+      // A DIFF MUST BE ABSENT WHERE ITS OPERAND IS ABSENT, and this used to
+      // `continue` past exactly that case. "diff === right - left" cannot catch
+      // it: null coerces to 0, 0 is a legal count, and the subtraction stays
+      // internally consistent while the rendered number is one side restated.
+      // Two implementations agreeing, both wrong - the same shape as the
+      // exact_date spec.
+      //
+      // WHAT THIS DOES AND DOES NOT COVER, said out loud rather than left to
+      // look like coverage. The legacy renderer has no candidate switcher, so
+      // every LIVED row carries both sides - 557 of 557 operands populated on
+      // epk - and it cannot produce the defect at all. The defect is a v2
+      // phenomenon and its real guard is the rendered-cell assertion in
+      // check_b1_switch, on the path where it actually lives. This one bites if
+      // the legacy table ever gains a lived row with a missing side.
+      //
+      // The detection PATH is exercised on every run even so: future rows do
+      // have absent operands, this branch reaches them, and it read their cell
+      // text. Confirmed by the guard firing on the real page before the
+      // countdown exclusion below existed - which is the negative test earning
+      // its keep in the other direction, since that first version failed a
+      // correct artefact.
+      if (l === null || r === null) {
+        // `J−25` and `J+1` are not diffs. A future row carries the countdown in
+        // this cell and the event days themselves read `J+1`/`J+2`, so a row
+        // with no current-side figure is expected there and its cell is out of
+        // scope: a countdown, not a comparison.
+        if (shownTxt && !/^[—–-]$/.test(shownTxt) && !/^J\s*[+−–-]\s*\d+$/.test(shownTxt)) {
+          fails.push(`diff "${shownTxt}" rendered against an absent operand ` +
+                     `(left ${l}, right ${r}) on ${row.getAttribute('data-cur')}`);
+          break;
+        }
+        continue;
+      }
+      // The `%` filter comes AFTER the absence check, deliberately. It used to
+      // come first, and it skips precisely the rows this is about: when the
+      // reference is absent the percentage renders an em-dash, so every row
+      // with a missing operand was dropped before any assertion saw it. The
+      // first version of this guard sat below that filter and was dead code for
+      // its own case - caught by the constructed negative test, not by reading.
+      if (!pct || !/%$/.test(pct.textContent)) continue;
+      const shown = parseInt(shownTxt.replace(/[^0-9-]/g, ''), 10);
       if (!Number.isFinite(shown)) continue;
       checked++;
       if (shown !== r - l) {
