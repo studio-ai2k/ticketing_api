@@ -53,6 +53,7 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_fixture_quarantine.py` | 3 |
 | `check_exact_date.py` | 4 (one per claim, broken separately) |
 | `check_data_freshness.py` | 2 (the outage reconstructed; and threshold below true age) |
+| `check_source_order.py` | 4 (must-flag; correct order; lower specificity; masked) + a new defeat still fails while pinned |
 | `check_b1_switch.py` (diff absence) | 1 (the null coercion restored) |
 | `check_selector.js` (diff absence) | 2 (dead below the % filter; then failing a correct page on `J−25`) |
 | `check_anchor_modes.py` | 2 (the drift claim and the by-construction one) |
@@ -86,6 +87,34 @@ clear it is the same mistake twice.
 Negative tests: the real outage reconstructed by rolling rennes' timestamps back
 28 h (`29.1 h old`, exit 1), and a threshold below the true age (exit 1). Both
 return to exit 0 on restore, and the CSV was verified byte-identical after.
+
+## After any change to the stylesheet
+
+    python3 verify/check_source_order.py
+
+Media queries add NO specificity, so a base rule declared LATER at equal
+specificity beats an earlier `@media` rule. The media rule stays in the file,
+looks correct, and does nothing.
+
+D29 is why: `overflow-x` was declared twice on `html` one line apart, and `clip`
+won on **source order alone** — the sticky nav worked, resting on the order of
+two adjacent lines.
+
+**It reports "this rule does not take", never "the page is wrong."** Only the
+first is provable from a stylesheet. A defeated rule can render perfectly when a
+later `@media` re-supplies the value, and that case is reported separately as
+MASKED so nobody reads it as a rendering bug or deletes it as noise. Currently
+3 masked, all benign.
+
+**No allowlist**, deliberately: an allowlist makes the check pass by growing
+instead of the sheet getting better. Two `.cmp-trigger` declarations are PINNED
+instead — the same mechanism `check_spec_example` uses for O1 — because both
+available fixes change the sheet's meaning and the choice is a ruling. A new
+defeat still fails while they are pinned; that was tested.
+
+It cannot compare selectors as element sets, only as normalised text, so `.a .b`
+versus `.b` is invisible to it. That needs the DOM, which is what the browser
+checks are for.
 
 ## WHICH CHECKS MAY RUN IN CI — the rule, and what breaking it cost
 
