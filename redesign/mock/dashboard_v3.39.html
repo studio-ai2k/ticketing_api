@@ -831,7 +831,7 @@ const D={"jx":29,"cap":20000,"cur":{"n":10039,"inv":4,"rev":555499,"avg":55.33,"
 let SUIVINOTE = '';
 const HEADS = {
   'sec-overview':    {t:'Revenus',
-                      x:'Revenu = valeur faciale TTC : ce que reçoit le promoteur, TVA comprise. Les frais de réservation payés par l’acheteur viennent en sus et ne sont pas inclus ici.',
+                      x:'Revenu = valeur faciale TTC : ce que reçoit le promoteur, TVA comprise. Les frais de réservation payés par l’acheteur viennent en sus et ne sont pas inclus ici. Les frais DICE sont confirmés par un relevé de versement ; les frais Shotgun sont dérivés des données de la plateforme et n’ont pas été confirmés.',
                       n:'valeur faciale TTC · hors frais de réservation'},
   'sec-velocite':    {t:'Vélocité actuelle'},
   'sec-projection':  {t:'Projection Finale',
@@ -2155,7 +2155,7 @@ function renderSuivi(){
          <button class="scen-b ${isD?'on':''}" onclick="grain('jour')">Jour</button>
          <button class="scen-b ${isD?'':'on'}" onclick="grain('semaine')">Semaine</button></div>
        ${HAS_CMP ? `<div class="svctl-p">${modeMenu()}${cmpMenu()}</div>` : ''}</div>
-     ${HAS_CMP ? `<div class="sec-note" style="margin:8px 0 0">
+     ${HAS_CMP ? `<div class="sec-note" style="margin:8px 0 11px">
        L’alignement s’applique aux deux grains : le tableau par jour et le
        tableau par semaine bougent ensemble.${AMODE === 'days_since_launch'
        ? ` Aligné sur l’ouverture, ce sont les DÉBUTS de campagne qui se

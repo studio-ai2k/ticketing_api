@@ -606,6 +606,24 @@ AUTHORISED += [
                   'the fallback would have been dormant code that looks needed '
                   'and is not',
      '<div class="ac-t" onclick="ac(this)"><span>Détails</span>'),
+    ('SV-gap', 'ruling - the alignment note gains an 11px BOTTOM margin. It had '
+               '8px above and nothing below, so it sat close under the controls '
+               'and butted straight against the column headers, reading as one '
+               'block with the table rather than as an introduction to it. 11px '
+               'is READ, not chosen: it is .sec-head\'s own margin-bottom, the '
+               'gap Répartition\'s table header already uses above itself. '
+               'Measured 0px before and 11px after',
+     'class="sec-note" style="margin:8px 0 11px"'),
+    ('AUD-fee', 'audit ruling 3 - the Shotgun booking fee is DECLARED as '
+                'unconfirmed. AUDIT_SCOPE.md priced it: the fee segment is the '
+                'only figure the 13,03%% multiplier touches, 500 210 EUR of the '
+                '623 092 EUR shown is Shotgun and unverified, and Paris XXL '
+                'alone could be wrong by 142 033 EUR. DICE is confirmed against '
+                'a payout statement and says so in the same sentence, so the '
+                'reader can see which half is which. Same degrade-honestly rule '
+                'as everything else on the page: a silent unknown becomes a '
+                'declared one',
+     'les frais Shotgun sont dérivés des données de la plateforme'),
     ('C4-total', 'ruling (d) - THE PROJECTION TOTAL: the three facts each day '
                  'card gives, aggregated, which a reader currently assembles by '
                  'hand. It sits directly under the two pickers that define it, '
