@@ -60,6 +60,7 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_b1_switch.py` (diff absence) | 1 (the null coercion restored) |
 | `check_selector.js` (diff absence) | 2 (dead below the % filter; then failing a correct page on `J−25`) |
 | `check_anchor_modes.py` | 2 (the drift claim and the by-construction one) |
+| `scripts/pages.py` (page enumeration) | 3 (a config page absent from v2/ — the old glob passed on five; an active row with a prose filename; no active page at all) |
 | `fetch_csv.py` pagination guards | 5 (undefined `SHOTGUN_PAGE_SIZE`; Shotgun loop; DICE stall; DICE short fetch; and the false-defect control that must NOT fire) |
 
 ---

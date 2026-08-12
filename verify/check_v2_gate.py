@@ -48,6 +48,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / 'scripts'))
+from pages import v2_pages   # noqa: E402 - CUTOVER 6.3, one page list
 CHROME = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
 
 JS = r"""
@@ -90,7 +92,7 @@ const { chromium } = require('playwright');
 
 def main(argv):
     targets = [str(Path(t).resolve()) for t in argv] or \
-        sorted(str(p) for p in (ROOT / 'v2').glob('*.html'))
+        [str(p) for p in v2_pages()]
     if not targets:
         print('no v2 pages found - nothing to check')
         print('(that is a pass only because nothing is published)')

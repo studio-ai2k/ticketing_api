@@ -9,7 +9,17 @@
 
 set -uo pipefail
 DIR="${1:-.}"
-FILES=(parisxxl.html bordeaux.html epk.html bordeaux_oct.html geneve.html rennes.html)
+# CUTOVER 6.3: the page list comes from event_config's active rows, not from a
+# hand-written array here. `scripts/pages.py` is the one declaration; it exits
+# non-zero rather than printing a short list, so a config this cannot read stops
+# the gate instead of quietly shrinking it.
+if ! mapfile -t FILES < <(python3 "$(dirname "$0")/../scripts/pages.py"); then
+  echo "  FAIL  cannot enumerate pages from event_config.csv"; exit 1
+fi
+if [[ ${#FILES[@]} -eq 0 ]]; then
+  echo "  FAIL  event_config.csv named no pages - the gate would pass on nothing"
+  exit 1
+fi
 FAIL=0
 
 # The stylesheet postprocess_html.py vendors in. Assertions that would

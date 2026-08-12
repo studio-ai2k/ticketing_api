@@ -500,9 +500,34 @@ imported everywhere. Then:
 pages carry a stamp over a shared set that no longer exists, and are excluded
 because they are **not built**, not because they are old.
 
-**Status: specified, not shipped.** `check_build_stamp.py:88` and
-`assert_redesign.sh:12` still carry hand-written six-name lists as of this
-writing. Nothing in this section has been built.
+**Status: SHIPPED 2026-08-12**, as `scripts/pages.py`.
+
+`page_names()` (active rows' `output_filename`), `pages_in(dir)` -> (present,
+missing), `v2_pages()` which RAISES on a declared-but-absent page, and a CLI so
+the bash gate reads the same list.
+
+**The enumerator count was 6 in this section and is 16 in the repo** — the same
+drift as the offset readers going 4 -> 5 while the files were open. All 16 now
+call `v2_pages()`, and both hand-written lists are gone.
+
+The control that makes it a safe switch: the config-derived list is identical to
+what `v2/*.html` and root `*.html` find today, and `assert_redesign.sh` output
+is line-for-line identical to the previous version.
+
+The control that makes it WORTH it: with `v2/geneve.html` removed,
+
+    old glob   "5 page(s) carry only their own event"   exit 0
+    new        "v2/ is missing geneve.html - event_config declares 6 ..."   exit 1
+
+Coverage lost with nothing said, which is exactly what an exclusion by glob
+does, demonstrated on the mechanism this section replaces.
+
+`status == 'active'` is the selector, and it is exact rather than convenient:
+**22 archived rows carry prose in `output_filename`** — one `Presale - Shotgun
+only - merge into main`, twenty-one `Capacity TBD`. Every one is
+`status='archive'`. The `.html` test in `page_names` is therefore not what
+excludes them; it RAISES if an *active* row ever grows such a value, because
+skipping it silently would drop a real page from sixteen checks at once.
 
 ### 6.4 The workflow pathspec — the archive must not be re-staged
 

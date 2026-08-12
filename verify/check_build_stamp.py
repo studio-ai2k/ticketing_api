@@ -107,9 +107,21 @@ sys.path.insert(0, str(ROOT / 'scripts'))
 
 import build_v2  # noqa: E402
 import postprocess_html as pp  # noqa: E402
+from pages import page_names  # noqa: E402 - CUTOVER 6.3, one page list
 
-PAGES = ('parisxxl.html', 'bordeaux.html', 'epk.html', 'bordeaux_oct.html',
-         'geneve.html', 'rennes.html')
+# CUTOVER 6.3. This was a hand-written six-name tuple - the same hazard as the
+# page->event map that was wrong in all six rows, sitting in the layer whose job
+# is to catch that. It now comes from event_config's active rows, so a seventh
+# event is covered the day it is configured rather than the day someone
+# remembers this file.
+#
+# LEGACY PAGES ARE OUT, AND NOT BECAUSE THEY ARE OLD. After cutover, `legacy/`
+# will hold frozen copies carrying a stamp over a shared set that no longer
+# exists. They are excluded because NO CONFIG ROW POINTS AT THEM - they are not
+# built. That is a property of what the repo produces, not of a path pattern,
+# and it is the distinction that keeps an exclusion from being coverage lost
+# without a decision.
+PAGES = page_names()
 
 
 def audit(label, pages, prefix, want, assets, stamp_re):

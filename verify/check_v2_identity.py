@@ -42,6 +42,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / 'scripts'))
+from pages import v2_pages   # noqa: E402 - CUTOVER 6.3, one page list
 PAYLOAD_RE = re.compile(r'const (?:D=|LG\s*=\s*)\{.*?\};\s*\n', re.DOTALL)
 
 # Literals belonging to the mock's own event (epk_2026) and its reference.
@@ -82,7 +84,7 @@ def payload_labels(raw):
 
 
 def main():
-    pages = sorted((ROOT / 'v2').glob('*.html'))
+    pages = v2_pages()
     if not pages:
         print('no v2 pages built - nothing to scan')
         return 0

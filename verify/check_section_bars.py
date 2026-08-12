@@ -46,6 +46,8 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / 'scripts'))
+from pages import v2_pages   # noqa: E402 - CUTOVER 6.3, one page list
 MOCK = ROOT / 'redesign' / 'mock' / 'dashboard_v3.39.html'
 V2 = ROOT / 'v2'
 CHROME = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
@@ -101,7 +103,7 @@ const { chromium } = require('playwright');
 
 
 def main():
-    pages = sorted(V2.glob('*.html'))
+    pages = v2_pages()
     if not pages:
         print('no v2 pages')
         return 1
