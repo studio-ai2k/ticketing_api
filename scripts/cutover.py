@@ -272,6 +272,123 @@ def compare(name, new_html, v2_html, login_bg):
         if l[:1] in '+-' and not l.startswith(('+++', '---'))]
 
 
+BANNER = (
+    '<div id="{bid}" style="background:#3a2a00;border:1px solid #7a5a00;'
+    'border-radius:8px;padding:12px 16px;margin:0 0 16px;'
+    'font:500 13px/1.5 \'DM Sans\',sans-serif;color:#ffd479">'
+    '<b>Archive — {freeze}.</b> Cette page n\'est plus mise à jour. '
+    'Les chiffres sont ceux du {freeze} et ne bougeront plus. '
+    'Le tableau de bord actuel est à la racine du site.'
+    '</div>'
+)
+
+
+def plan_writes(names, v2_snap, built, hashes, bgs):
+    """[(Path, content)] for every file the cutover changes. Computed whole,
+    written only once all of it exists - see the staging loop in main()."""
+    out = []
+
+    # 1. the six new root pages, exactly as asserted above
+    for n in names:
+        out.append((BASE_DIR / n, built[n].read_text(encoding='utf-8')))
+
+    # 2. legacy/: the pages that ship TODAY, frozen, each with one banner.
+    #    The hashes were taken BEFORE this loop and before any banner - §6.2's
+    #    provenance record, so the archive is provably "the page that shipped,
+    #    plus one named insertion" and anyone can verify it by stripping the
+    #    banner and hashing.
+    freeze = subprocess.run(['git', '-C', str(BASE_DIR), 'rev-parse', '--short', 'HEAD'],
+                            capture_output=True, text=True).stdout.strip()
+    for n in names:
+        src = (BASE_DIR / n)
+        html = src.read_text(encoding='utf-8')
+        frozen_on = subprocess.run(
+            [sys.executable, str(BASE_DIR / 'scripts' / 'stamp_footer.py'),
+             str(src), '--read-frozen'], capture_output=True, text=True
+        ).stdout.strip().splitlines()[-1:] or ['']
+        banner = BANNER.format(bid=BANNER_ID, freeze=frozen_on[0] or 'la coupure')
+        # Above the content and INSIDE the gate: someone who never gets past the
+        # password sees no figures either, so the banner cannot leak more than
+        # the page already does.
+        marker = '<div class="wrap"'
+        if html.count(marker) != 1:
+            raise SystemExit(
+                f'cutover: {n} has {html.count(marker)} `{marker}` anchors, want '
+                f'1 - the archive banner has nowhere unambiguous to go.')
+        out.append((BASE_DIR / 'legacy' / n,
+                    html.replace(marker, banner + '\n  ' + marker, 1)))
+
+    lines = [f'# `legacy/` — the pages as they shipped at {freeze}', '',
+             'Frozen artefacts of the pipeline retired at cutover. **They are',
+             'served, and they will lie**: the numbers are cutover-day numbers and',
+             'will never move again. Each carries one archive banner saying so,',
+             'inserted at freeze time and nowhere else in the file.', '',
+             '## Provenance', '',
+             'SHA-256 of each page **as it shipped, before the banner was',
+             'inserted**. Strip the single `<div id="' + BANNER_ID + '">…</div>`',
+             'and its following newline+indent, and the hash returns:', '',
+             '| page | sha256 (pre-banner) |', '| --- | --- |']
+    lines += [f'| `{n}` | `{hashes[n]}` |' for n in names if n in hashes]
+    lines += ['', 'These pages keep their original `<!-- shared:… -->` build',
+              'stamp. It is evidence of what built them, and it is meaningful',
+              f'only against commit `{freeze}` — the shared assets it hashes have',
+              'moved on since.', '',
+              '`event_config.csv` points at none of these files, which is why',
+              'every page check excludes them: not because they are old, but',
+              'because nothing builds them (CUTOVER §6.3).', '']
+    out.append((BASE_DIR / 'legacy' / 'README.md', '\n'.join(lines)))
+
+    # 3. the two build_v2 edit sites (§3(a), and P3's half of it)
+    bv = BASE_DIR / 'scripts' / 'build_v2.py'
+    out.append((bv, cutover_edit(bv.read_text(encoding='utf-8'))))
+
+    # 4. the version, in BOTH places (§3(b2))
+    pp_path = BASE_DIR / 'scripts' / 'postprocess_html.py'
+    pp_src = pp_path.read_text(encoding='utf-8')
+    if pp_src.count("DASHBOARD_VERSION = '6.8'") != 1:
+        raise SystemExit('cutover: DASHBOARD_VERSION is not 6.8 - already bumped?')
+    out.append((pp_path, pp_src.replace("DASHBOARD_VERSION = '6.8'",
+                                        "DASHBOARD_VERSION = '7.0'", 1)))
+    tz_path = BASE_DIR / 'verify' / 'check_footer_tz.py'
+    tz_src = tz_path.read_text(encoding='utf-8')
+    if tz_src.count('Festiflow Dashboard v6.8') != 2:
+        raise SystemExit(
+            f'cutover: check_footer_tz has '
+            f'{tz_src.count("Festiflow Dashboard v6.8")} v6.8 literal(s), want 2 '
+            f'- §3(b2) says twice, and a miss here fails the run loudly later.')
+    out.append((tz_path, tz_src.replace('Festiflow Dashboard v6.8',
+                                        'Festiflow Dashboard v7.0')))
+
+    # 5. THE PREVIEW PATH (§3(c2)), shipping WITH the cutover and not after.
+    #    The moment root is production, a push to main is a deploy and work must
+    #    move to a branch - and a branch is only reviewable if its build is
+    #    published somewhere Leo can open. Every visual defect on this project
+    #    without exception was found by Leo opening a page.
+    out.append((BASE_DIR / 'preview' / 'README.md', '\n'.join([
+        '# `preview/` — where a branch build goes to be looked at', '',
+        'Until cutover, `/v2/` was the staging area and work went straight to',
+        '`main`: a push published to a path that was not production. That',
+        'inverted at cutover. Root IS production now, so a push to `main` is a',
+        'deploy, and work moves to a branch.', '',
+        'A branch is only reviewable if its build is published. Otherwise every',
+        'visual ruling needs a hand-built preview — and the last time that',
+        'happened, a self-contained copy of `v2/epk.html` had to be built by',
+        'hand with the series pre-seeded so the page\'s own `fetch` never fired.',
+        'That is **a transformed artefact used to judge an untransformed one**,',
+        'the class `check_v2_identity` and the locked mock exist because of.', '',
+        '## How',
+        '',
+        'GitHub Pages already deploys this repo from `main` (`pages build and',
+        'deployment` has run 188 times), so nothing needs hosting built — only a',
+        'published location. A branch build lands here and is opened at',
+        '`…/preview/<page>.html`.', '',
+        'Shipping the cutover without this leaves a window where production is',
+        'live, branches are mandatory, and nothing is viewable. That window has',
+        'no safe length, which is why this directory exists from the first',
+        'cutover commit rather than the second.', ''])))
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--apply', action='store_true',
@@ -363,12 +480,59 @@ def main():
                   'perform the cutover.')
             return 0
 
-        print('applying...')
-        raise SystemExit(
-            'cutover: --apply is not wired yet. The assertion above is the part '
-            'that had to exist before anything is moved; the writing half - '
-            'legacy/, the banners, the README and the build_v2 edit - lands '
-            'with §3, and lands atomically or not at all.')
+        # THE PRECONDITION, AND WHY IT IS A REFUSAL RATHER THAN A STEP.
+        # The workflow builds pass 0's output to `v2/$OUT` (line 279) and stages
+        # it (390). Move the pages to root without changing that and the next
+        # scheduled run rebuilds v2/, leaves the root pages untouched, and
+        # production goes stale within four hours while every check still
+        # passes. That is a half-cutover, the state nobody has specified.
+        #
+        # It is NOT folded in here, because a workflow edit is a reviewable diff
+        # and this script's job is the part that cannot be reviewed after the
+        # fact. So the reviewable half goes first, as an ordinary commit, and
+        # this refuses until it is in place. The irreversible step sits behind
+        # the reversible one rather than beside it.
+        wf = (BASE_DIR / '.github' / 'workflows' / 'daily-dashboards.yml'
+              ).read_text(encoding='utf-8')
+        if '--out "v2/${{ matrix.event.out }}"' in wf:
+            raise SystemExit(
+                'cutover: the workflow still builds pass 0 to v2/. Land that '
+                'edit first - it is a reviewable diff, and moving the pages '
+                'without it leaves production stale within four hours while '
+                'every check still passes. Nothing was written.')
+
+        print('applying...\n')
+        writes = plan_writes(names, v2_snap, built, hashes, bgs)
+
+        # ATOMIC: every target is written to a sibling `.cutover-new` file
+        # first, and only renamed once ALL of them exist. A failure halfway
+        # leaves the tree exactly as it was found, which is the one thing a
+        # cutover must never get wrong.
+        staged = []
+        try:
+            for target, content in writes:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                tmp_t = target.with_suffix(target.suffix + '.cutover-new')
+                tmp_t.write_text(content, encoding='utf-8')
+                staged.append((tmp_t, target))
+            for tmp_t, target in staged:
+                tmp_t.replace(target)
+        except Exception:
+            for tmp_t, _ in staged:
+                tmp_t.unlink(missing_ok=True)
+            raise
+        for n in names:
+            (BASE_DIR / 'v2' / n).unlink(missing_ok=True)
+        v2d = BASE_DIR / 'v2'
+        if v2d.exists() and not any(v2d.iterdir()):
+            v2d.rmdir()
+
+        print(f'  wrote {len(writes)} file(s); v2/ removed')
+        print('\nCUTOVER COMPLETE. Now, before committing:')
+        print('  bash verify/assert_redesign.sh .')
+        print('  python3 verify/check_build_stamp.py     # rescope: one set, at root')
+        print('  python3 verify/check_v2_footer.py       # reads root now')
+        return 0
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
