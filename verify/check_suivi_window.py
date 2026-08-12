@@ -28,8 +28,25 @@ What it asserts, per page:
   3. The "voir les N jours" and "voir les N semaines" buttons count their own
      grain. A weekly button reporting a daily count would mean the two grains
      share a row set (AA3).
+
+TWO ROUTES, ONE SET OF CLAIMS — and the route is chosen by the artefact
+-----------------------------------------------------------------------
+Production renders the Suivi table as static markup. Pass 0 ships `const D` and
+builds the table at runtime, so the markup route reads ZERO rows on a correct
+pass-0 page. At cutover the page at the root changes pipeline underneath this
+check, which is what §5bis lists it for.
+
+So it reads whichever the page actually holds. The three claims are the same;
+only claim 3 differs in form, because the payload can state the thing the
+buttons were a symptom of: every ticket in `daily` appears in `weekly` exactly
+once. Measured equal to the unit on all six pages.
+
+The window mapping is measured, not assumed - see payload_window(). The
+HIDDEN-row counts are deliberately NOT carried across: they diverge between the
+pipelines because they describe each renderer rather than the data.
 """
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -51,6 +68,94 @@ from pages import page_names   # noqa: E402 - CUTOVER 6.3, one page list
 # make this red about a state that is fine. The two resolvers answer different
 # questions and only one of them is this check's.
 VISIBLE = 7
+
+
+PAYLOAD_RE = re.compile(r'const D=(\{.*?\});\s*\n', re.DOTALL)
+
+
+def jx_label(jx):
+    """`J-93` before the event, `J+2` after it. Never `J--2`.
+
+    jx counts DOWN to 0 at the event, so a negative value is a day past it -
+    which is the dead space trap #10 anchored into, and the one number in this
+    check a reader most needs to read correctly at a glance.
+    """
+    return f'J-{jx}' if jx >= 0 else f'J+{-jx}'
+
+
+def payload_window(html):
+    """(window, problems) for a PASS-0 page, read from `const D`.
+
+    WHY THERE ARE TWO ROUTES AND NOT A REPOINTED ONE
+    -------------------------------------------------
+    This check reads the page that SHIPS, at the repo root, and at cutover that
+    page changes pipeline. Production renders the Suivi table as static markup;
+    pass 0 ships `const D` and builds the table at runtime, so `daily_rows()`
+    reads 0 rows on a perfectly correct pass-0 page.
+
+    The property does not change - trap #10 is that the seven visible rows can
+    all be zero when the anchor drifts into dead space - only where it has to be
+    read from. So the route is chosen by what the page actually contains, and
+    both routes assert the same three claims.
+
+    THE MAPPING IS MEASURED, NOT ASSUMED. The last seven non-future `daily`
+    rows, ordered chronologically, reproduce the rendered window exactly on both
+    pages where a production page exists to check against:
+
+        rennes    714 over 2026-08-05 .. 2026-08-11   = "Mer 5 Aoû .. Mar 11 Aoû"
+        parisxxl 4816 over 2026-03-09 .. 2026-03-15   = "Lun 9 Mar .. Dim 15 Mar"
+
+    The HIDDEN-row counts deliberately are not carried across: they diverge
+    between the pipelines (bordeaux 151 here against 172 there), because they
+    are a property of how each renders its table rather than of the data. An
+    assertion that reproduced them would be asserting the renderer twice.
+    """
+    m = PAYLOAD_RE.search(html)
+    if not m:
+        return None, ['no `const D=` payload and no static Suivi markup']
+    try:
+        D = json.loads(m.group(1))
+    except ValueError as exc:
+        return None, [f'`const D=` is not parseable JSON: {exc}']
+    daily = D.get('daily') or []
+    if not daily:
+        return None, ['the payload carries no `daily` rows at all']
+    past = sorted((r for r in daily if not r.get('fut')), key=lambda r: -r['jx'])
+    if not past:
+        return None, ['every daily row is `fut` - there is no window to show']
+    return past[-VISIBLE:], []
+
+
+def grain_problems(html):
+    """AA3 at the payload: the weekly grain aggregates the daily one, exactly.
+
+    The markup form asked whether the two "voir les N" buttons report the same
+    number, which is a symptom of the two grains sharing a row set. The payload
+    can state the thing itself: every ticket in `daily` must appear in `weekly`
+    once. Measured equal on all six pages, to the unit.
+
+    Length is asserted too, because equal sums alone would hold if `weekly` WERE
+    `daily` - which is the failure AA3 is named for.
+    """
+    m = PAYLOAD_RE.search(html)
+    if not m:
+        return []
+    D = json.loads(m.group(1))
+    daily, weekly = D.get('daily') or [], D.get('weekly') or []
+    if not weekly:
+        return ['the payload carries no `weekly` rows - the grain toggle has '
+                'nothing to switch to']
+    sd = sum(r.get('a') or 0 for r in daily)
+    sw = sum(r.get('a') or 0 for r in weekly)
+    out = []
+    if sd != sw:
+        out.append(f'the grains disagree on the total: daily {sd}, weekly {sw}. '
+                   f'One of them drops or double-counts tickets.')
+    if len(weekly) >= len(daily):
+        out.append(f'{len(weekly)} weekly rows against {len(daily)} daily - the '
+                   f'weekly grain is not coarser, so the two are the same row '
+                   f'set (AA3)')
+    return out
 
 
 def daily_rows(html):
@@ -86,6 +191,37 @@ def main(argv):
             continue
         html = path.read_text(encoding='utf-8')
         rows = daily_rows(html)
+
+        # PASS 0: no static Suivi markup, so read the same window from the
+        # payload the renderer consumes. Route chosen by what the page holds,
+        # not by a flag - it is correct on both sides of the cutover with no
+        # edit on the day.
+        if not rows and PAYLOAD_RE.search(html):
+            window, probs = payload_window(html)
+            probs += grain_problems(html)
+            if window is None:
+                for x in probs:
+                    failures.append(f'{name}: {x}')
+                    print(f'  FAIL  {name}: {x}')
+                continue
+            total = sum(r.get('a') or 0 for r in window)
+            span = f"{jx_label(window[0]['jx'])} .. {jx_label(window[-1]['jx'])}"
+            if total == 0:
+                probs.append(f'all {len(window)} visible rows are zero ({span})')
+            # Claim 2, at the payload: the window must not sit past the event.
+            # jx counts down to 0 at the event, so a negative jx is a day AFTER
+            # it - which is exactly the dead space trap #10 anchored into.
+            if window[-1]['jx'] < -VISIBLE:
+                probs.append(f'the window ends at {jx_label(window[-1]["jx"])}, more than '
+                             f'{VISIBLE} days past the event')
+            for x in probs:
+                failures.append(f'{name}: {x}')
+                print(f'  FAIL  {name}: {x}')
+            if not probs:
+                print(f'  ok    {name}: {total} sales in the visible window  '
+                      f'[{span}]  (from `const D`)')
+            continue
+
         if not rows:
             # LOUD, AND STILL UNRESOLVED FOR PASS 0. `daily_rows` parses
             # `id="suivi-jour"` and `.dtl-row` out of STATIC markup, and a

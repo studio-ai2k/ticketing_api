@@ -57,6 +57,7 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_footer_tz.py` | 3 |
 | `check_spec_example.py` | 4 |
 | `check_suivi_window.py` | 1 (and its own first version failed step 2) |
+| `check_suivi_window.py` (payload route) | 5 (trap #10 reconstructed at the payload — the seven visible rows zeroed; the anchor dragged 100 days so the window ends J+13; the two grains made to disagree by one ticket; `weekly` set to `daily` outright (AA3); and an untouched page as control. The route reproduces the RENDERED window exactly where a production page exists to check against: rennes 714 over 2026-08-05..08-11, parisxxl 4816 over 2026-03-09..03-15) |
 | `check_payout_reconciliation.py` | 3 |
 | `check_build_stamp.py` (v2 half) | 3 (12 stale before the rebuild; a v2-only asset fails v2 alone; a shared asset fails both) |
 | `check_shotgun_fee_table.py` | 4 (arithmetic change moves every tier; a witnessed tier vanishes; a new tier — must NOT fail; odd rows at a witnessed tier — must NOT fail) |
