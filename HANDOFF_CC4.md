@@ -1,58 +1,58 @@
 # Handoff to CC4
 
-## 0. State, so you start from a known one
-
-**`a703a2c` is the last pushed tree on `main`. It is green. The cutover has NOT
-happened and has been attempted twice, both attempts rolled back cleanly.**
-
-Production is the old pipeline. Root pages carry `<!-- shared:… -->` and
-production markup; `v2/` holds six pass-0 pages. Nothing is half-landed.
-
-### RUN THE SUITE, NOT A LIST — and enumerate it from disk
-
-**This section used to name three commands and call the result "green". It was
-not.** `check_v2_behaviour.py` was red the whole time, on all four live
-editions, and no one saw it because it was not one of the three. That is the
-third handoff whose green claim was narrower than it read, so the fix is to stop
-writing lists:
+## "GREEN" MEANS THIS LOOP. It does not mean a list someone typed.
 
 ```bash
-# Every check that exists. Four take a page argument and run inside the gate.
+# Every check that EXISTS, enumerated from disk. ~12 minutes. Silence is green.
+# The four skipped take a page argument and run inside assert_redesign.sh.
+SKIP='check_login_bg check_platform_cards check_section_amber check_stampable'
 for f in verify/check_*.py; do
-  case $(basename "$f" .py) in
-    check_login_bg|check_platform_cards|check_section_amber|check_stampable) continue;;
-  esac
-  timeout 600 python3 "$f" >/dev/null 2>&1 || echo "RED  $(basename "$f")"
+  n=$(basename "$f" .py)
+  case " $SKIP " in *" $n "*) continue;; esac
+  timeout 600 python3 "$f" >/dev/null 2>&1 || echo "RED  $n"
 done
-bash verify/assert_redesign.sh >/dev/null || echo "RED  assert_redesign.sh"
-python3 scripts/cutover.py    >/dev/null || echo "RED  cutover dry run"
+bash verify/assert_redesign.sh >/dev/null 2>&1 || echo "RED  assert_redesign.sh"
+python3 scripts/cutover.py     >/dev/null 2>&1 || echo "RED  cutover dry run"
 ```
 
-Takes ~12 minutes; `check_b1_switch`, `check_v2_behaviour`, `check_v2_gate` and
-`check_selector.js` drive a browser and `check_float_clamp` rebuilds every page.
-Run it before believing any statement in this file, including this one.
+**This is first because it is the reason `check_v2_behaviour.py` sat red for two
+sessions on a tree three handoffs in a row called green.** It was red from the
+moment ruling C4 shipped, on all four live editions, and nobody saw it because
+the previous version of this section named three commands and none of them was
+that one. A list is a claim about which checks matter, written by someone who is
+about to stop looking at them.
 
-Notes on two of them:
+`check_b1_switch`, `check_v2_behaviour`, `check_v2_gate` and `check_selector.js`
+drive a browser; `check_float_clamp` rebuilds every page. Run it before
+believing any statement in this file, **including this one.**
 
-- `bash verify/assert_redesign.sh` takes **no argument** now. It resolves where
-  pass 0 publishes, like every other page check (§6.3). `.` meant production,
-  which is no longer what this gate asserts.
-- `python3 verify/check_page_anchor.py` is the one to run first if the gate is
-  red: everything else in it is vacuous on a page that fails the anchor.
+Three things worth knowing before you do:
+
+- `bash verify/assert_redesign.sh` takes **no argument**. It resolves where pass
+  0 publishes, like every other page check (§6.3). `.` meant production, which
+  is no longer what this gate asserts.
+- `python3 verify/check_page_anchor.py` is the one to read first if the gate is
+  red — every absence assertion in it is vacuous on a page that fails the anchor.
 - `python3 verify/check_login_bg_wiring.py` **writes `event_config.csv` and
   restores it**, asserting the sha256 afterwards. If it is interrupted, check
-  `git status` before doing anything else.
+  `git status` before anything else.
 
-**CC4 correction to §0's `main`:** confirm the tree with
-`git ls-remote origin main`, not a local ref. A stale local `main` at `273457f`
-is an unrelated "Add files via upload" root that DELETES the whole `verify/`
-suite; CC3 hit it too. The real `origin/main` carries all six root pages, `v2/`,
-`verify/` and `scripts/`.
+---
 
-**The dry run is RED as of CC4, and correctly so.** It reports the §3(b2)
-version bump landing after the build that stamps it — the ordering bug named in
-§3 below, now surfaced by an assertion instead of by a reader. See
-`verify/P4_KEEP_DROP.md`.
+## 0. State, so you start from a known one
+
+**Confirm the tree with `git ls-remote origin main`, never a local ref.** A
+stale local `main` at `273457f` is an unrelated "Add files via upload" root that
+DELETES the whole `verify/` suite; CC3 hit it and so did CC4. The real
+`origin/main` carries all six root pages, `v2/`, `verify/` and `scripts/`.
+
+**The cutover has NOT happened. It was attempted twice, both attempts rolled
+back cleanly.** Production is the old pipeline: root pages carry
+`<!-- shared:… -->` and production markup, `v2/` holds six pass-0 pages. Nothing
+is half-landed.
+
+As of CC4's last commit the loop above is green — 30 checks, the gate, and the
+dry run, zero red. That statement is worth exactly one re-run.
 
 Run them first. Not because they are expected to fail, but because a handoff
 that says "green" is a claim about a tree you have not seen.
