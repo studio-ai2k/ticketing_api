@@ -4,7 +4,10 @@
 every build. Everything below needs extra tooling, so it is manual — run it
 after the change described, not on every build.
 
-    bash verify/assert_redesign.sh .          # always, all six dashboards
+    bash verify/assert_redesign.sh            # always, all six dashboards
+                                              # NO ARGUMENT: it resolves where pass 0
+                                              # publishes (CUTOVER §6.3). `.` meant
+                                              # production, which it no longer asserts.
 
 ---
 
@@ -58,6 +61,7 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_source_order.py` | 4 (must-flag; correct order; lower specificity; masked) + a new defeat still fails while pinned |
 | `check_duplicate_decls.py` | 4 (disagree; identical; different condition; different property) |
 | `check_b1_switch.py` (diff absence) | 1 (the null coercion restored) |
+| `assert_redesign.sh` (P4 rewrite) | 7 (six empty files — 174 ok before, 0 after; then five KEEP properties broken one per page: `.det-footer` variant, Smartboard URL, login subtitle, footer version, `sw-wrap` removed outright — with a sixth page as control; plus DASHBOARD_VERSION bumped at source, which correctly failed all six pages on `v7.0` and restored) |
 | `check_page_anchor.py` | 6 (six empty files — the artefact it was written for; then one per claim, broken separately: truncated mid-payload, payload id swapped to another event, build stamp removed, a `.pg-footer` lost, a second `<style>` added — with a sixth page left untouched as the control) |
 | `cutover.built_page_problems` | 4 (wrong build stamp — the `eac8f37bfef8` the second attempt actually shipped; version bump missed; a `../` survived; both at once — plus a correct post-edit page, which must NOT fail) |
 | `cutover.PRE_BUILD_EDITS` ordering | 1 (drop `postprocess_html.py` from the tuple: predicted stamp reverts `8f54ebb8db3d` → `eac8f37bfef8`. NOTE: the dry run still passed — that is what exposed `predicted_stamp()` being decorative, and is why `built_page_problems` exists) |

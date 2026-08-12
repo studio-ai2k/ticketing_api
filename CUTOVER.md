@@ -349,6 +349,41 @@ The assertion that makes this falsifiable is the probe above: after the cleanup,
 the v2 build must **succeed** with `style/dashboard_v6_8.css` absent from the
 root. Run it as a test, not as a belief.
 
+#### (d)(4) TWO CHECKS READ THAT STYLESHEET, AND ONE OF THEM IS THE REPLACEMENT GATE
+
+The probe above asks whether the BUILD survives the move. It does. The question
+nobody asked is whether the CHECKS do, and the answer is no:
+
+| reader | line | what it uses the sheet for |
+|---|---|---|
+| `verify/check_mock_deviations.py` | 1220 | `prod_css`, for the carried-across `.db-*` rules and `_carried_block`'s page-footer run |
+| `verify/assert_redesign.sh` | 27 | `$CSS`, the source every `@media` count is derived from |
+
+Both do a plain `read_text` / path read on `style/dashboard_v6_8.css`. Move the
+file to `legacy/` and both raise on a missing file.
+
+**`check_mock_deviations` is the one that matters, because it is what P4 makes
+the cutover lean on.** The whole argument for deleting the CSS half of
+`assert_redesign.sh` is that `check_pages` asserts the shipped `<style>`
+byte-for-byte against the redesign sheet, and that the ledger pins that sheet.
+The ledger's carry-across half is exactly the part that reads production's
+stylesheet — so the cleanup that retires the old pipeline also disables the
+check the cutover replaced the old gate with. Cutover green, cleanup red, and
+the gap between them is the window where nothing is asserting the stylesheet at
+all.
+
+This is §7ter's rule with the ordering inverted: not "a check that reads the
+retiring pipeline", but **a check that reads the retiring pipeline in order to
+assert the NEW one**. The carry-across is legitimate — those rules genuinely
+come from production's sheet and must match it verbatim — so the repair is not
+to stop reading it. It is to decide, before the cleanup and not during it,
+whether the sheet moves to `legacy/` (and both readers follow it there) or stays
+at root as the source of the carry (and the cleanup says why a retired
+pipeline's stylesheet is still a live input).
+
+**Not resolved here.** It is a decision, and §6.5's rule applies — prove the file
+dead before deleting it, and it is demonstrably not dead.
+
 ---
 
 ## 4. The cleanup, and why mitigation (a) comes first
@@ -443,6 +478,97 @@ each v2 page**. It is the cheapest single test of which pipeline produced a file
 written as "no page anywhere". Scoping it by non-recursive glob would be exclusion
 by pattern — see §6. Scope it to **the pages `event_config.csv` names**, which is
 where the answer already lives.
+
+---
+
+## 5bis. THE CHECKS, ENUMERATED — the rule of §7ter, applied
+
+§5 above enumerates the PAGES. This enumerates the CHECKS, which is what §7ter
+says must exist before the cutover runs and what both failed attempts died for
+the lack of. **Every file in `verify/` was read, not grepped.** The two axes
+were: what artefact does it READ, and what markup SHAPE does it assume.
+
+Reproduce the read map:
+
+    python3 - <<'EOF'
+    import pathlib, re
+    PAT = re.compile(r"(ROOT|BASE_DIR)\s*/\s*([^\n]{0,70})")
+    for f in sorted(pathlib.Path('verify').iterdir()):
+        if f.suffix not in ('.py', '.sh', '.js'): continue
+        s = f.read_text(encoding='utf-8')
+        code = re.sub(r'"""(.*?)"""', '', s, flags=re.S)
+        hits = sorted({m.group(0).strip()[:66] for m in PAT.finditer(code)})
+        if hits: print(f.name, *('\n    ' + h for h in hits))
+    EOF
+
+### The ones the cutover changes
+
+| check | what breaks | direction | when |
+| --- | --- | --- | --- |
+| `assert_redesign.sh` | asserts production's markup vocabulary | loud | cutover (P4) |
+| `check_v2_footer.py:143` | compares the pass-0 page against `ROOT / name` | **SILENT — false green** | cutover |
+| `check_v2_footer.py:268` | demands `v2/$OUT` in the workflow restamp step | loud | the pre-work workflow edit |
+| `check_v2_identity.py:54` | `BAD_PATHS` asserts root-relative paths are ABSENT | loud, on CORRECT pages | cutover |
+| `check_suivi_window.py:38` | hand-written six-name page list + reads `ROOT / name` | loud | cutover |
+| `check_b1_switch.py:317` | payload read hardcoded to `ROOT / 'v2'` | loud | cutover |
+| `check_v2_behaviour.py:293` | payload read hardcoded to `ROOT / 'v2'` | loud | cutover |
+| `check_mock_deviations.py:1220` | reads `style/dashboard_v6_8.css` | loud | **cleanup** — see §3(d) |
+| `assert_redesign.sh:27` | reads `style/dashboard_v6_8.css` | loud | **cleanup** — see §3(d) |
+| `assert_redesign.sh:110` | third `v6.8` site, absent from `cutover.plan_writes` | loud | the §3(b2) bump |
+| `audit_css_overrides.py:64` | defaults to `REPO / 'epk.html'`, a production page | loud | cutover |
+
+**`check_v2_footer.py:143` is the one to read twice.** It iterates
+`pass0_pages()` — correct on both sides — and then opens `prod = ROOT / name`
+to compare the two footers. After the cutover those are **the same file**, so
+the comparison is a page against itself and passes unconditionally. It is the
+only check in the suite that goes quietly wrong, and it is assertion 4 of 5 in
+a check whose other four keep working, so nothing about its output looks
+different.
+
+### The ones that are already correct, and why
+
+Verified individually rather than assumed:
+
+- **Sixteen page checks resolve through `scripts/pages.py`** and are correct on
+  both sides with no flag-day edit: `check_cand_groups`, `check_eligibility`,
+  `check_finished_edition`, `check_proj_total`, `check_section_bars`,
+  `check_section_heads`, `check_v2_gate`, `check_v2_identity` (enumeration
+  only — its `BAD_PATHS` is the defect above), `check_mock_literals`,
+  `check_float_clamp`, `check_page_anchor`, `check_build_stamp`,
+  `check_b1_switch` and `check_v2_behaviour` (enumeration only — their payload
+  reads are the defects above).
+- **Eight of those additionally define `V2 = ROOT / 'v2'` and never use it.**
+  Dead constants left from before the `pages.py` migration. They read as live
+  cutover dependencies to a grep and are not: `grep -n '\bV2\b'` returns the
+  definition line and nothing else in each.
+- **`check_build_stamp.py:185`** branches on `pages.pass0_dir(ROOT) != ROOT` and
+  so audits two asset sets before the cutover and one after. Confirmed by
+  reading the branch, not by trusting §2.
+- **`check_login_bg.py:61`** branches on `path.parent.name != 'v2'` and is
+  already correct in both locations.
+- **Ten checks read no page at all** — `data/`, `event_config.csv`, the mock, or
+  `scripts/`: `check_anchor_modes`, `check_data_freshness`, `check_exact_date`,
+  `check_duplicate_decls`, `check_fixture_quarantine`, `check_offset`,
+  `check_payout_reconciliation`, `check_shotgun_fee_table`, `check_source_order`,
+  `check_spec_example`.
+
+### The two callouts that lose their subject
+
+`check_platform_cards.py` keys on `.det-link` and `check_section_amber.py` needs
+`<div id="sec-projection"` in static markup. Both are 0 in a pass-0 page, so
+both retire with the markup half of P4 rather than moving.
+
+### What replaces the markup half
+
+Nothing needs inventing. `check_section_bars.py` already asserts **"the shipped
+section bars ARE the mock's bars, byte for byte"** — not "has six tabs", equals
+— and that is the shape the whole markup half should have had. `check_pages`
+does the same for the `<style>` block. The gap worth naming: **nothing asserts
+the page's BODY against the mock the way `check_pages` asserts its stylesheet.**
+The mock is pinned to the locked copy by the ledger, and the page is pinned to
+the shared set by `check_build_stamp`, so the property is pinned *transitively*
+— but no single check states it, which is why the markup half looked load-
+bearing for so long.
 
 ---
 

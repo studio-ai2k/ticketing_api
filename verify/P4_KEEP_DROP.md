@@ -229,3 +229,84 @@ They divide, and the division is a judgement rather than a measurement:
 
 The anchor has landed and is not in these counts. It is 1 assertion per page
 and it is the one that makes the other buckets mean anything.
+
+---
+
+# RULED — Leo, and what was done
+
+| bucket | ruling | done |
+| --- | --- | --- |
+| DROP 8 | drop — `check_pages`' byte equality is strictly stronger | deleted |
+| DEAD 21 | delete — zero on both pipelines is not coverage | deleted |
+| TRAP 2 | scope, do not keep; if a scoped version has no static artefact it is MOVE | **both are MOVE** — see below |
+| MOVE 14 | drop, unless pinned by neither the ledger nor a DOM check — name those | **none survive; all 14 dropped** |
+| KEEP 12 | unchanged | kept, 3 scoped to the static region |
+
+The gate went from **396 assertions to 84** (14 per page × 6), and from 174
+passing on six empty files to **0**.
+
+## TRAP 2 — scoped, and the scoped version has nothing to assert
+
+`class="ac-t"` scoped to the static region reads **0** on every pass-0 page; all
+5 whole-file hits are inside `<script>`. So the scoped assertion has no artefact
+and the ruling sends it to MOVE, where it then falls to the MOVE ruling. Both
+`.ac-t` assertions are gone.
+
+The scoping itself was kept and applied where it *does* have a subject:
+`sw-wrap` (16 whole file → 2 in markup), `nav-user` (3 → 1) and `DM Sans`
+(11 → 1) are now counted against `verify/static_region.py` rather than the file.
+Those three were halfway to being TRAP rows and are now not.
+
+## MOVE 14 — pinned by neither: **none**
+
+Measured against the mock, the locked mock, the built page, and both DOM checks:
+
+| assertion | in mock | in locked | in page | in a DOM check | verdict |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `class="q-card"` | 1 | 1 | 1 | 0 | ledger + `check_build_stamp` |
+| `h.scrollTop=h.scrollHeight` | 1 | 1 | 1 | 0 | ledger + `check_build_stamp` |
+| `class="det-link"` | 1 | 1 | 1 | 0 | ledger + `check_build_stamp` |
+| the other 11 | 0 | 0 | 0 | 0 | **the redesign does not produce this markup at all** |
+
+The eleven are not unpinned properties. They are **production's vocabulary**,
+and the redesign either renamed the thing or removed it:
+
+- `class="…ac-body"` → the redesign's accordion body is **`ac-b`**. Present in
+  the mock, the locked mock and the page; renamed, not lost.
+- `id="sep-prev-days"` / `id="sep-prev-weeks"` → the redesign has **one**
+  separator, `sep-past`. A design change, ruled and shipped.
+- `Space Grotesk` → the redesign loads **DM Sans only**. Zero occurrences in the
+  redesign sheet. The assertion outlived the design it was written for.
+- `class="vel-head"` / `class="vel-grid"` / `class="inset-divider"` /
+  `class="dtl-cutoff"` / `class="det-link-txt"` → no `vel-*`, no divider class,
+  and only `dtl-rev` / `det-chart` in the redesign's vocabulary.
+- `canvas id="chartDay…S1"` / `_projBuilders['day…S2']` → the redesign builds no
+  canvases in markup; charts are constructed at runtime.
+
+So the answer to "name the ones pinned by neither" is that **there are none**,
+and the reason is not that coverage was found elsewhere — it is that eleven of
+the fourteen were asserting a design that no longer exists. That is worth saying
+plainly, because "we checked and it is covered" and "there was nothing there"
+are different facts and only the second one is true here.
+
+## One gap this leaves, named rather than closed
+
+The three ledger-pinned rows are pinned **transitively**: the ledger pins the
+mock against the locked copy, and `check_build_stamp` pins each page against the
+shared set that contains the mock and `build_v2.py`. No single check states "the
+page's body is the mock's body through the declared transforms" the way
+`check_pages` states it for the `<style>` element.
+
+`check_section_bars.py` already does exactly that, scoped to the section tab
+bars — *"the shipped section bars are the mock's, byte for byte"*, not "has six
+tabs". Generalising that to the body is the real replacement for the markup half,
+and it would run on bash and python alone. It is not in this change.
+
+## §5.7's negative test — still open, and unaffected
+
+Dropping `check_login_bg.py` neither creates nor closes the gap. All six pages
+carry `upload.JPG`, so the data is uniform and neither `check_login_bg` nor
+`check_pages` would notice if the per-page wiring broke. The test §5.7 asks for
+is a real config change — point one row at a different filename, assert the page
+follows it, revert — and it is its own item, not a side effect of this one.
+Uniform data is exactly what made the paris_xxl login background invisible.

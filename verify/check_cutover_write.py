@@ -1,7 +1,7 @@
 """build -> edit -> rebuild -> assert agree. Then break the edit and assert FAIL."""
 import shutil, subprocess, sys, tempfile
 from pathlib import Path
-R = Path('/home/user/ticketing_api'); sys.path.insert(0, str(R/'scripts'))
+R = Path(__file__).resolve().parent.parent; sys.path.insert(0, str(R/'scripts'))
 import cutover as C, build_v2
 
 bv = R/'scripts'/'build_v2.py'; orig = bv.read_text()
@@ -17,7 +17,12 @@ def build(out):
 def verdict(raw, v2html, bg):
     if '../' in raw:
         return f'FAIL: {raw.count("../")} `../` in the built page'
-    st, ck, other = C.classify(C.compare(NAME, raw, v2html, bg))
+    # current_version(), NOT predicted_version(). This test applies ONLY
+    # `cutover_edit` (the build_v2 half); it never bumps DASHBOARD_VERSION, so
+    # both pages here legitimately carry today's version and asking for the
+    # post-bump one would fail T1 - a correct edit reported as a defect.
+    st, ck, other = C.classify(C.compare(NAME, raw, v2html, bg),
+                               C.current_version())
     return 'PASS' if (st == 1 and not other) else f'FAIL: {st} stamp, {len(other)} unexplained'
 
 try:
