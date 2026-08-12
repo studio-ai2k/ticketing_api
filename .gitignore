@@ -21,3 +21,17 @@ data/*
 # Build sidecar: written by build_dashboard.py, consumed by postprocess_html.py
 # in the same build. Never needs committing.
 *.html.suivi.json
+
+# Temp scripts the browser-driven checks write to the repo ROOT and unlink when
+# they finish. They are invisible almost always - and were swept into the
+# CUTOVER commit by a `git add -A` that ran while the suite was still going, so
+# a file that exists for ~90 seconds landed in the one commit that most needed
+# to contain only what it claims.
+#
+# `.cutover-new` is the same shape from the other direction: cutover.py stages
+# every write to a sibling and renames only once all of them exist, so a crash
+# mid-stage leaves them behind.
+.check_b1.js
+.check_v2_gate.js
+.check_v2_behaviour.js
+*.cutover-new
