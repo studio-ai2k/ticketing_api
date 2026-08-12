@@ -35,8 +35,21 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT = ['parisxxl.html', 'bordeaux.html', 'bordeaux_oct.html',
-           'epk.html', 'geneve.html', 'rennes.html']
+sys.path.insert(0, str(ROOT / 'scripts'))
+from pages import page_names   # noqa: E402 - CUTOVER 6.3, one page list
+
+# The hand-written six-name list that used to live here was the THIRD one in the
+# repo. CUTOVER §6.3 records removing two - `check_build_stamp.py` and
+# `assert_redesign.sh` - and this one was not found, so it kept the hazard the
+# other two were fixed for: a seventh event is covered on the day someone
+# remembers, and this file was not on anyone's list of places to remember.
+#
+# The ROOT it reads is NOT a defect and was deliberately left alone. This
+# check's subject is the page a reader opens, which is at the repo root on both
+# sides of the cutover - production today, pass 0 after. `pass0_dir()` would be
+# wrong here: it resolves to `v2/` today, and auditing the staging copy would
+# make this red about a state that is fine. The two resolvers answer different
+# questions and only one of them is this check's.
 VISIBLE = 7
 
 
@@ -58,17 +71,33 @@ def daily_rows(html):
 
 
 def main(argv):
-    targets = argv or DEFAULT
+    # Config-derived, at the REPO ROOT - which is "the page that ships" on both
+    # sides of the cutover, so it needs no repointing. NOT pass0_dir(): this
+    # check's subject is the page a reader opens, and today that is production
+    # at the root, not the staging copy under v2/. Repointing it at v2/ would
+    # have made it red today about a state that is fine.
+    targets = [Path(a) for a in argv] or [ROOT / n for n in page_names()]
     failures = []
 
-    for name in targets:
-        path = ROOT / name
+    for path in targets:
+        name = path.name
         if not path.exists():
             print(f'  skip  {name} (not built)')
             continue
         html = path.read_text(encoding='utf-8')
         rows = daily_rows(html)
         if not rows:
+            # LOUD, AND STILL UNRESOLVED FOR PASS 0. `daily_rows` parses
+            # `id="suivi-jour"` and `.dtl-row` out of STATIC markup, and a
+            # pass-0 page has neither: its body is built at runtime from
+            # `const D`, so this reads 0 rows on a perfectly correct page.
+            #
+            # Deliberately left failing rather than made to pass. The property
+            # - the seven visible rows contain sales, trap #10 - is real and
+            # still matters; what it has to be read FROM changes at cutover,
+            # and the payload-level form is a separate piece of work. A check
+            # that fails loudly says so; one quietly repointed at markup that
+            # is not there would report six green pages and assert nothing.
             failures.append(f'{name}: no daily rows found - the markup moved')
             print(f'  FAIL  {name}: no daily rows found')
             continue

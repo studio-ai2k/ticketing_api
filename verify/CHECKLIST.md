@@ -35,6 +35,14 @@ caused them — and its first version passed on that page, because run.py's
 "Aujourd'hui" row is appended after the visible slice and carried the very
 tickets that caused the bug. Trap #10 in `HANDOFF.md`.
 
+**And run the checks that EXIST, not the ones you thought of.** The P4 footer
+commit changed `cutover.classify()`'s signature and left
+`verify/check_cutover_write.py` raising `TypeError` on import of its own test.
+The suite was reported green in the same message, because the checks were
+enumerated from memory rather than from `verify/`. That is the exact failure the
+§7ter sweep exists to correct, landing on the person doing the sweep — which is
+the argument for `ls verify/` over recall, not for being more careful.
+
 Understanding a bug completely is not protection against writing a check that
 cannot see it. Those are different skills. This step is the cheap one, and it is
 cheap precisely when it matters: the broken artefact exists at the moment you
@@ -61,6 +69,9 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_source_order.py` | 4 (must-flag; correct order; lower specificity; masked) + a new defeat still fails while pinned |
 | `check_duplicate_decls.py` | 4 (disagree; identical; different condition; different property) |
 | `check_b1_switch.py` (diff absence) | 1 (the null coercion restored) |
+| `check_login_bg_wiring.py` (§5.7) | 2 (the repointed row followed: `../upload.JPG` -> `../paris_login.jpg`; and its own first version, written against a TEMP config, reported a FALSE DEFECT — `build_v2 --config` never reaches this value because `run.main()` is called with no arguments and run.py reads the real file. That false defect is the finding, and it is why the check edits the real config with a `finally` restore and a sha256 assertion) |
+| `check_v2_footer.py` (clauses 4 and 5) | 3 (`Dernier billet` perturbed pre-cutover; the same perturbation in a POST-CUTOVER-shaped tree, where the old form compared the page with itself and passed unconditionally; and the workflow restamp step with and without `v2/`) |
+| `check_v2_identity.py` (path location) | 2 (a `../` left on a root page; and a correct root page, which the old form failed — 2 of 3 BAD_PATHS matched precisely when the page was right) |
 | `assert_redesign.sh` (P4 rewrite) | 7 (six empty files — 174 ok before, 0 after; then five KEEP properties broken one per page: `.det-footer` variant, Smartboard URL, login subtitle, footer version, `sw-wrap` removed outright — with a sixth page as control; plus DASHBOARD_VERSION bumped at source, which correctly failed all six pages on `v7.0` and restored) |
 | `check_page_anchor.py` | 6 (six empty files — the artefact it was written for; then one per claim, broken separately: truncated mid-payload, payload id swapped to another event, build stamp removed, a `.pg-footer` lost, a second `<style>` added — with a sixth page left untouched as the control) |
 | `cutover.built_page_problems` | 4 (wrong build stamp — the `eac8f37bfef8` the second attempt actually shipped; version bump missed; a `../` survived; both at once — plus a correct post-edit page, which must NOT fail) |

@@ -481,6 +481,35 @@ where the answer already lives.
 
 ---
 
+## 5ter. THE PROPERTY THE DRY RUN HAS, stated once so it stops being found
+
+**Anything the dry run PREDICTS, it cannot verify — and it must say so.**
+
+The artefact does not exist yet. The dry run builds from pre-edit sources by
+definition, so every post-edit value it prints is a model, and a model compared
+to a model reads clean. Three instances, all found the same way — by breaking
+the thing the check was supposed to catch and watching it pass:
+
+1. the `../` modelling, which stopped the second attempt: `--apply` asserted
+   against the modelled page and wrote the unmodelled build.
+2. `only_digits_differ`, which only ever saw lines that already differed, so a
+   page that missed a change had no differing line and was never examined.
+3. `predicted_stamp()`, printed above six `ok` lines and compared to nothing —
+   `classify()` counted a stamp pair whenever both lines were stamp lines and
+   never looked at the value.
+
+Each was repaired separately. The property they share is the thing to hold:
+
+> A dry-run prediction is a claim about a file that does not exist. It belongs
+> under `--apply`, asserted against the raw build — and until then the dry run
+> prints it marked NOT ASSERTED, rather than beside results that were.
+
+`built_page_problems()` is where the post-edit assertions live. The dry run now
+prints `NOT ASSERTED IN THE DRY RUN` under the predicted stamp. A fourth
+instance is a prediction that appears in neither place.
+
+---
+
 ## 5bis. THE CHECKS, ENUMERATED — the rule of §7ter, applied
 
 §5 above enumerates the PAGES. This enumerates the CHECKS, which is what §7ter
@@ -503,19 +532,40 @@ Reproduce the read map:
 
 ### The ones the cutover changes
 
-| check | what breaks | direction | when |
+| check | what breaks | direction | status |
 | --- | --- | --- | --- |
-| `assert_redesign.sh` | asserts production's markup vocabulary | loud | cutover (P4) |
-| `check_v2_footer.py:143` | compares the pass-0 page against `ROOT / name` | **SILENT — false green** | cutover |
-| `check_v2_footer.py:268` | demands `v2/$OUT` in the workflow restamp step | loud | the pre-work workflow edit |
-| `check_v2_identity.py:54` | `BAD_PATHS` asserts root-relative paths are ABSENT | loud, on CORRECT pages | cutover |
-| `check_suivi_window.py:38` | hand-written six-name page list + reads `ROOT / name` | loud | cutover |
-| `check_b1_switch.py:317` | payload read hardcoded to `ROOT / 'v2'` | loud | cutover |
-| `check_v2_behaviour.py:293` | payload read hardcoded to `ROOT / 'v2'` | loud | cutover |
-| `check_mock_deviations.py:1220` | reads `style/dashboard_v6_8.css` | loud | **cleanup** — see §3(d) |
-| `assert_redesign.sh:27` | reads `style/dashboard_v6_8.css` | loud | **cleanup** — see §3(d) |
-| `assert_redesign.sh:110` | third `v6.8` site, absent from `cutover.plan_writes` | loud | the §3(b2) bump |
-| `audit_css_overrides.py:64` | defaults to `REPO / 'epk.html'`, a production page | loud | cutover |
+| `assert_redesign.sh` | asserted production's markup vocabulary | loud | **FIXED** — P4, 396 assertions to 84 |
+| `check_v2_footer.py` clause 4 | compared the pass-0 page against `ROOT / name` | **SILENT — false green** | **FIXED** — referent is now the merged CSV |
+| `check_v2_footer.py` clause 5 | demanded `v2/$OUT` in the workflow restamp step | loud | **FIXED** — derived from `pass0_dir()` |
+| `check_v2_identity.py` | `BAD_PATHS` asserted root-relative paths ABSENT | loud, on CORRECT pages | **FIXED** — location-aware, both directions |
+| `check_suivi_window.py` | hand-written six-name page list | loud | **FIXED** — config-derived |
+| `check_suivi_window.py` | parses `.dtl-row` from static markup | loud | **STAGED** — see below |
+| `check_b1_switch.py:317` | payload read hardcoded to `ROOT / 'v2'` | loud | **STAGED** — cutover commit |
+| `check_v2_behaviour.py:293` | payload read hardcoded to `ROOT / 'v2'` | loud | **STAGED** — cutover commit |
+| `check_mock_deviations.py:1220` | reads `style/dashboard_v6_8.css` | loud | **OPEN** — cleanup, §3(d)(4) |
+| `assert_redesign.sh:27` | read `style/dashboard_v6_8.css` | loud | **FIXED** — the CSS half is gone |
+| `assert_redesign.sh:110` | third `v6.8` site, absent from `plan_writes` | loud | **FIXED** — derived from the constant |
+| `audit_css_overrides.py:64` | defaults to `REPO / 'epk.html'` | loud | **STAGED** — takes an argument; pass one |
+
+Verified in a post-cutover-shaped tree — six root pages built through
+`to_root()`, no `v2/`, workflow edited — not by reading. `check_v2_footer`,
+`check_v2_identity`, `check_page_anchor`, `check_v2_gate`, `check_mock_literals`
+and `assert_redesign.sh` all exit 0 there.
+
+**What STAGED means, and why these three are not fixed now.** Each needs an edit
+that is wrong until the day: `check_b1_switch` and `check_v2_behaviour` must
+read the payload from `pass0_dir()`, which resolves to `v2/` today, so making the
+change now is a no-op that cannot be tested and will read as done. They fail
+LOUDLY at cutover (`FileNotFoundError`), which is the acceptable failure mode —
+the cutover commit carries the one-line change in each, and the dry run before it
+is where they get exercised.
+
+`check_suivi_window`'s markup half is different: the property (trap #10, the
+seven visible rows contain sales) is real and survives the cutover, but what it
+must be read FROM changes — static `.dtl-row` markup today, `const D` after. It
+is deliberately left failing rather than repointed, because a check quietly
+aimed at markup that is not there reports six green pages and asserts nothing.
+The payload-level form is its own piece of work.
 
 **`check_v2_footer.py:143` is the one to read twice.** It iterates
 `pass0_pages()` — correct on both sides — and then opens `prod = ROOT / name`
