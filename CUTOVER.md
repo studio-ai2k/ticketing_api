@@ -349,6 +349,133 @@ The assertion that makes this falsifiable is the probe above: after the cleanup,
 the v2 build must **succeed** with `style/dashboard_v6_8.css` absent from the
 root. Run it as a test, not as a belief.
 
+#### (d)(4) TWO CHECKS READ THAT STYLESHEET, AND ONE OF THEM IS THE REPLACEMENT GATE
+
+The probe above asks whether the BUILD survives the move. It does. The question
+nobody asked is whether the CHECKS do, and the answer is no:
+
+| reader | line | what it uses the sheet for | status |
+|---|---|---|---|
+| `verify/check_mock_deviations.py` | 1220 | `prod_css`, for the carried-across `.db-*` rules and `_carried_block`'s page-footer run | **live** |
+| `verify/assert_redesign.sh` | 27 | `$CSS`, the source every `@media` count was derived from | **gone** — P4 deleted the CSS half |
+
+`assert_redesign.sh` no longer reads the sheet at all: the eight `@media`,
+`fs-*` and `font-size` assertions that derived from it were subsumed by
+`check_pages` and removed. **One reader is left**, and it does a plain
+`read_text` on `style/dashboard_v6_8.css` — move the file and it raises.
+
+**How much of the sheet is actually load-bearing: about 33 lines of 626.**
+
+```
+production sheet                  46 947 bytes   626 lines
+  .db-* lines the carry consults                  17
+  of those, matched verbatim against production   10
+  the page-footer block, located by its banner    16
+```
+
+Reproduce with the `_carried_block` / `CARRIED` logic at
+`check_mock_deviations.py:1300-1315`.
+
+**`check_mock_deviations` is the one that matters, because it is what P4 makes
+the cutover lean on.** The whole argument for deleting the CSS half of
+`assert_redesign.sh` is that `check_pages` asserts the shipped `<style>`
+byte-for-byte against the redesign sheet, and that the ledger pins that sheet.
+The ledger's carry-across half is exactly the part that reads production's
+stylesheet — so the cleanup that retires the old pipeline also disables the
+check the cutover replaced the old gate with. Cutover green, cleanup red, and
+the gap between them is the window where nothing is asserting the stylesheet at
+all.
+
+This is §7ter's rule with the ordering inverted: not "a check that reads the
+retiring pipeline", but **a check that reads the retiring pipeline in order to
+assert the NEW one**.
+
+### The three options, and what is wrong with each
+
+**A — the sheet stays at root.** One line of cleanup notes deleted, nothing
+else. Cost: a retired pipeline's stylesheet sits at the repo root permanently,
+and the only stated reason is that a check reads it. §6.5 asks for a file to be
+proved dead before deletion; this proves it alive for a reason that has nothing
+to do with the pipeline it belongs to.
+
+**B — the sheet moves to `legacy/` and the reader follows it.** A one-line path
+change, and the verbatim-provenance claim survives. **But `legacy/` is frozen by
+definition** (§6.2), so after the move the check compares the redesign's
+carried rules against a file that can never change again. An assertion whose
+reference cannot move is one that can never fail — decoration, in the §5 sense,
+and the third time this plan has met that shape.
+
+**C — the carried rules are absorbed and the carry-across retires by name.**
+The ~33 lines become ordinary lines of the redesign sheet, entered in the ledger
+as authorised additions (the mechanism already exists — `old_line is None`
+authorises a pure addition, `check_mock_deviations.py:1252`), the locked
+reference is updated in the same commit, and the sheet moves to `legacy/` with
+no reader at all. Retiring a check by name is the pattern §5.6 already uses for
+`check_eligibility`'s P4.
+
+Cost: it is real work, and it gives up the claim "these rules are verbatim
+production's". **That claim is worth less after cutover than it reads** — it is
+a statement about provenance from a pipeline that no longer runs. The rules do
+not stop being correct; they stop being *production's*, because there is no
+production.
+
+### RULED: it is history. The dependency is deleted.
+
+**Leo, this session.** "It is history, not a property. The chain is complete
+without it." B was rejected in the same breath and for the reason it was flagged:
+a reference frozen by definition is an assertion that cannot fail.
+
+**Confirmed BEFORE deleting, as ruled.** The 17 `.db-*` lines in the working
+sheet split cleanly:
+
+| | lines | pinned by |
+|---|---:|---|
+| verbatim in production | 10 | the carry-across — `.db-overlay`, `.db-modal*`, `.db-pw-*`, production's long-form auth overlay |
+| **not** in production | 7 | the LOCKED reference — `.db-m`, `.db-logo`, `.db-t`, `.db-s`, `.db-i`, `.db-b`, `.db-e`, the mock's own short-form names |
+
+All seven of the non-matching lines are in `dashboard_redesign.LOCKED.css`, so
+they were never carried and are pinned by the locked-vs-working diff like every
+other line. **None of them moves; all of them stay.**
+
+The carry-across excused **25** added lines in total — those 10 plus the 15-line
+page-footer run. Those 25 are now an explicit literal, `CARRIED_LINES`, in
+`check_mock_deviations.py`, matched **exactly and consumed once each**. The
+production stylesheet is read nowhere in `verify/`.
+
+What that gives up is provenance. What it keeps is falsifiability, which is the
+half that matters after the pipeline retires:
+
+```
+a carried line EDITED       -> FAIL (invented)      a carried line DELETED   -> FAIL (no longer present)
+a carried line DUPLICATED   -> FAIL (used once)     an invented .db-* rule   -> FAIL (invented)
+the production sheet MOVED AWAY ENTIRELY           -> exit 0   <- the point
+```
+
+The last line is the one to read: **the cleanup can now move
+`style/dashboard_v6_8.css` to `legacy/` without darkening the gate the cutover
+leans on.** §6.5's "prove it dead first" is satisfied — it has no readers left
+in `verify/`.
+
+### What changed in KIND, and what holds it
+
+`CARRIED_LINES` is a **maintained literal**. What it replaced was a **derived
+reference** — production's sheet, which nobody editing the redesign could bend
+to agree with them. An edit to the working sheet *and* to the list, made
+together, now passes; every one-sided case still fails.
+
+The two halves are not equally covered, and the file says so:
+
+| | lines | paired with |
+|---|---:|---|
+| the auth overlay | 10 | **`verify/check_v2_gate.py`** — a real browser, no auth token, asserting the overlay is `position:fixed`, covers the viewport, is opaque, and paints above the dashboard's numbers. Written for exactly this failure: the sheet once had no `.db-overlay` rule and everything else passed while revenue sat on a public URL. Verified firing — `position:fixed`→`static` gives *"does not cover the viewport; page centre paints 'dept-tabs'"* |
+| the page footer | 15 | **nothing.** `check_stampable`, `check_v2_footer`, `check_page_anchor` and `assert_redesign.sh` all read the MARKUP, and none is a browser check |
+
+So the footer's failure mode after a coordinated edit is: present, countable,
+stampable, and visually wrong. Bounded, but real. If it is worth closing, the
+shape is a browser assertion on the rendered footer beside `check_v2_gate`'s on
+the overlay — **not** a re-derived reference, which is the thing §3(d)(4) just
+retired.
+
 ---
 
 ## 4. The cleanup, and why mitigation (a) comes first
@@ -443,6 +570,147 @@ each v2 page**. It is the cheapest single test of which pipeline produced a file
 written as "no page anywhere". Scoping it by non-recursive glob would be exclusion
 by pattern — see §6. Scope it to **the pages `event_config.csv` names**, which is
 where the answer already lives.
+
+---
+
+## 5ter. THE PROPERTY THE DRY RUN HAS, stated once so it stops being found
+
+**Anything the dry run PREDICTS, it cannot verify — and it must say so.**
+
+The artefact does not exist yet. The dry run builds from pre-edit sources by
+definition, so every post-edit value it prints is a model, and a model compared
+to a model reads clean. Three instances, all found the same way — by breaking
+the thing the check was supposed to catch and watching it pass:
+
+1. the `../` modelling, which stopped the second attempt: `--apply` asserted
+   against the modelled page and wrote the unmodelled build.
+2. `only_digits_differ`, which only ever saw lines that already differed, so a
+   page that missed a change had no differing line and was never examined.
+3. `predicted_stamp()`, printed above six `ok` lines and compared to nothing —
+   `classify()` counted a stamp pair whenever both lines were stamp lines and
+   never looked at the value.
+
+Each was repaired separately. The property they share is the thing to hold:
+
+> A dry-run prediction is a claim about a file that does not exist. It belongs
+> under `--apply`, asserted against the raw build — and until then the dry run
+> prints it marked NOT ASSERTED, rather than beside results that were.
+
+`built_page_problems()` is where the post-edit assertions live. The dry run now
+prints `NOT ASSERTED IN THE DRY RUN` under the predicted stamp. A fourth
+instance is a prediction that appears in neither place.
+
+---
+
+## 5bis. THE CHECKS, ENUMERATED — the rule of §7ter, applied
+
+§5 above enumerates the PAGES. This enumerates the CHECKS, which is what §7ter
+says must exist before the cutover runs and what both failed attempts died for
+the lack of. **Every file in `verify/` was read, not grepped.** The two axes
+were: what artefact does it READ, and what markup SHAPE does it assume.
+
+Reproduce the read map:
+
+    python3 - <<'EOF'
+    import pathlib, re
+    PAT = re.compile(r"(ROOT|BASE_DIR)\s*/\s*([^\n]{0,70})")
+    for f in sorted(pathlib.Path('verify').iterdir()):
+        if f.suffix not in ('.py', '.sh', '.js'): continue
+        s = f.read_text(encoding='utf-8')
+        code = re.sub(r'"""(.*?)"""', '', s, flags=re.S)
+        hits = sorted({m.group(0).strip()[:66] for m in PAT.finditer(code)})
+        if hits: print(f.name, *('\n    ' + h for h in hits))
+    EOF
+
+### The ones the cutover changes
+
+| check | what breaks | direction | status |
+| --- | --- | --- | --- |
+| `assert_redesign.sh` | asserted production's markup vocabulary | loud | **FIXED** — P4, 396 assertions to 84 |
+| `check_v2_footer.py` clause 4 | compared the pass-0 page against `ROOT / name` | **SILENT — false green** | **FIXED** — referent is now the merged CSV |
+| `check_v2_footer.py` clause 5 | demanded `v2/$OUT` in the workflow restamp step | loud | **FIXED** — derived from `pass0_dir()` |
+| `check_v2_identity.py` | `BAD_PATHS` asserted root-relative paths ABSENT | loud, on CORRECT pages | **FIXED** — location-aware, both directions |
+| `check_suivi_window.py` | hand-written six-name page list | loud | **FIXED** — config-derived |
+| `check_suivi_window.py` | parses `.dtl-row` from static markup | loud | **STAGED** — see below |
+| `check_b1_switch.py:317` | payload read hardcoded to `ROOT / 'v2'` | loud | **STAGED** — cutover commit |
+| `check_v2_behaviour.py:293` | payload read hardcoded to `ROOT / 'v2'` | loud | **STAGED** — cutover commit |
+| `check_mock_deviations.py:1220` | reads `style/dashboard_v6_8.css` | loud | **OPEN** — cleanup, §3(d)(4) |
+| `assert_redesign.sh:27` | read `style/dashboard_v6_8.css` | loud | **FIXED** — the CSS half is gone |
+| `assert_redesign.sh:110` | third `v6.8` site, absent from `plan_writes` | loud | **FIXED** — derived from the constant |
+| `audit_css_overrides.py:64` | defaults to `REPO / 'epk.html'` | loud | **STAGED** — takes an argument; pass one |
+
+Verified in a post-cutover-shaped tree — six root pages built through
+`to_root()`, no `v2/`, workflow edited — not by reading. `check_v2_footer`,
+`check_v2_identity`, `check_page_anchor`, `check_v2_gate`, `check_mock_literals`
+and `assert_redesign.sh` all exit 0 there.
+
+**What STAGED means, and why these three are not fixed now.** Each needs an edit
+that is wrong until the day: `check_b1_switch` and `check_v2_behaviour` must
+read the payload from `pass0_dir()`, which resolves to `v2/` today, so making the
+change now is a no-op that cannot be tested and will read as done. They fail
+LOUDLY at cutover (`FileNotFoundError`), which is the acceptable failure mode —
+the cutover commit carries the one-line change in each, and the dry run before it
+is where they get exercised.
+
+`check_suivi_window`'s markup half is different: the property (trap #10, the
+seven visible rows contain sales) is real and survives the cutover, but what it
+must be read FROM changes — static `.dtl-row` markup today, `const D` after. It
+is deliberately left failing rather than repointed, because a check quietly
+aimed at markup that is not there reports six green pages and asserts nothing.
+The payload-level form is its own piece of work.
+
+**`check_v2_footer.py:143` is the one to read twice.** It iterates
+`pass0_pages()` — correct on both sides — and then opens `prod = ROOT / name`
+to compare the two footers. After the cutover those are **the same file**, so
+the comparison is a page against itself and passes unconditionally. It is the
+only check in the suite that goes quietly wrong, and it is assertion 4 of 5 in
+a check whose other four keep working, so nothing about its output looks
+different.
+
+### The ones that are already correct, and why
+
+Verified individually rather than assumed:
+
+- **Sixteen page checks resolve through `scripts/pages.py`** and are correct on
+  both sides with no flag-day edit: `check_cand_groups`, `check_eligibility`,
+  `check_finished_edition`, `check_proj_total`, `check_section_bars`,
+  `check_section_heads`, `check_v2_gate`, `check_v2_identity` (enumeration
+  only — its `BAD_PATHS` is the defect above), `check_mock_literals`,
+  `check_float_clamp`, `check_page_anchor`, `check_build_stamp`,
+  `check_b1_switch` and `check_v2_behaviour` (enumeration only — their payload
+  reads are the defects above).
+- **Eight of those additionally define `V2 = ROOT / 'v2'` and never use it.**
+  Dead constants left from before the `pages.py` migration. They read as live
+  cutover dependencies to a grep and are not: `grep -n '\bV2\b'` returns the
+  definition line and nothing else in each.
+- **`check_build_stamp.py:185`** branches on `pages.pass0_dir(ROOT) != ROOT` and
+  so audits two asset sets before the cutover and one after. Confirmed by
+  reading the branch, not by trusting §2.
+- **`check_login_bg.py:61`** branches on `path.parent.name != 'v2'` and is
+  already correct in both locations.
+- **Ten checks read no page at all** — `data/`, `event_config.csv`, the mock, or
+  `scripts/`: `check_anchor_modes`, `check_data_freshness`, `check_exact_date`,
+  `check_duplicate_decls`, `check_fixture_quarantine`, `check_offset`,
+  `check_payout_reconciliation`, `check_shotgun_fee_table`, `check_source_order`,
+  `check_spec_example`.
+
+### The two callouts that lose their subject
+
+`check_platform_cards.py` keys on `.det-link` and `check_section_amber.py` needs
+`<div id="sec-projection"` in static markup. Both are 0 in a pass-0 page, so
+both retire with the markup half of P4 rather than moving.
+
+### What replaces the markup half
+
+Nothing needs inventing. `check_section_bars.py` already asserts **"the shipped
+section bars ARE the mock's bars, byte for byte"** — not "has six tabs", equals
+— and that is the shape the whole markup half should have had. `check_pages`
+does the same for the `<style>` block. The gap worth naming: **nothing asserts
+the page's BODY against the mock the way `check_pages` asserts its stylesheet.**
+The mock is pinned to the locked copy by the ledger, and the page is pinned to
+the shared set by `check_build_stamp`, so the property is pinned *transitively*
+— but no single check states it, which is why the markup half looked load-
+bearing for so long.
 
 ---
 

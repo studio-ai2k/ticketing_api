@@ -43,7 +43,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
-from pages import pass0_pages   # noqa: E402 - CUTOVER 6.3, one page list
+from pages import pass0_pages, pass0_dir   # noqa: E402 - CUTOVER 6.3, one page list
 PAYLOAD_RE = re.compile(r'const (?:D=|LG\s*=\s*)\{.*?\};\s*\n', re.DOTALL)
 
 # Literals belonging to the mock's own event (epk_2026) and its reference.
@@ -51,6 +51,18 @@ MOCK_IDENTITY = ['Elektric Park', 'Île des Impressionnistes', 'Île de Chatou',
                  'campagne_mock', '5–6 septembre', '1–2 septembre',
                  '35 000']
 # Paths that break one directory deeper, and a link to a page v2/ has no copy of.
+#
+# LOCATION-DEPENDENT, AND THE DEPENDENCE INVERTS AT CUTOVER. These forms are
+# wrong under `/v2/`, where the page needs `../`. At the repo ROOT they are the
+# CORRECT forms - `to_root()` strips exactly these prefixes, and §5 asserts zero
+# `../` in a built root page. Measured on a real post-cutover build: 2 of the 3
+# match, so asserting them absent would fail all six pages precisely when all
+# six are right.
+#
+# So the check is not "these strings are absent". It is "the asset paths suit
+# the directory the page is in", and which half applies is resolved from
+# `pages.pass0_dir()` at call time - the same rule as check_login_bg.py:61 and
+# CUTOVER §6.3, rather than a flag-day edit on the morning.
 BAD_PATHS = [r'src="LOGO_ROND_JAUNE\.png"', r"url\('upload\.JPG'\)",
              r'href="upload\.html']
 # The one page allowed to say "Elektric Park": epk's own.
@@ -89,6 +101,10 @@ def main():
         print('no v2 pages built - nothing to scan')
         return 0
     names = real_event_names()
+    # WHERE pass 0 publishes, resolved now rather than assumed. `../` is
+    # right under v2/ and wrong at root, and this is the switch.
+    at_root = pass0_dir() == ROOT
+    print(f'paths asserted for: {"the repo root" if at_root else "v2/"}')
     failures = []
     for p in pages:
         # The whole <nav> is excluded, not just its <option> elements. The
@@ -103,7 +119,14 @@ def main():
         html = PAYLOAD_RE.sub('', html)
         allowed = OWN.get(p.name, [])
         hits = [t for t in MOCK_IDENTITY if t not in allowed and t in html]
-        paths = [b for b in BAD_PATHS if re.search(b, html)]
+        if at_root:
+            # Post-cutover the page IS at the root, so the un-prefixed forms are
+            # correct and the defect is the opposite one: a `../` that survived
+            # the move. Same property - "the paths suit the location" - read
+            # from the other end.
+            paths = ['../ survived the move to root'] if '../' in html else []
+        else:
+            paths = [b for b in BAD_PATHS if re.search(b, html)]
         # What the exclusion above gives up, this takes back: a label in the
         # payload must name a configured event.
         labels = payload_labels(raw)

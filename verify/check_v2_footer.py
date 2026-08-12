@@ -46,16 +46,35 @@ other certifies consistency and nothing else:
      before the run rather than four hours into a quiet one.
   3  the stamp PARSES as a real time or a real freeze date. Against reality, not
      against production: two pages can agree on the same nonsense.
-  4  v2's DATA-DERIVED footer items equal production's for the same event -
-     last-ticket time and version. NOT the sync stamp: build_v2 regenerates the
-     page, so a locally rebuilt v2 legitimately carries a newer stamp than the
-     committed production page, and an earlier draft of this check failed all
-     six on a correct state. A check that fails on correct states gets
-     disabled, and a disabled check is not a check.
-  5  the WORKFLOW's restamp step names v2/$OUT and loops stamp_footer over both.
-     That is what actually keeps the stamp fresh, and it is the only clause that
-     says anything about a QUIET day - the only day the stamp matters, because
-     a busy one rebuilds the page and mints a new stamp anyway.
+  4  "Dernier billet" equals THE NEWEST ORDER IN THE MERGED CSV, converted to
+     Europe/Paris. NOT the sync stamp: build_v2 regenerates the page, so a
+     locally rebuilt v2 legitimately carries a newer stamp than the committed
+     page, and an earlier draft compared the whole footer and failed all six on
+     a correct state. A check that fails on correct states gets disabled, and a
+     disabled check is not a check.
+
+     REFERENT CHANGED AT P4. This used to compare against the PRODUCTION page
+     for the same event. That was a proxy for the CSV all along - see the line
+     above about two artefacts certifying consistency and nothing else - and at
+     cutover the proxy becomes THIS SAME FILE, because `pass0_pages()` resolves
+     to the repo root and `ROOT / name` resolves beside it. The comparison would
+     have passed unconditionally, against itself, silently. It was the only
+     silent cutover break in the whole suite.
+
+     `data/` is gitignored, so the CSV can legitimately be absent on a fresh
+     clone. That is REPORTED as unverified per page, never skipped quietly.
+  5  the WORKFLOW's restamp step names EVERY LOCATION THE PAGES LIVE IN, and
+     loops stamp_footer over the list. That is what actually keeps the stamp
+     fresh, and it is the only clause that says anything about a QUIET day - the
+     only day the stamp matters, because a busy one rebuilds the page and mints
+     a new stamp anyway.
+
+     LOCATION-DERIVED SINCE P4, not a fixed `v2/$OUT`. Before cutover the pages
+     exist twice and the restamp must reach both. After it, `v2/` is gone - and
+     the workflow edit that `cutover.py --apply` REFUSES to run without is
+     exactly what removes that literal. Demanding it unconditionally made this
+     check and the cutover mutually exclusive: doing the required pre-work
+     turned the check red, so one of the two had to be wrong and neither said so.
 
 ON THE VERSION
 --------------
@@ -67,19 +86,22 @@ where pass 0's does. That bump is one constant, `postprocess_html.DASHBOARD_VERS
 which this reads rather than restates.
 """
 
+import csv as _csv2
 import json
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
-from pages import pass0_pages   # noqa: E402 - CUTOVER 6.3, one page list
+from pages import pass0_pages, pass0_dir   # noqa: E402 - CUTOVER 6.3, one page list
 
 import postprocess_html as pp          # noqa: E402
 import stamp_footer as sf              # noqa: E402
 
-V2 = ROOT / 'v2'
+PARIS, UTC = ZoneInfo('Europe/Paris'), ZoneInfo('UTC')
 FOOTER_RE = re.compile(r'<div class="pg-footer[^"]*">.*?</div>', re.DOTALL)
 VALUE_RE = re.compile(r'<span class="pgf-k">([^<]*)</span>'
                       r'<span class="pgf-v">([^<]*)</span>')
@@ -95,13 +117,47 @@ def items(html):
             for k, v in VALUE_RE.findall(foot)]
 
 
+def last_ticket_paris(csv_path):
+    """`DD/MM · HH:MM` for the newest order in the merged CSV, in Paris time.
+
+    THE REALITY ANCHOR THAT REPLACES THE PRODUCTION COMPARISON.
+
+    Clause (4) used to compare v2's data-derived footer items against the
+    PRODUCTION page for the same event. That was always a proxy - this file's
+    own header says "comparing two artefacts to each other certifies
+    consistency and nothing else" - and at cutover the proxy stops existing:
+    `pass0_pages()` resolves to the repo root, `ROOT / name` is THE SAME FILE,
+    and the comparison passes unconditionally against itself. Silent, and the
+    only silent one in the suite.
+
+    So it compares against the thing production was standing in for. The header
+    already names it: "Dernier billet comes from the merged CSV". This reads
+    that CSV.
+
+    The conversion is a real Europe/Paris conversion, not a fixed +2. Measured
+    across all six pages the offset is +2 today (CEST) and would be +1 in
+    January - a fixed offset is the exact bug `check_offset.py` keeps a negative
+    test for, and it would fail every page for five months of the year.
+    """
+    newest = None
+    with csv_path.open(encoding='utf-8-sig') as f:
+        for row in _csv2.DictReader(f):
+            v = (row.get('order_datetime') or '').strip()
+            if v and (newest is None or v > newest):
+                newest = v
+    if not newest:
+        return None
+    return (datetime.fromisoformat(newest).replace(tzinfo=UTC)
+            .astimezone(PARIS).strftime('%d/%m · %H:%M'))
+
+
 def main():
     pages = pass0_pages()
     if not pages:
         print('no v2 pages')
         return 1
 
-    fails = []
+    fails, unchecked = [], []
     print(f'0  the version is one constant, read not restated: '
           f'v{pp.DASHBOARD_VERSION}')
 
@@ -140,7 +196,6 @@ def main():
 
     for p in pages:
         name = p.name
-        prod = ROOT / name
         html = p.read_text(encoding='utf-8')
         bad = []
 
@@ -213,19 +268,29 @@ def main():
         #     "Dernier billet" comes from the merged CSV, so it must agree
         #     whenever the two were built from the same data; a divergence there
         #     means the transplant took a footer from somewhere else.
-        if not prod.exists():
-            bad.append(f'no production page {name} to compare against')
+        #     REFERENT CHANGED: the merged CSV, not the production page. See
+        #     last_ticket_paris(). The production page was a stand-in for the
+        #     CSV, and after cutover it is this same file, so the old form
+        #     compared a page with itself and passed no matter what.
+        csv_path = ROOT / 'data' / f'{eid}_merged.csv' if eid else None
+        shown = [v for l, v in got if l.startswith('Dernier billet')]
+        if csv_path is None or not csv_path.exists():
+            # NOT a silent skip. `data/` is gitignored - it carries buyer
+            # contact details and must never be committed - so on a fresh clone
+            # this referent is genuinely absent. Say which property went
+            # unverified and why, the way check_pages does when v2/ is empty.
+            unchecked.append(name)
+        elif not shown:
+            bad.append('no "Dernier billet" item in either footer')
         else:
-            fixed = lambda rows: [(l, v) for l, v in rows
-                                  if not l.startswith(('Données API', 'Données figées'))]
-            if fixed(got) != fixed(prod.read_text(encoding='utf-8') and
-                                   items(prod.read_text(encoding='utf-8'))):
-                bad.append('data-derived footer items differ from production\'s:')
-                for a, b in zip(fixed(got) + [None] * 9,
-                                fixed(items(prod.read_text(encoding='utf-8'))) + [None] * 9):
-                    if a != b and (a or b):
-                        bad.append(f'    v2 {a}  vs  prod {b}')
-                bad = bad[:8]
+            want = last_ticket_paris(csv_path)
+            if want is None:
+                bad.append(f'{csv_path.name} has no order_datetime to anchor against')
+            else:
+                off = [v for v in shown if v != want]
+                if off:
+                    bad.append(f'"Dernier billet" {off} != {want!r}, the newest '
+                               f'order in {csv_path.name} in Paris time')
 
         # the version, from the constant rather than a literal
         if f'Festiflow Dashboard' in html:
@@ -244,15 +309,17 @@ def main():
         else:
             stamp = next((v for l, v in got
                           if l.startswith(('Données API', 'Données figées'))), '?')
-            print(f'  ok    {name}: 2 footer(s), stampable, {stamp}, '
-                  f'data items match production')
+            anchor = ('last ticket UNVERIFIED (no merged CSV)'
+                      if name in unchecked
+                      else 'last ticket matches the merged CSV')
+            print(f'  ok    {name}: 2 footer(s), stampable, {stamp}, {anchor}')
 
     # ---- (5) the WORKFLOW restamps v2, not just production -------------
     # This is what actually keeps the stamp fresh. The pages above can only
     # show what a build produced; this shows what the scheduled run will do on
     # a QUIET day, which is the only day the stamp matters - a busy day
     # rebuilds the page and mints a new one anyway.
-    print('\n5  the scheduled restamp reaches v2, not only production')
+    print('\n5  the scheduled restamp reaches every location the pages live in')
     wf = ROOT / '.github' / 'workflows' / 'daily-dashboards.yml'
     if not wf.exists():
         fails.append('no workflow')
@@ -265,17 +332,34 @@ def main():
             print('  FAIL  no "Restamp the footer" step')
         else:
             body = step[1].split('\n      - name:', 1)[0]
-            if 'v2/$OUT' not in body:
+            # WHICH LOCATIONS, derived rather than fixed. Before cutover the
+            # pages exist twice - production at root and pass 0 under v2/ - and
+            # the restamp must reach BOTH. After cutover there is one location,
+            # `v2/` does not exist, and the workflow edit the cutover REFUSES to
+            # run without is precisely what removes `v2/$OUT`. Demanding that
+            # literal on both sides makes this check and the cutover mutually
+            # exclusive: the required pre-work turns it red.
+            #
+            # So it asks the question that survives - does the restamp step name
+            # every location the pages actually live in?
+            want_v2 = pass0_dir() != ROOT
+            if want_v2 and 'v2/$OUT' not in body:
                 fails.append('restamp skips v2')
                 print('  FAIL  the restamp step never names v2/$OUT, so a quiet')
                 print('        run refreshes production and leaves v2 asserting')
                 print('        a sync time that stopped being true')
+            elif not want_v2 and 'v2/' in body:
+                fails.append('restamp still names v2/')
+                print('  FAIL  the restamp step still names v2/, which no longer')
+                print('        exists - it would stamp a path that is not there')
             elif 'stamp_footer.py "$f"' not in body:
                 fails.append('restamp does not loop')
                 print('  FAIL  v2/$OUT is named but stamp_footer is not called '
                       'over the list')
             else:
-                print('  ok    restamps $OUT and v2/$OUT in one loop')
+                print('  ok    restamps ' +
+                      ('$OUT and v2/$OUT' if want_v2 else '$OUT') +
+                      ' in one loop')
 
     print()
     if fails:

@@ -106,37 +106,90 @@ STYLE_NEW = """    # CUTOVER §3(a), second half: the `../` goes with the move t
     return [(f"url('{SHEET_LOGIN_BG}')", f"url('{login_bg}')")]"""
 
 
-def cutover_edit(src):
-    """build_v2.py as the cutover leaves it. Asserts each site matches once."""
-    for old, new in ((PAGE_PATHS_OLD, PAGE_PATHS_NEW), (STYLE_OLD, STYLE_NEW)):
+VERSION_OLD = "DASHBOARD_VERSION = '6.8'"
+VERSION_NEW = "DASHBOARD_VERSION = '7.0'"
+
+
+def _edit_once(src, pairs, what):
+    """Apply each (old, new), refusing unless the site matches EXACTLY once."""
+    for old, new in pairs:
         n = src.count(old)
         if n != 1:
             raise SystemExit(
                 f'cutover: the edit site matched {n} time(s), want 1. '
-                f'build_v2.py has moved under this script, and a cutover that '
+                f'{what} has moved under this script, and a cutover that '
                 f'edits the wrong text is worse than one that refuses.\n'
                 f'  looking for: {old.splitlines()[0][:70]}...')
         src = src.replace(old, new)
     return src
 
 
-def predicted_stamp():
-    """The v2 stamp AFTER the edit, computed from the edited source.
+def cutover_edit(src):
+    """build_v2.py as the cutover leaves it. Asserts each site matches once."""
+    return _edit_once(src, ((PAGE_PATHS_OLD, PAGE_PATHS_NEW),
+                            (STYLE_OLD, STYLE_NEW)), 'build_v2.py')
 
-    build_v2.py is in V2_SHARED_ASSETS and the cutover edits it, so the stamp
-    moves for a legitimate reason at the one moment the comparison exists. §5
-    calls that the failure most likely to be waved through as "that's just the
-    stamp" - so it is predicted here, exactly, and then asserted.
+
+def version_edit(src):
+    """postprocess_html.py as the cutover leaves it - §3(b2)'s version bump."""
+    return _edit_once(src, ((VERSION_OLD, VERSION_NEW),),
+                      'postprocess_html.py')
+
+
+# EVERY SHARED ASSET THE CUTOVER EDITS, AND THEREFORE EVERY EDIT THAT MUST LAND
+# BEFORE THE BUILD.
+#
+# One shape, found twice. `build_v2.py` and `postprocess_html.py` are BOTH in
+# V2_SHARED_ASSETS, so a page built before either edit is stamped against an
+# asset set that no longer exists the moment the edit lands:
+#
+#     pass 0: 11 shared asset(s) hash to 8f54ebb8db3d
+#     FAIL  parisxxl.html: built from shared assets eac8f37bfef8, not 8f54ebb8db3d
+#
+# The PAGE_PATHS ordering was fixed on its own and the version bump - the same
+# bug, in the same write plan, one asset over - was left in `plan_writes` and
+# missed. Enumerating them in ONE list is the repair: a third shared-asset edit
+# gets the ordering by being added here, rather than by someone remembering that
+# the rule exists. Anything in V2_SHARED_ASSETS that the cutover touches belongs
+# in this tuple and nowhere else.
+PRE_BUILD_EDITS = (
+    ('scripts/build_v2.py', cutover_edit),
+    ('scripts/postprocess_html.py', version_edit),
+)
+
+
+def pre_build_sources():
+    """{relative path: edited source} for every pre-build edit, applied now.
+
+    Computed from the files on disk, so it raises through _edit_once if any
+    site has moved - before anything is written, in the dry run as well as in
+    --apply.
+    """
+    return {rel: fn((BASE_DIR / rel).read_text(encoding='utf-8'))
+            for rel, fn in PRE_BUILD_EDITS}
+
+
+def predicted_stamp():
+    """The v2 stamp AFTER every pre-build edit, computed from the edited sources.
+
+    build_v2.py AND postprocess_html.py are both in V2_SHARED_ASSETS and the
+    cutover edits both, so the stamp moves for a legitimate reason at the one
+    moment the comparison exists. §5 calls that the failure most likely to be
+    waved through as "that's just the stamp" - so it is predicted here, exactly,
+    and then asserted.
+
+    It iterates PRE_BUILD_EDITS rather than naming build_v2.py: predicting the
+    stamp from ONE of two edits gave a hash no correct build could ever produce,
+    which is the second half of the same bug as building before the bump.
     """
     import hashlib as _h
     h = _h.sha256()
-    edited = cutover_edit((BASE_DIR / 'scripts' / 'build_v2.py')
-                          .read_text(encoding='utf-8')).encode()
+    edited = pre_build_sources()
     for rel_path in build_v2.V2_SHARED_ASSETS:
         f = BASE_DIR / rel_path
         h.update(rel_path.encode())
-        if rel_path == 'scripts/build_v2.py':
-            h.update(edited)
+        if rel_path in edited:
+            h.update(edited[rel_path].encode())
         else:
             h.update(f.read_bytes() if f.exists() else b'<absent>')
     return f'<!-- shared-v2:{h.hexdigest()[:12]} -->'
@@ -226,42 +279,167 @@ def build_root_pages(outdir):
     return built
 
 
-def only_digits_differ(a, b):
-    """True when two lines differ ONLY in digit runs.
+FOOT_PAIR_RE = re.compile(
+    r'<span class="pgf-k">(.*?)</span><span class="pgf-v">(.*?)</span>')
+FOOT_VER_RE = re.compile(r'<span class="pgf-ver">(.*?)</span>')
+# The ONE footer field that legitimately moves between the v2 build and the
+# root build. Measured across all six pages: `Dernier billet` is data-derived
+# and identical, `Données figées` is the frozen variant and identical, the
+# brand and every SVG are identical. Only this one differs, and only in HH:MM.
+CLOCK_KEY = 'Données API'
+CLOCK_RE = re.compile(r'^\d{2}:\d{2}$')
+CLOCK_MASK = re.compile(
+    r'(<span class="pgf-k">' + CLOCK_KEY + r'</span><span class="pgf-v">)'
+    r'[^<]*(</span>)')
+VER_MASK = re.compile(r'(<span class="pgf-ver">)[^<]*(</span>)')
 
-    §5 asks for "exactly one differing line". Measured, it is THREE - the build
-    stamp and the two footer items, which carry a build-time clock, so the root
-    pages are necessarily built at a different minute than the v2 pages were.
-    "Two footer lines differ" would be the loose repair, and it would pass a
-    footer whose DATE or EVENT NAME had also changed. So the difference is
-    asserted at character level: every changed segment, on both sides, must be
-    digits and nothing else.
+
+def current_version():
+    """The footer version string the CURRENT sources build. `v6.8` today."""
+    src = (BASE_DIR / 'scripts' / 'postprocess_html.py').read_text(encoding='utf-8')
+    m = re.search(r"DASHBOARD_VERSION = '([\d.]+)'", src)
+    if not m:
+        raise SystemExit('cutover: cannot read DASHBOARD_VERSION from '
+                         'postprocess_html.py')
+    return f'v{m.group(1)}'
+
+
+def predicted_version():
+    """The footer version string AFTER the bump, from the edited source.
+
+    The mirror of predicted_stamp(), and for the same reason: §3(b2) bumps
+    DASHBOARD_VERSION during the cutover, so the footer version moves at the one
+    moment the §5 comparison exists. Predicted here and then asserted, rather
+    than absorbed - see footer_line_ok's docstring for what absorbing it cost.
     """
-    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a, b).get_opcodes():
-        if tag == 'equal':
-            continue
-        if not (a[i1:i2].isdigit() or not a[i1:i2]):
-            return False
-        if not (b[j1:j2].isdigit() or not b[j1:j2]):
-            return False
-    return True
+    src = (BASE_DIR / 'scripts' / 'postprocess_html.py').read_text(encoding='utf-8')
+    m = re.search(r"DASHBOARD_VERSION = '([\d.]+)'", src)
+    if not m:
+        raise SystemExit('cutover: cannot read DASHBOARD_VERSION from '
+                         'postprocess_html.py - the version cannot be predicted, '
+                         'so the footer comparison cannot be asserted.')
+    return 'v7.0' if m.group(1) == '6.8' else f'v{m.group(1)}'
 
 
-def classify(diff):
-    """(stamp_pairs, clock_pairs, unexplained) over a unified diff's -/+ lines."""
+def footer_line_ok(a, b, want_ver):
+    """(ok, reason) for a footer line that may differ ONLY in the build clock.
+
+    REPLACES a character-level "every changed segment is digits" test, which was
+    wrong in BOTH directions - and the tightening that produced it was itself
+    the cause, because a date is digits too:
+
+      FALSE PASS. `12/08 · 14:33` -> `13/08 · 14:33` returned True, as did
+      `v6.8` -> `v7.0`. §5 names a changed DATE as the exact thing the check
+      exists to prevent, and the §3(b2) version bump would have been absorbed
+      as "clock digits" inside the one assertion that cannot be re-run.
+
+      FALSE DEFECT. difflib aligns whole lines, so a replace span can straddle
+      the `:` in a clock: measured against the shipped `14:48`, 254 of the 1439
+      possible HH:MM values classified as UNEXPLAINED. A CORRECT cutover failed
+      about one run in six per page, presenting as two footer lines that look
+      identical - whose obvious response is "re-run, it's green", on the one
+      assertion §5 says must never be waved through.
+
+    So the difference is addressed by FIELD rather than by character. The footer
+    is structured markup; the clock lives in a named field, and every other
+    field must be byte-identical. Everything OUTSIDE the two mutable fields is
+    then compared as a whole string, because a check that only reads the fields
+    it knows about is blind to any markup change beside them.
+    """
+    ka, kb = FOOT_PAIR_RE.findall(a), FOOT_PAIR_RE.findall(b)
+    if [k for k, _ in ka] != [k for k, _ in kb]:
+        return False, (f'footer keys changed: {[k for k, _ in ka]} -> '
+                       f'{[k for k, _ in kb]}')
+    if not ka:
+        return False, 'no pgf-k/pgf-v pairs in a line that looks like a footer'
+    for (k, va), (_, vb) in zip(ka, kb):
+        if k == CLOCK_KEY:
+            if not (CLOCK_RE.match(va) and CLOCK_RE.match(vb)):
+                return False, (f'{k}: {va!r} -> {vb!r}, and the build clock must '
+                               f'be HH:MM on BOTH sides')
+        elif va != vb:
+            return False, (f'{k}: {va!r} -> {vb!r}. This field does not carry '
+                           f'the build clock, so it must not move.')
+    va_, vb_ = FOOT_VER_RE.findall(a), FOOT_VER_RE.findall(b)
+    if len(va_) != 1 or len(vb_) != 1:
+        return False, f'{len(va_)} -> {len(vb_)} .pgf-ver span(s), want 1 each'
+    if vb_[0] != want_ver:
+        return False, (f'footer version is {vb_[0]!r}, want {want_ver!r}. The '
+                       f'§3(b2) bump must land BEFORE the build that stamps it '
+                       f'- the same ordering rule as the PAGE_PATHS edit.')
+    ma = VER_MASK.sub(r'\1@V@\2', CLOCK_MASK.sub(r'\1@C@\2', a))
+    mb = VER_MASK.sub(r'\1@V@\2', CLOCK_MASK.sub(r'\1@C@\2', b))
+    if ma != mb:
+        return False, 'the footer differs outside the build clock and the version'
+    return True, ''
+
+
+def classify(diff, want_ver):
+    """(stamp_pairs, clock_pairs, unexplained) over a unified diff's -/+ lines.
+
+    `unexplained` carries the REASON each line was rejected. The old version
+    returned the line pair alone, so a rejected footer printed as two strings
+    identical for their first 104 columns and named nothing - which is how a
+    false defect here reads as noise to be re-run rather than as a finding.
+    """
     olds = [l[1:] for l in diff if l.startswith('-')]
     news = [l[1:] for l in diff if l.startswith('+')]
     stamp, clock, other = 0, 0, []
     for a, b in zip(olds, news):
         if stamp_line(a) and stamp_line(b):
             stamp += 1
-        elif 'pg-footer' in a and 'pg-footer' in b and only_digits_differ(a, b):
-            clock += 1
+        elif 'pg-footer' in a and 'pg-footer' in b:
+            ok, why = footer_line_ok(a, b, want_ver)
+            if ok:
+                clock += 1
+            else:
+                other.append((a, b, why))
         else:
-            other.append((a, b))
+            other.append((a, b, 'not the build stamp and not a footer line'))
     if len(olds) != len(news):
-        other.append(('<line count differs>', f'{len(olds)} vs {len(news)}'))
+        other.append(('<line count differs>', f'{len(olds)} vs {len(news)}',
+                      'a line was added or removed, not changed'))
     return stamp, clock, other
+
+
+def built_page_problems(raw, want_stamp, want_ver):
+    """Every way a POST-EDIT built page fails what §5 predicts. Reasons, not a bool.
+
+    WHY THIS IS SEPARATE, AND WHY IT ONLY RUNS UNDER --apply
+    --------------------------------------------------------
+    `predicted_stamp()` was computed, printed, and never compared to anything.
+    The dry run substitutes it INTO the modelled page (`new_html.replace(here,
+    want_stamp)`) and then diffs that against the v2 snapshot, so the prediction
+    was being checked against a page built from the prediction. `classify()`
+    counts a stamp pair whenever BOTH lines are stamp lines - it never looked at
+    the value. So the one number §5 calls "the failure most likely to be waved
+    through as that's just the stamp" could take any value at all and every page
+    still read ok.
+
+    Found by negative-testing the version-bump ordering: dropping
+    postprocess_html.py from PRE_BUILD_EDITS moved the predicted stamp from
+    8f54ebb8db3d to eac8f37bfef8 - the exact wrong value the second cutover
+    attempt shipped - and all six pages still printed ok.
+
+    The dry run cannot assert this: it builds with the PRE-edit sources, so the
+    stamp it produces is today's and the post-edit value does not exist yet to
+    be compared. --apply builds AFTER the edits, so there the prediction and the
+    artefact are both real, and this is where the assertion belongs.
+    """
+    why = []
+    if '../' in raw:
+        why.append(f'{raw.count("../")} `../` survived the edit')
+    got = stamp_line(raw)
+    if got != want_stamp:
+        why.append(f'build stamp is {got!r}, predicted {want_stamp!r}. The '
+                   f'prediction is computed from the shared set as the cutover '
+                   f'leaves it, so a mismatch means the pages were built '
+                   f'against a different set than the one they ship with - '
+                   f'§2/§3 ordering.')
+    vers = FOOT_VER_RE.findall(raw)
+    if vers != [want_ver] * 2:
+        why.append(f'footer version(s) {vers}, want {[want_ver] * 2} - §3(b2)')
+    return why
 
 
 def compare(name, new_html, v2_html, login_bg):
@@ -310,7 +488,23 @@ def plan_writes(names, v2_snap, built, hashes, bgs):
         # Above the content and INSIDE the gate: someone who never gets past the
         # password sees no figures either, so the banner cannot leak more than
         # the page already does.
-        marker = '<div class="wrap"'
+        #
+        # PRODUCTION'S container, not the redesign's. This read
+        # `<div class="wrap"` - which is the REDESIGN's wrapper, and the page
+        # being banner-stamped here is the PRODUCTION one, because the archive
+        # is what ships today. Measured: `.wrap` is 1 in every v2 page and 0 in
+        # every production page, so --apply refused on the first page it tried:
+        #
+        #   cutover: parisxxl.html has 0 `<div class="wrap"` anchors, want 1
+        #
+        # A marker taken from one pipeline and applied to the other, which is
+        # the shape this project keeps finding. It refused rather than writing a
+        # bannerless archive, and it refused before any page was written.
+        #
+        # `.dashboard` is production's equivalent: measured 1 in every
+        # production page, 0 in every v2 page, sitting immediately after
+        # `</nav>` - above all content, below the nav, inside the gate.
+        marker = '<div class="dashboard">'
         if html.count(marker) != 1:
             raise SystemExit(
                 f'cutover: {n} has {html.count(marker)} `{marker}` anchors, want '
@@ -342,13 +536,18 @@ def plan_writes(names, v2_snap, built, hashes, bgs):
     #    goes in BEFORE the build so the pages are produced by the post-cutover
     #    builder rather than transformed into looking like it. Nothing to write.
 
-    # 4. the version, in BOTH places (§3(b2))
-    pp_path = BASE_DIR / 'scripts' / 'postprocess_html.py'
-    pp_src = pp_path.read_text(encoding='utf-8')
-    if pp_src.count("DASHBOARD_VERSION = '6.8'") != 1:
-        raise SystemExit('cutover: DASHBOARD_VERSION is not 6.8 - already bumped?')
-    out.append((pp_path, pp_src.replace("DASHBOARD_VERSION = '6.8'",
-                                        "DASHBOARD_VERSION = '7.0'", 1)))
+    # 4. the version, in BOTH places (§3(b2)) - but only ONE of them here.
+    #
+    #    postprocess_html.py is in V2_SHARED_ASSETS, so its bump is a PRE-BUILD
+    #    edit and is already on disk by the time this runs, exactly like
+    #    build_v2.py above. It used to be written here, in the same plan as the
+    #    pages, which stamped every page against the pre-bump asset set. See
+    #    PRE_BUILD_EDITS.
+    #
+    #    check_footer_tz.py is NOT a shared asset - measured, it is not in
+    #    V2_SHARED_ASSETS - so nothing is stamped against it and it has no
+    #    ordering constraint. It stays in the write plan, which is where an edit
+    #    belongs unless the build depends on it.
     tz_path = BASE_DIR / 'verify' / 'check_footer_tz.py'
     tz_src = tz_path.read_text(encoding='utf-8')
     if tz_src.count('Festiflow Dashboard v6.8') != 2:
@@ -429,10 +628,23 @@ def main():
         built = build_root_pages(tmp)
 
         want_stamp = predicted_stamp()
+        want_ver, have_ver = predicted_version(), current_version()
+        print(f'EXPECTED FOOTER VERSION AFTER THE BUMP: {want_ver} '
+              f'(from {have_ver})  (§3(b2))')
         print(f'EXPECTED STAMP AFTER THE EDIT: {want_stamp}')
         print(f'  today: {stamp_line(v2_snap[names[0]])}')
-        print('  computed from build_v2.py AS THE CUTOVER LEAVES IT, not '
-              'observed after the fact.\n')
+        print('  computed from the shared set AS THE CUTOVER LEAVES IT, not '
+              'observed after the fact.')
+        # SAY WHAT IS UNVERIFIED. The dry run builds with the PRE-edit sources,
+        # so this value cannot be observed here - the page carrying it does not
+        # exist until --apply writes the edits and rebuilds. Printing it beside
+        # six ok lines read as "checked"; it was not, in either mode, until
+        # built_page_problems() existed. Not a caveat: the difference between a
+        # prediction and an assertion is the whole of §5.
+        print('  NOT ASSERTED IN THE DRY RUN. The pages below are built from '
+              'PRE-edit sources,')
+        print('  so this stamp does not exist yet. --apply rebuilds after the '
+              'edits and asserts it.\n')
 
         print('PER-PAGE DIFF against the v2 page, stripped of `../` (§5):')
         failures = []
@@ -446,16 +658,57 @@ def main():
             here = stamp_line(new_html)
             if here:
                 new_html = new_html.replace(here, want_stamp)
+            # MODEL THE VERSION BUMP TOO, and assert the substitution landed.
+            #
+            # This loop cannot run an edited postprocess_html without writing,
+            # so it models the bump exactly as it models the stamp above. What
+            # keeps that from being a free pass is the COUNT: `to_root` already
+            # refuses when a declared substitution silently matched nothing, and
+            # a modelled bump that matched nothing would otherwise satisfy the
+            # positive check below by having replaced zero of zero.
+            #
+            # --apply does not reach this path for its real assertion: it writes
+            # the edits, rebuilds, and asserts the RAW output further down.
+            if want_ver != have_ver:
+                old_span = f'<span class="pgf-ver">{have_ver}</span>'
+                n_sites = new_html.count(old_span)
+                if n_sites != 2:
+                    failures.append(n)
+                    print(f'  FAIL  {n}: {n_sites} `{have_ver}` footer version '
+                          f'span(s) to bump, want 2 - the modelled §3(b2) bump '
+                          f'has nothing to act on')
+                    continue
+                new_html = new_html.replace(
+                    old_span, f'<span class="pgf-ver">{want_ver}</span>')
+            # POSITIVE, not via the diff. classify() only ever sees lines that
+            # DIFFER, so a page that missed the bump would carry v6.8 on both
+            # sides, produce an identical footer line, never reach the version
+            # test, and pass. The blindness the diff has is exactly the one the
+            # bump would land in, so the version is asserted on the built page
+            # directly, every page, whether or not anything differs.
+            vers = FOOT_VER_RE.findall(new_html)
+            if vers != [want_ver] * 2:
+                failures.append(n)
+                print(f'  FAIL  {n}: footer version(s) {vers}, want '
+                      f'{[want_ver] * 2} - §3(b2)')
+                continue
             diff = compare(n, new_html, v2_snap[n], bgs[n])
-            stamp, clock, other = classify(diff)
+            stamp, clock, other = classify(diff, want_ver)
             if stamp == 1 and not other:
+                # "and/or the version": on a FINISHED edition the clock field is
+                # the frozen `Données figées` date and does not move, so both
+                # footer lines differ by the §3(b2) version alone. Saying "clock
+                # only" there would describe a difference that is not the one
+                # asserted - the §9 habit, applied to a progress message.
                 print(f'  ok    {n}: {stamp} build stamp + {clock} footer '
-                      f'line(s) differing in clock digits only, nothing else')
+                      f'line(s) differing only in the build clock and/or the '
+                      f'{want_ver} bump, nothing else')
             else:
                 failures.append(n)
                 print(f'  FAIL  {n}: {stamp} stamp, {clock} clock-only, '
                       f'{len(other)} UNEXPLAINED')
-                for a, b in other[:3]:
+                for a, b, why in other[:3]:
+                    print(f'          why: {why}')
                     print(f'          - {a[:104]}')
                     print(f'          + {b[:104]}')
         print()
@@ -508,10 +761,16 @@ def main():
         # UNMODELLED build - model compared to model, write untouched by either -
         # and shipped six root pages still carrying `../` past an assertion that
         # said zero. The write path now contains no modelling at all.
-        bv = BASE_DIR / 'scripts' / 'build_v2.py'
-        original_bv = bv.read_text(encoding='utf-8')
+        # EVERY pre-build edit, not just build_v2's. The restore list is built
+        # before the first write, so a failure part-way through leaves no file
+        # edited - the same property the staged page writes have.
+        edited_now = pre_build_sources()
+        originals = {rel: (BASE_DIR / rel).read_text(encoding='utf-8')
+                     for rel in edited_now}
         try:
-            bv.write_text(cutover_edit(original_bv), encoding='utf-8')
+            for rel, src in edited_now.items():
+                (BASE_DIR / rel).write_text(src, encoding='utf-8')
+            print(f'  pre-build edits applied: {", ".join(sorted(edited_now))}')
             tmp2 = Path(tempfile.mkdtemp(prefix='cutover_post_'))
             try:
                 built = build_root_pages(tmp2)
@@ -519,14 +778,17 @@ def main():
                 bad = []
                 for n in names:
                     raw = built[n].read_text(encoding='utf-8')
-                    if '../' in raw:
-                        bad.append(f'{n}: {raw.count("../")} `../` survived the edit')
+                    problems = built_page_problems(raw, want_stamp, want_ver)
+                    if problems:
+                        bad.append(f'{n}: ' + '; '.join(problems))
                         continue
-                    st, ck, other = classify(compare(n, raw, v2_snap[n], bgs[n]))
+                    st, ck, other = classify(
+                        compare(n, raw, v2_snap[n], bgs[n]), want_ver)
                     if st == 1 and not other:
                         print(f'  ok    {n}: {st} stamp + {ck} clock-only, 0 `../`')
                     else:
-                        bad.append(f'{n}: {st} stamp, {len(other)} unexplained')
+                        bad.append(f'{n}: {st} stamp, {len(other)} unexplained'
+                                   + ''.join(f'\n      {w}' for _, _, w in other[:3]))
                 if bad:
                     raise SystemExit('cutover: the post-edit build does not '
                                      'match:\n  ' + '\n  '.join(bad))
@@ -557,7 +819,8 @@ def main():
             finally:
                 shutil.rmtree(tmp2, ignore_errors=True)
         except BaseException:
-            bv.write_text(original_bv, encoding='utf-8')
+            for rel, src in originals.items():
+                (BASE_DIR / rel).write_text(src, encoding='utf-8')
             raise
 
         print(f'  wrote {len(writes)} file(s); v2/ removed')

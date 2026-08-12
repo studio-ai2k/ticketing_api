@@ -1,18 +1,58 @@
 # Handoff to CC4
 
+## "GREEN" MEANS THIS LOOP. It does not mean a list someone typed.
+
+```bash
+# Every check that EXISTS, enumerated from disk. ~12 minutes. Silence is green.
+# The four skipped take a page argument and run inside assert_redesign.sh.
+SKIP='check_login_bg check_platform_cards check_section_amber check_stampable'
+for f in verify/check_*.py; do
+  n=$(basename "$f" .py)
+  case " $SKIP " in *" $n "*) continue;; esac
+  timeout 600 python3 "$f" >/dev/null 2>&1 || echo "RED  $n"
+done
+bash verify/assert_redesign.sh >/dev/null 2>&1 || echo "RED  assert_redesign.sh"
+python3 scripts/cutover.py     >/dev/null 2>&1 || echo "RED  cutover dry run"
+```
+
+**This is first because it is the reason `check_v2_behaviour.py` sat red for two
+sessions on a tree three handoffs in a row called green.** It was red from the
+moment ruling C4 shipped, on all four live editions, and nobody saw it because
+the previous version of this section named three commands and none of them was
+that one. A list is a claim about which checks matter, written by someone who is
+about to stop looking at them.
+
+`check_b1_switch`, `check_v2_behaviour`, `check_v2_gate` and `check_selector.js`
+drive a browser; `check_float_clamp` rebuilds every page. Run it before
+believing any statement in this file, **including this one.**
+
+Three things worth knowing before you do:
+
+- `bash verify/assert_redesign.sh` takes **no argument**. It resolves where pass
+  0 publishes, like every other page check (§6.3). `.` meant production, which
+  is no longer what this gate asserts.
+- `python3 verify/check_page_anchor.py` is the one to read first if the gate is
+  red — every absence assertion in it is vacuous on a page that fails the anchor.
+- `python3 verify/check_login_bg_wiring.py` **writes `event_config.csv` and
+  restores it**, asserting the sha256 afterwards. If it is interrupted, check
+  `git status` before anything else.
+
+---
+
 ## 0. State, so you start from a known one
 
-**`a703a2c` is the last pushed tree on `main`. It is green. The cutover has NOT
-happened and has been attempted twice, both attempts rolled back cleanly.**
+**Confirm the tree with `git ls-remote origin main`, never a local ref.** A
+stale local `main` at `273457f` is an unrelated "Add files via upload" root that
+DELETES the whole `verify/` suite; CC3 hit it and so did CC4. The real
+`origin/main` carries all six root pages, `v2/`, `verify/` and `scripts/`.
 
-Production is the old pipeline. Root pages carry `<!-- shared:… -->` and
-production markup; `v2/` holds six pass-0 pages. Nothing is half-landed.
+**The cutover has NOT happened. It was attempted twice, both attempts rolled
+back cleanly.** Production is the old pipeline: root pages carry
+`<!-- shared:… -->` and production markup, `v2/` holds six pass-0 pages. Nothing
+is half-landed.
 
-```
-bash verify/assert_redesign.sh .
-python3 verify/check_build_stamp.py
-python3 scripts/cutover.py            # dry run, writes nothing
-```
+As of CC4's last commit the loop above is green — 30 checks, the gate, and the
+dry run, zero red. That statement is worth exactly one re-run.
 
 Run them first. Not because they are expected to fail, but because a handoff
 that says "green" is a claim about a tree you have not seen.
@@ -212,3 +252,37 @@ From `HANDOFF_CC3.md` §6, and it earned its place twice more this session:
 > write performed neither. Model compared to model, and it read as clean.
 
 Say what is unverified when it is. That habit is most of why this project works.
+
+### Three more, and the last two are the same family from the tooling side
+
+**Two quantities that mean different things, reported through one number.** The
+adjacent-metric pattern, fourth instance: `projItems` returned `0` both when the
+projection menu was empty and when the locator could not find it. A locator
+fault read as a payload regression for two sessions, and the investigation that
+followed went to the emitter — the one place the defect was not. The repair is
+never a better message; it is a second value. `-1` now means "could not
+identify", and it prints a different sentence. `only_digits_differ` and
+`predicted_stamp()` were the same shape: one number carrying two claims.
+
+**A value read in one frame and reported in another.** Fourth instance, and the
+cheapest to make: `git log --date=format:` renders in the AUTHOR's timezone, and
+the auto-update commits carry `+0200`. Every timing figure in this session was
+two hours out until someone noticed a commit timestamped 42 minutes in the
+future. Use `--date=format-local:` or `%aI` when the frame matters, and check a
+timestamp against `date -u` before planning around it.
+
+**A loud error can still name the symptom rather than the cause.** `check_b1_switch`
+had `v2` hardcoded in THREE places — a dead constant, the payload read, and the
+HTTP URL. Fixing two of the three left the check fetching `/v2/bordeaux.html`,
+which 404s, so the browser evaluated against an empty body and node died on
+`pickMode is not defined`. Nothing was silent and nothing was wrong with
+`pickMode`. **A fix that addresses every instance it found is not a fix that
+addresses every instance** — grep the file for the pattern, not the line.
+
+**A harness produces findings indistinguishable from real ones.** The
+post-cutover-shaped tree reported `series_path(...) -> None`, which reads
+exactly like a cutover break and was `csv_database/` never being linked into the
+tree. The only thing separating a harness fault from a finding is checking the
+harness *before* believing its output — the same discipline as the negative
+test, applied to the thing running the test. If a simulated environment produces
+a failure, the first suspect is the simulation.

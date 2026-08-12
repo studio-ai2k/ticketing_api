@@ -262,7 +262,7 @@ LOGO_LOCAL = 'LOGO_ROND_JAUNE.png'
 
 # ------------------------------------------------------- redesign v6.6 --
 # The footer version tracks the package version, so a bump is one constant.
-DASHBOARD_VERSION = '6.8'
+DASHBOARD_VERSION = '7.0'
 VERSION_OLD = 'Festiflow Dashboard v6'
 VERSION_NEW = f'Festiflow Dashboard v{DASHBOARD_VERSION}'
 

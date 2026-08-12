@@ -57,7 +57,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
-from pages import pass0_pages   # noqa: E402 - CUTOVER 6.3, one page list
+from pages import pass0_pages, pass0_dir   # noqa: E402 - CUTOVER 6.3, one page list
 sys.path.insert(0, str(ROOT / 'scripts'))
 sys.path.insert(0, str(ROOT))
 CHROME = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
@@ -285,7 +285,17 @@ def main():
                'PATH': '/opt/node22/bin:/usr/bin:/bin'}
         res = subprocess.run(
             ['node', str(script)] +
-            [f'http://127.0.0.1:{port}/v2/{p.name}' for p in pages],
+            # The URL path is DERIVED from where the page actually is, relative
+            # to the directory being served. A literal `/v2/` here was a THIRD
+            # hardcoded location in this file, after the payload read and the
+            # dead `V2` constant - and it is the one that survived fixing the
+            # other two, because `pass0_dir()` made the payload read correct
+            # while the browser kept fetching a path that no longer exists.
+            # Post-cutover it 404s: "could not drive the pages", then node dies
+            # on `pickMode is not defined` because the 404 body has no page in
+            # it. Loud, but it names the symptom and not the cause.
+            [f'http://127.0.0.1:{port}/{p.relative_to(ROOT).as_posix()}'
+             for p in pages],
             capture_output=True, text=True, env=env, timeout=900)
     finally:
         script.unlink(missing_ok=True)
@@ -314,7 +324,12 @@ def main():
     for row in json.loads(line[2:]):
         name = row['url'].rsplit('/', 1)[-1]
         event = PAGE_EVENT.get(name)
-        src = (ROOT / 'v2' / name).read_text(encoding='utf-8')
+        # pass0_dir(), not a literal `v2/`. The browser half above already
+        # drives whatever pass0_pages() resolves, so a hardcoded payload read
+        # meant the two halves could address DIFFERENT FILES the moment the
+        # pages moved - and post-cutover it is a FileNotFoundError rather than
+        # a disagreement, which is the only reason it was not worse.
+        src = (pass0_dir() / name).read_text(encoding='utf-8')
         D = json.loads(re.search(r'const D=(\{.*?\});\s*\n', src, re.DOTALL).group(1))
         cutoff = date.fromisoformat(D['ev']) - __import__('datetime').timedelta(days=D['jx'])
         cmap = {c['n']: c['id'] for c in D.get('cands', [])}

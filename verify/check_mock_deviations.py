@@ -76,6 +76,101 @@ STYLE_RE = re.compile(r'<style>(.*?)</style>', re.DOTALL)
 # (id, ruling, the LOCKED line, the line that must replace it)
 # Whole lines, matched exactly. A ruling that edits CSS lands here; anything
 # else that edits CSS is an invention.
+# ═══ THE CARRIED-ACROSS CHROME, PINNED HERE INSTEAD OF AGAINST PRODUCTION ═══
+#
+# These 25 lines are in the working sheet and not in the locked one. They were
+# carried verbatim out of `style/dashboard_v6_8.css` - the auth overlay, which
+# the locked mock has no equivalent for, and production's page-footer block,
+# which was transplanted because stamp_footer.py matches on the `.pgf-item`
+# structure rather than the mock's `.foot`/`.fi` design.
+#
+# UNTIL CUTOVER this check read that stylesheet directly and asserted each line
+# appeared in it verbatim. CUTOVER §3(d)(4) retires that: the cleanup moves the
+# sheet to `legacy/`, and this was its LAST reader, so the check that P4 makes
+# the cutover LEAN ON would have gone dark on cleanup day.
+#
+# The claim given up is provenance - "these came from production's stylesheet" -
+# and once the old pipeline retires that is history, not a property. What
+# replaces it is not weaker in the way that matters: any edit to these lines, or
+# any new line pretending to be one of them, still fails, because the list is
+# exact and sits in the diff where a reviewer reads it.
+#
+# What was deliberately NOT done: repointing the reader at `legacy/`. That
+# folder is frozen by definition (§6.2), so the reference could never change
+# again - an assertion that cannot fail. Third time this plan has met that shape.
+#
+# The other seven `.db-*` rules in the working sheet - `.db-m`, `.db-logo`,
+# `.db-t`, `.db-s`, `.db-i`, `.db-b`, `.db-e` - are NOT here and were never
+# carried: they are the mock's own short-form names, present in the LOCKED
+# reference, and pinned by the locked-vs-working diff like every other line.
+# Measured before this list was written, not after.
+#
+# ── WHAT CHANGED IN KIND, AND WHAT CATCHES IT ────────────────────────────────
+#
+# This list is a MAINTAINED LITERAL. The thing it replaced was a DERIVED
+# REFERENCE - it read production's sheet, so nobody editing the redesign could
+# make a carried rule agree with it by editing one file.
+#
+# That difference is the cost, and it is narrow but real: an edit to the working
+# sheet AND to this list, made together, passes here. The one-sided cases do not
+# (see the five negative tests in verify/CHECKLIST.md). So the question is what
+# holds the two-sided case, and the answer differs for the two halves.
+#
+# THE TEN `.db-*` LINES ARE PAIRED, and by the check that exists for exactly
+# this failure. `verify/check_v2_gate.py` loads a built page in a real browser
+# with no auth token and asserts the overlay is `position:fixed`, covers the
+# viewport, is opaque, and paints above the dashboard's own numbers. It was
+# written because the redesign sheet once had NO `.db-overlay` rule at all and
+# every other assertion passed while internal revenue sat on a public URL.
+#
+#   Verified, not assumed: `.db-overlay{position:fixed` -> `position:static` in
+#   the working sheet, page rebuilt, and check_v2_gate says
+#     "FAIL b.html: position:static (want fixed); does not cover the viewport;
+#      page centre paints 'dept-tabs'"
+#   Restored byte-identical afterwards.
+#
+# THE FIFTEEN FOOTER LINES ARE NOT PAIRED. Nothing renders the footer and
+# asserts its appearance: `check_stampable`, `check_v2_footer`,
+# `check_page_anchor` and `assert_redesign.sh` all read the MARKUP - that the
+# `.pgf-item` structure is present, countable and patchable by stamp_footer.py -
+# and none of them is a browser check. A coordinated edit to a `.pgf-*` RULE
+# here and in the sheet would not be caught by anything.
+#
+# That is a real reduction and it is stated rather than papered over. It is
+# bounded: the footer's STRUCTURE stays pinned four ways, so the failure mode is
+# a footer that is present, countable, stampable and visually wrong. If that
+# matters enough to close, the shape is a browser assertion on the rendered
+# footer, next to check_v2_gate's on the overlay - not a re-derived reference,
+# which is what §3(d)(4) just retired.
+CARRIED_LINES = (
+    ".db-overlay{position:fixed; inset:0; background:#08080d url('upload.JPG') center center/cover no-repeat; z-index:9999; display:flex; align-items:center; justify-content:center;}",
+    ".db-overlay::before{content:''; position:fixed; inset:0; background:rgba(4,4,10,0.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);}",
+    '.db-modal{position:relative; z-index:1; background:rgba(12,6,24,0.3); border:1px solid rgba(56,189,248,0.15); border-radius:20px; padding:32px 28px; width:320px; box-shadow:0 32px 80px rgba(0,0,0,0.2); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); text-align:center;}',
+    '.db-modal-logo{width:72px; height:72px; border-radius:50%; object-fit:cover; margin:0 auto 16px; display:block;}',
+    ".db-modal-title{font-family:'DM Sans',sans-serif; font-size:var(--fs-body); font-weight:700; color:#fff; margin-bottom:4px;}",
+    '.db-modal-sub{font-size:var(--fs-tiny); color:#a0a0b0; margin-bottom:24px;}',
+    '.db-pw-field{width:100%; padding:13px 16px; background:linear-gradient(135deg,rgba(56,189,248,0.12),rgba(244,114,182,0.12)); border:1px solid rgba(56,189,248,0.3); border-radius:10px; margin-bottom:10px; cursor:text; position:relative; min-height:46px; display:flex; align-items:center; box-sizing:border-box; text-align:left; transition:border-color 0.2s,box-shadow 0.2s;}',
+    '.db-pw-dots{color:#fff; font-size:var(--fs-body); letter-spacing:4px; line-height:1;}',
+    ".db-pw-placeholder{color:#4a4a6a; font-size:var(--fs-micro); font-family:'DM Sans',sans-serif;}",
+    '.db-pw-error{font-size:var(--fs-caption); color:#e17055; margin-bottom:8px; min-height:14px; text-align:left;}',
+    '.pg-footer{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;',
+    '  gap:0 16px;margin-top:34px;padding:16px 0 6px;border-top:1px solid var(--border)}',
+    '.pgf-item{display:inline-flex;align-items:center;gap:7px;padding:4px 0;white-space:nowrap}',
+    '.pgf-ico{width:13px;height:13px;flex:0 0 auto;color:var(--text-dim);opacity:.8}',
+    '.pgf-k{font-size:var(--fs-nano);letter-spacing:.09em;text-transform:uppercase;color:var(--text-dim)}',
+    '.pgf-v{font-size:var(--fs-tiny);color:var(--text-muted);font-variant-numeric:tabular-nums}',
+    '.pgf-sep{width:1px;height:11px;background:var(--border);flex:0 0 auto}',
+    '.pgf-brand{font-size:var(--fs-tiny);color:var(--text-dim);letter-spacing:.02em}',
+    ".pgf-ver{margin-left:7px;font-family:'JetBrains Mono',monospace;font-size:var(--fs-nano);",
+    '  color:var(--text-muted);background:rgba(255,255,255,.05);border-radius:4px;padding:2px 6px}',
+    '@media (max-width:480px){',
+    '  .pg-footer{gap:0 10px}',
+    '  .pgf-sep{display:none}',
+    '  .pgf-item{flex:1 0 100%;justify-content:center}',
+    '}',
+)
+
+
 AUTHORISED_CSS = [
     ('D9', "--ff-mono becomes JetBrains Mono. DM Mono was declared but never "
            "loaded by any page, so .ac-b code and .dsrc-k fell back to SF Mono "
@@ -1176,20 +1271,6 @@ def check_pages():
 
 
 
-def _carried_block(prod_css, _norm):
-    """The page-footer block from production's sheet, normalised, as one run.
-
-    Located by its own comment banner rather than by line numbers, so an edit
-    above it in production's sheet does not silently change what is carried.
-    Returns '' if the banner is gone - which fails the carry rather than
-    passing an empty block, because a block that cannot be found is a block
-    that cannot be checked.
-    """
-    start = prod_css.find('/* \u2550\u2550\u2550 page footer \u2550\u2550\u2550 */')
-    if start < 0:
-        return ''
-    end = prod_css.find('\n/*', start + 1)
-    return _norm(prod_css[start:end if end > 0 else len(prod_css)])
 
 def main():
     for p in (LOCK_HTML, WORK_HTML, LOCK_CSS, WORK_CSS):
@@ -1217,7 +1298,6 @@ def main():
 
     lock_css = _decomment(LOCK_CSS.read_text(encoding='utf-8'))
     work_css = _decomment(WORK_CSS.read_text(encoding='utf-8'))
-    prod_css = (ROOT / 'style' / 'dashboard_v6_8.css').read_text(encoding='utf-8')
     added, removed = [], []
     for line in difflib.unified_diff(lock_css.split('\n'), work_css.split('\n'),
                                      lineterm='', n=0):
@@ -1293,35 +1373,49 @@ def main():
             print(f'        want +{new_line.strip()!r}')
             print(f'        {why}')
 
-    prod_norm = _norm(prod_css)
-    # `.pgf-*` / `.pg-footer` joins `.db-*` as carried-across production chrome:
-    # v2 shipped an EMPTY #foot and therefore no footer at all, and production's
-    # markup was transplanted rather than the mock's .foot/.fi design being
-    # wired up, because stamp_footer.py matches on the .pgf-item structure.
-    # The block is carried as ONE CONTIGUOUS RUN, so its continuation lines and
-    # its @media wrapper - which start with neither prefix - are covered by
-    # membership in the run rather than by a per-line prefix test.
-    CARRIED = ('.db-',)
-    foot_block = _carried_block(prod_css, _norm)
-    if foot_block and foot_block in _norm(WORK_CSS.read_text(encoding='utf-8')):
-        added = [a for a in added if _norm(a) not in foot_block or not _norm(a)]
-    stray = [a for a in added
-             if a.strip()
-             and not (a.lstrip().startswith(CARRIED) and _norm(a) in prod_norm)]
+    # The carried chrome is matched against CARRIED_LINES, not against
+    # production's stylesheet. See that constant for why, and for what claim was
+    # given up. §3(d)(4).
+    #
+    # EXACT, and consumed once each: an added line is excused by removing the
+    # entry it matches, so a line carried TWICE is not excused twice. The old
+    # form tested membership in a normalised blob, which would have excused any
+    # number of copies of the same rule.
+    pool = {}
+    for c in CARRIED_LINES:
+        pool[_norm(c)] = pool.get(_norm(c), 0) + 1
+    stray = []
+    for a in added:
+        if not a.strip():
+            continue
+        k = _norm(a)
+        if pool.get(k):
+            pool[k] -= 1
+        else:
+            stray.append(a)
+    unused = sum(pool.values())
     if removed:
         failures.append(f'stylesheet: {len(removed)} line(s) REMOVED from locked')
         print(f'FAIL  stylesheet removes {len(removed)} line(s) from locked - '
               f'the carry-across is additive only')
     if stray:
-        failures.append(f'stylesheet: {len(stray)} line(s) not carried from production')
-        print('FAIL  stylesheet lines that are neither locked nor verbatim from')
-        print('      dashboard_v6_8.css - i.e. invented:')
+        failures.append(f'stylesheet: {len(stray)} line(s) neither locked, ruled '
+                        f'nor carried')
+        print('FAIL  stylesheet lines that are neither in the locked sheet, nor')
+        print('      a ruled deviation, nor one of the carried lines - invented:')
         for s in stray[:5]:
             print(f'        {s[:100]}')
-    if not removed and not stray:
-        n_db = sum(1 for a in added if a.lstrip().startswith('.db-'))
-        print(f'ok    stylesheet: locked + {n_db} .db-* rule(s) carried verbatim '
-              f'from dashboard_v6_8.css, nothing invented')
+    # A carried line that is NO LONGER in the working sheet fails too. Without
+    # this the list could rot silently: rules could be deleted from the sheet and
+    # the check would go on saying "25 carried", because absence excuses itself.
+    if unused:
+        failures.append(f'stylesheet: {unused} carried line(s) no longer present')
+        print(f'FAIL  {unused} of the {len(CARRIED_LINES)} carried line(s) are no '
+              f'longer in the working sheet. Either the rule was dropped, or it '
+              f'was edited and the list needs a ruling, not an update.')
+    if not removed and not stray and not unused:
+        print(f'ok    stylesheet: locked + {len(CARRIED_LINES)} carried line(s), '
+              f'exact and each used once, nothing invented')
 
     # ---- the mock's hunks must each be authorised ----
     lock = LOCK_HTML.read_text(encoding='utf-8').split('\n')

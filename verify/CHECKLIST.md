@@ -4,7 +4,10 @@
 every build. Everything below needs extra tooling, so it is manual — run it
 after the change described, not on every build.
 
-    bash verify/assert_redesign.sh .          # always, all six dashboards
+    bash verify/assert_redesign.sh            # always, all six dashboards
+                                              # NO ARGUMENT: it resolves where pass 0
+                                              # publishes (CUTOVER §6.3). `.` meant
+                                              # production, which it no longer asserts.
 
 ---
 
@@ -32,6 +35,14 @@ caused them — and its first version passed on that page, because run.py's
 "Aujourd'hui" row is appended after the visible slice and carried the very
 tickets that caused the bug. Trap #10 in `HANDOFF.md`.
 
+**And run the checks that EXIST, not the ones you thought of.** The P4 footer
+commit changed `cutover.classify()`'s signature and left
+`verify/check_cutover_write.py` raising `TypeError` on import of its own test.
+The suite was reported green in the same message, because the checks were
+enumerated from memory rather than from `verify/`. That is the exact failure the
+§7ter sweep exists to correct, landing on the person doing the sweep — which is
+the argument for `ls verify/` over recall, not for being more careful.
+
 Understanding a bug completely is not protection against writing a check that
 cannot see it. Those are different skills. This step is the cheap one, and it is
 cheap precisely when it matters: the broken artefact exists at the moment you
@@ -46,10 +57,13 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_footer_tz.py` | 3 |
 | `check_spec_example.py` | 4 |
 | `check_suivi_window.py` | 1 (and its own first version failed step 2) |
+| `check_suivi_window.py` (payload route) | 5 (trap #10 reconstructed at the payload — the seven visible rows zeroed; the anchor dragged 100 days so the window ends J+13; the two grains made to disagree by one ticket; `weekly` set to `daily` outright (AA3); and an untouched page as control. The route reproduces the RENDERED window exactly where a production page exists to check against: rennes 714 over 2026-08-05..08-11, parisxxl 4816 over 2026-03-09..03-15) |
 | `check_payout_reconciliation.py` | 3 |
 | `check_build_stamp.py` (v2 half) | 3 (12 stale before the rebuild; a v2-only asset fails v2 alone; a shared asset fails both) |
 | `check_shotgun_fee_table.py` | 4 (arithmetic change moves every tier; a witnessed tier vanishes; a new tier — must NOT fail; odd rows at a witnessed tier — must NOT fail) |
 | `check_mock_deviations.py` | 4 |
+| `check_v2_gate.py` (pairs CARRIED_LINES) | 1 (`.db-overlay{position:fixed` -> `position:static` in the working sheet, page rebuilt: "position:static (want fixed); does not cover the viewport; page centre paints 'dept-tabs'". This is what holds the ten carried `.db-*` lines now that they are a maintained literal rather than a derived reference — the fifteen FOOTER lines have no equivalent, stated in check_mock_deviations.py) |
+| `check_mock_deviations.py` (CARRIED_LINES) | 5 (a carried line edited -> invented; deleted -> "no longer present", so the list cannot rot silently; duplicated -> caught, because entries are consumed once each rather than tested for membership in a blob; an invented `.db-*` rule appended -> invented; and `style/dashboard_v6_8.css` MOVED AWAY ENTIRELY -> exit 0, which is the whole point of §3(d)(4)) |
 | `check_v2_gate.py` | 1 (the page that actually shipped) |
 | `check_v2_identity.py` | 2 (the shipped page; and the nav-form regression) |
 | `check_fixture_quarantine.py` | 3 |
@@ -58,6 +72,17 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_source_order.py` | 4 (must-flag; correct order; lower specificity; masked) + a new defeat still fails while pinned |
 | `check_duplicate_decls.py` | 4 (disagree; identical; different condition; different property) |
 | `check_b1_switch.py` (diff absence) | 1 (the null coercion restored) |
+| `check_v2_behaviour.py` (A4 locator) | 5 (keyed on BEHAVIOUR after being keyed to a label twice. Every `.kc-k` title renamed -> still 8; every `.cmp-name` trigger label renamed -> still 8 — the C4 label move that broke v1 and would have broken v2. Menu genuinely emptied -> **0**, not -1, so the defect A4 exists for is still caught. Selector structurally removed -> **-1**, a distinct claim with its own message. Page as shipped -> 8, which must NOT fail) |
+| `check_login_bg_wiring.py` (§5.7) | 2 (the repointed row followed: `../upload.JPG` -> `../paris_login.jpg`; and its own first version, written against a TEMP config, reported a FALSE DEFECT — `build_v2 --config` never reaches this value because `run.main()` is called with no arguments and run.py reads the real file. That false defect is the finding, and it is why the check edits the real config with a `finally` restore and a sha256 assertion) |
+| `check_v2_footer.py` (clauses 4 and 5) | 3 (`Dernier billet` perturbed pre-cutover; the same perturbation in a POST-CUTOVER-shaped tree, where the old form compared the page with itself and passed unconditionally; and the workflow restamp step with and without `v2/`) |
+| `check_v2_identity.py` (path location) | 2 (a `../` left on a root page; and a correct root page, which the old form failed — 2 of 3 BAD_PATHS matched precisely when the page was right) |
+| `assert_redesign.sh` (P4 rewrite) | 7 (six empty files — 174 ok before, 0 after; then five KEEP properties broken one per page: `.det-footer` variant, Smartboard URL, login subtitle, footer version, `sw-wrap` removed outright — with a sixth page as control; plus DASHBOARD_VERSION bumped at source, which correctly failed all six pages on `v7.0` and restored) |
+| `check_page_anchor.py` | 6 (six empty files — the artefact it was written for; then one per claim, broken separately: truncated mid-payload, payload id swapped to another event, build stamp removed, a `.pg-footer` lost, a second `<style>` added — with a sixth page left untouched as the control) |
+| `check_cutover_write.py` (post-cutover half) | 2 (a legacy page removed -> "legacy/ holds 5 page(s), want 6 - the archive a second run would overwrite is not intact"; restored -> exit 0. Its PRE-cutover T1/T2 body is kept and runs whenever the edit sites exist again, rather than being deleted as spent) |
+| `cutover.plan_writes` banner anchor | 2 (the REAL refusal, on the first `--apply` ever run: `.wrap` is the REDESIGN's wrapper — 1 in every v2 page, 0 in every production page — and the archive copy is the PRODUCTION page, so it refused with "parisxxl.html has 0 `<div class=\"wrap\"` anchors" before writing anything, and the `finally` restored both pre-build edits. Then `.dashboard`, production's equivalent: 1 in every production page, 0 in every v2 page, banner once, and STRIPPING IT RESTORES THE PAGE BYTE-FOR-BYTE — §6.2's provenance property, asserted on all six) |
+| `cutover.built_page_problems` | 4 (wrong build stamp — the `eac8f37bfef8` the second attempt actually shipped; version bump missed; a `../` survived; both at once — plus a correct post-edit page, which must NOT fail) |
+| `cutover.PRE_BUILD_EDITS` ordering | 1 (drop `postprocess_html.py` from the tuple: predicted stamp reverts `8f54ebb8db3d` → `eac8f37bfef8`. NOTE: the dry run still passed — that is what exposed `predicted_stamp()` being decorative, and is why `built_page_problems` exists) |
+| `cutover.footer_line_ok` | 9 (both directions. FALSE PASS: date `12/08`→`13/08`, version `v6.8`→`v7.0` — the old character-level test returned True for both. FALSE DEFECT: 254 of 1439 clock values misclassified, now 0 of 1440. Plus non-HH:MM clock, key rename, markup beside the fields, the frozen `Données figées` variant moving, and the legitimate clock move — which must NOT fail) |
 | `check_selector.js` (diff absence) | 2 (dead below the % filter; then failing a correct page on `J−25`) |
 | `check_anchor_modes.py` | 2 (the drift claim and the by-construction one) |
 | `check_v2_footer.py` (frozen/live variant) | 2 (a finished edition rebuilt to the live footer — the regression I shipped; and a live edition given a frozen one) |

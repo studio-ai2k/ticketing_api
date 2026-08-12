@@ -40,7 +40,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
-from pages import pass0_pages   # noqa: E402 - CUTOVER 6.3, one page list
+from pages import pass0_pages, pass0_dir   # noqa: E402 - CUTOVER 6.3, one page list
 CHROME = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
 
 D_RE = re.compile(r'const D=(\{.*?\});\s*\n', re.DOTALL)
@@ -186,11 +186,43 @@ const { chromium } = require('playwright');
                    && !!document.getElementById('sep-past'),
         cuts: document.querySelectorAll('#suivi .cut, #sep-past .cut').length,
         scen,
+        // The projection selector, located by WHAT ITS ITEMS DO. Returns -1
+        // when it cannot be identified at all, which is a different claim from
+        // "it is empty" and prints a different sentence.
+        //
+        // TWICE NOW THIS HAS BEEN KEYED TO SOMETHING COSMETIC.
+        //
+        // v1 looked for a `.cmp-trigger` whose `.cmp-eyebrow` read `réf.`.
+        // Leo's C4 ruling moved the control labels above the dropdowns and
+        // removed the four inline eyebrows - réf., scén., vs, aligné sur -
+        // replacing them with `.kc-k` titles (ledger entries X10 and X10-ref,
+        // a named PURE DELETION). Zero `.cmp-eyebrow` render, so the locator
+        // matched nothing, `wrap` was null, and this reported 0 items on a menu
+        // rendering all eight candidates. Red on every live edition from the
+        // moment C4 shipped, on a tree two handoffs called green.
+        //
+        // v2 keyed on the replacement title text, `Événement comparatif`. That
+        // is the same class of anchor - one ruling away from the same failure -
+        // and it is not what makes this control the projection selector.
+        //
+        // So: BEHAVIOUR. Its items call `pickProj('<candidate id>')`; the other
+        // control in this section calls `pickScen(n)`. A label move cannot
+        // touch either, and if `pickProj` is renamed the control really has
+        // changed and failing is correct. The candidate ids in those handlers
+        // are payload keys, not display strings.
+        //
+        // Identified as "the #sec-projection switcher that is NOT the method
+        // one" rather than "the one containing pickProj", so that a menu
+        // rendered with ZERO candidates is still located and still counted as
+        // 0 - the defect A4 was written for. Ambiguity (no such wrap, or more
+        // than one) is -1.
         projItems: (() => {
-          const t = [...document.querySelectorAll('.cmp-trigger')].find(
-            x => (x.querySelector('.cmp-eyebrow') || {}).textContent === 'réf.');
-          const wrap = t && t.closest('.sw-wrap');
-          return wrap ? wrap.querySelectorAll('.sw-item').length : 0;
+          const calls = (w, fn) => [...w.querySelectorAll('.sw-item')].some(
+            i => new RegExp('\\b' + fn + '\\(').test(i.getAttribute('onclick') || ''));
+          const cand = [...document.querySelectorAll('#sec-projection .sw-wrap')]
+            .filter(w => !calls(w, 'pickScen'));
+          return cand.length === 1
+            ? cand[0].querySelectorAll('.sw-item').length : -1;
         })(),
         hasCloseAll: typeof window.swCloseAll === 'function',
         // SHAPE, not a blacklist. "593 421 €593k" contains no NaN, no
@@ -290,7 +322,10 @@ def main(argv):
 
     failures = []
     for r in rows:
-        why, info = payload_problems(ROOT / 'v2' / r['file'])
+        # pass0_dir(), not a literal `v2/` - same reason as check_b1_switch:317.
+        # The browser half drives pass0_pages(); this half must read the same
+        # file, not a path that happens to agree today.
+        why, info = payload_problems(pass0_dir() / r['file'])
         live = info['live']
         g = r['gated']
         if g['overlayUp'] and g['scrolled']:
@@ -321,9 +356,23 @@ def main(argv):
         # zero. Third check to need this scoping after the same change, which
         # is itself the signal: suppressing a control touches every assertion
         # that took its presence for granted.
-        if live and r['projItems'] < 2:
+        # NOT FOUND is its own finding, and it is not a claim about the menu.
+        # This check spent a session reporting "renders 0 item(s)" about a menu
+        # rendering eight, because a broken locator and an empty menu returned
+        # the same number.
+        if live and r['projItems'] < 0:
+            why.append('A4 the projection selector could not be IDENTIFIED - '
+                       '#sec-projection does not hold exactly one .sw-wrap '
+                       'whose items are not pickScen(). This says nothing about '
+                       'how many candidates the menu has: the locator is what '
+                       'failed, and it has drifted from a ruling twice already, '
+                       'both times by keying on a label.')
+        elif live and r['projItems'] < 2:
             why.append(f"A4 the projection selector renders {r['projItems']} item(s)")
-        if not live and r['projItems']:
+        elif not live and r['projItems'] > 0:
+            # `> 0`, not truthiness: -1 now means "no projection selector on the
+            # page", which is the CORRECT state for a finished edition - it
+            # projects nothing, so it offers no control over the projection.
             why.append(f"A4 a finished edition still offers {r['projItems']} "
                        f"projection candidate(s) - a control over a forecast "
                        f"that is not rendered")
@@ -352,9 +401,10 @@ def main(argv):
             for w in why:
                 print(f'          {w}')
         else:
-            print(f"  ok    {r['file']}: À venir + Précédent · "
-                  f"{r['projItems']} candidates · scenarios differ · "
-                  f"menus close · gate locks scroll")
+            sel = ('no projection selector' if r['projItems'] < 0
+                   else f"{r['projItems']} candidates")
+            print(f"  ok    {r['file']}: À venir + Précédent · {sel} · "
+                  f"scenarios differ · menus close · gate locks scroll")
 
     print()
     if failures:
