@@ -678,6 +678,37 @@ but the checks that had to stop caring.
 
 ---
 
+## 7ter. P4 — the checks are artefacts too, and §5 does not enumerate them
+
+**BLOCKS CUTOVER. Found by attempting it twice.**
+
+§5 describes what the post-cutover PAGES look like, in detail, and says nothing
+about the CHECKS. Both attempts were rolled back by something this plan did not
+list, after this plan had been reviewed and approved twice.
+
+`verify/assert_redesign.sh` is ~400 lines asserting PRODUCTION's markup. Against
+pass-0 pages it fails at once — `.ac-body missing`, `Space Grotesk missing`,
+`literal font-size:Npx present (3)`. Not defects in the new pages: the gate
+asserting the shape of the thing being retired.
+
+**The rule this section exists to state:**
+
+> Every check is an artefact the cutover changes. §5 must enumerate them the way
+> it enumerates pages. Anything reading production markup, production paths, or
+> `SHARED_ASSETS` is in scope and needs a stated post-cutover form BEFORE the
+> cutover runs.
+
+And the second ordering bug, which is the same shape as the first: **an edit to
+a shared asset must land before the build that stamps against it.**
+`postprocess_html.py` is in `V2_SHARED_ASSETS`, so bumping `DASHBOARD_VERSION` in
+the same write plan as the pages leaves every page stamped `eac8f37bfef8` against
+a current `8f54ebb8db3d`. `cutover.py` already moves the `PAGE_PATHS` edit ahead
+of the build; the version bump has to move with it.
+
+Full handoff in `HANDOFF_CC4.md`.
+
+---
+
 ## 8. Ordering
 
 ```
