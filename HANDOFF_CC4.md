@@ -8,15 +8,40 @@ happened and has been attempted twice, both attempts rolled back cleanly.**
 Production is the old pipeline. Root pages carry `<!-- shared:… -->` and
 production markup; `v2/` holds six pass-0 pages. Nothing is half-landed.
 
+### RUN THE SUITE, NOT A LIST — and enumerate it from disk
+
+**This section used to name three commands and call the result "green". It was
+not.** `check_v2_behaviour.py` was red the whole time, on all four live
+editions, and no one saw it because it was not one of the three. That is the
+third handoff whose green claim was narrower than it read, so the fix is to stop
+writing lists:
+
+```bash
+# Every check that exists. Four take a page argument and run inside the gate.
+for f in verify/check_*.py; do
+  case $(basename "$f" .py) in
+    check_login_bg|check_platform_cards|check_section_amber|check_stampable) continue;;
+  esac
+  timeout 600 python3 "$f" >/dev/null 2>&1 || echo "RED  $(basename "$f")"
+done
+bash verify/assert_redesign.sh >/dev/null || echo "RED  assert_redesign.sh"
+python3 scripts/cutover.py    >/dev/null || echo "RED  cutover dry run"
 ```
-bash verify/assert_redesign.sh        # CC4: no argument. It now resolves where
-                                      # pass 0 publishes, like every other page
-                                      # check (§6.3). `.` meant production, which
-                                      # is no longer what this gate asserts.
-python3 verify/check_page_anchor.py   # CC4: added. Run it first if the gate is red
-python3 verify/check_build_stamp.py
-python3 scripts/cutover.py            # dry run, writes nothing
-```
+
+Takes ~12 minutes; `check_b1_switch`, `check_v2_behaviour`, `check_v2_gate` and
+`check_selector.js` drive a browser and `check_float_clamp` rebuilds every page.
+Run it before believing any statement in this file, including this one.
+
+Notes on two of them:
+
+- `bash verify/assert_redesign.sh` takes **no argument** now. It resolves where
+  pass 0 publishes, like every other page check (§6.3). `.` meant production,
+  which is no longer what this gate asserts.
+- `python3 verify/check_page_anchor.py` is the one to run first if the gate is
+  red: everything else in it is vacuous on a page that fails the anchor.
+- `python3 verify/check_login_bg_wiring.py` **writes `event_config.csv` and
+  restores it**, asserting the sha256 afterwards. If it is interrupted, check
+  `git status` before doing anything else.
 
 **CC4 correction to §0's `main`:** confirm the tree with
 `git ls-remote origin main`, not a local ref. A stale local `main` at `273457f`

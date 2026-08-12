@@ -186,11 +186,32 @@ const { chromium } = require('playwright');
                    && !!document.getElementById('sep-past'),
         cuts: document.querySelectorAll('#suivi .cut, #sep-past .cut').length,
         scen,
+        // The projection selector, located by SECTION plus the title above it,
+        // and returning -1 when it cannot be found at all.
+        //
+        // It used to be found by a `.cmp-trigger` whose `.cmp-eyebrow` read
+        // `réf.` - markup that ruling X10 DELETED. The ledger records the
+        // decision, the reason and the measurement behind it
+        // (check_mock_deviations, entries X10 and X10-ref: "the four
+        // .cmp-eyebrow labels come out ... with a title above each control they
+        // say the same thing twice"). Zero `.cmp-eyebrow` elements render, so
+        // `find` returned undefined, `wrap` was null, and this reported 0 on a
+        // menu that renders all eight candidates - a false defect on all four
+        // LIVE editions, sitting red on the tree a handoff called green.
+        //
+        // The new anchor is what that ruling PUT THERE rather than what it took
+        // away: `Événement comparatif` is the title X10 says replaces the
+        // eyebrow, inside the section the control belongs to.
+        //
+        // -1, not 0, when the wrap is absent. Returning 0 made "I could not
+        // find the menu" indistinguishable from "the menu is empty", which is
+        // the whole of why this cost a session to diagnose: the message named
+        // the payload while the defect was in the locator.
         projItems: (() => {
-          const t = [...document.querySelectorAll('.cmp-trigger')].find(
-            x => (x.querySelector('.cmp-eyebrow') || {}).textContent === 'réf.');
-          const wrap = t && t.closest('.sw-wrap');
-          return wrap ? wrap.querySelectorAll('.sw-item').length : 0;
+          const wrap = [...document.querySelectorAll('#sec-projection .sw-wrap')]
+            .find(w => (w.previousElementSibling || {}).textContent
+                       === 'Événement comparatif');
+          return wrap ? wrap.querySelectorAll('.sw-item').length : -1;
         })(),
         hasCloseAll: typeof window.swCloseAll === 'function',
         // SHAPE, not a blacklist. "593 421 €593k" contains no NaN, no
@@ -321,9 +342,22 @@ def main(argv):
         # zero. Third check to need this scoping after the same change, which
         # is itself the signal: suppressing a control touches every assertion
         # that took its presence for granted.
-        if live and r['projItems'] < 2:
+        # NOT FOUND is its own finding, and it is not a claim about the menu.
+        # This check spent a session reporting "renders 0 item(s)" about a menu
+        # rendering eight, because a broken locator and an empty menu returned
+        # the same number.
+        if live and r['projItems'] < 0:
+            why.append('A4 the projection selector could not be LOCATED - no '
+                       '.sw-wrap under #sec-projection follows a title reading '
+                       '"Événement comparatif". This says nothing about how '
+                       'many candidates the menu has; the locator is what '
+                       'failed, and it has drifted from a ruling once already.')
+        elif live and r['projItems'] < 2:
             why.append(f"A4 the projection selector renders {r['projItems']} item(s)")
-        if not live and r['projItems']:
+        elif not live and r['projItems'] > 0:
+            # `> 0`, not truthiness: -1 now means "no projection selector on the
+            # page", which is the CORRECT state for a finished edition - it
+            # projects nothing, so it offers no control over the projection.
             why.append(f"A4 a finished edition still offers {r['projItems']} "
                        f"projection candidate(s) - a control over a forecast "
                        f"that is not rendered")
@@ -352,9 +386,10 @@ def main(argv):
             for w in why:
                 print(f'          {w}')
         else:
-            print(f"  ok    {r['file']}: À venir + Précédent · "
-                  f"{r['projItems']} candidates · scenarios differ · "
-                  f"menus close · gate locks scroll")
+            sel = ('no projection selector' if r['projItems'] < 0
+                   else f"{r['projItems']} candidates")
+            print(f"  ok    {r['file']}: À venir + Précédent · {sel} · "
+                  f"scenarios differ · menus close · gate locks scroll")
 
     print()
     if failures:

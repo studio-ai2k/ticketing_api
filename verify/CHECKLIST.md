@@ -69,6 +69,7 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_source_order.py` | 4 (must-flag; correct order; lower specificity; masked) + a new defeat still fails while pinned |
 | `check_duplicate_decls.py` | 4 (disagree; identical; different condition; different property) |
 | `check_b1_switch.py` (diff absence) | 1 (the null coercion restored) |
+| `check_v2_behaviour.py` (A4 locator) | 3 (the menu genuinely emptied -> 0; the title the locator keys on renamed -> **-1**, a DISTINCT result, which is the point; and the page as shipped -> 8, which must NOT fail) |
 | `check_login_bg_wiring.py` (§5.7) | 2 (the repointed row followed: `../upload.JPG` -> `../paris_login.jpg`; and its own first version, written against a TEMP config, reported a FALSE DEFECT — `build_v2 --config` never reaches this value because `run.main()` is called with no arguments and run.py reads the real file. That false defect is the finding, and it is why the check edits the real config with a `finally` restore and a sha256 assertion) |
 | `check_v2_footer.py` (clauses 4 and 5) | 3 (`Dernier billet` perturbed pre-cutover; the same perturbation in a POST-CUTOVER-shaped tree, where the old form compared the page with itself and passed unconditionally; and the workflow restamp step with and without `v2/`) |
 | `check_v2_identity.py` (path location) | 2 (a `../` left on a root page; and a correct root page, which the old form failed — 2 of 3 BAD_PATHS matched precisely when the page was right) |
