@@ -338,9 +338,9 @@ def plan_writes(names, v2_snap, built, hashes, bgs):
               'because nothing builds them (CUTOVER §6.3).', '']
     out.append((BASE_DIR / 'legacy' / 'README.md', '\n'.join(lines)))
 
-    # 3. the two build_v2 edit sites (§3(a), and P3's half of it)
-    bv = BASE_DIR / 'scripts' / 'build_v2.py'
-    out.append((bv, cutover_edit(bv.read_text(encoding='utf-8'))))
+    # 3. build_v2 is ALREADY edited on disk by the time this runs - the edit
+    #    goes in BEFORE the build so the pages are produced by the post-cutover
+    #    builder rather than transformed into looking like it. Nothing to write.
 
     # 4. the version, in BOTH places (§3(b2))
     pp_path = BASE_DIR / 'scripts' / 'postprocess_html.py'
@@ -502,30 +502,63 @@ def main():
                 'every check still passes. Nothing was written.')
 
         print('applying...\n')
-        writes = plan_writes(names, v2_snap, built, hashes, bgs)
+
+        # EDIT FIRST, THEN BUILD. The dry run MODELS the edit; --apply must not.
+        # The first version asserted against the modelled page and then wrote the
+        # UNMODELLED build - model compared to model, write untouched by either -
+        # and shipped six root pages still carrying `../` past an assertion that
+        # said zero. The write path now contains no modelling at all.
+        bv = BASE_DIR / 'scripts' / 'build_v2.py'
+        original_bv = bv.read_text(encoding='utf-8')
+        try:
+            bv.write_text(cutover_edit(original_bv), encoding='utf-8')
+            tmp2 = Path(tempfile.mkdtemp(prefix='cutover_post_'))
+            try:
+                built = build_root_pages(tmp2)
+                print('POST-EDIT BUILD, asserted RAW (no modelling):')
+                bad = []
+                for n in names:
+                    raw = built[n].read_text(encoding='utf-8')
+                    if '../' in raw:
+                        bad.append(f'{n}: {raw.count("../")} `../` survived the edit')
+                        continue
+                    st, ck, other = classify(compare(n, raw, v2_snap[n], bgs[n]))
+                    if st == 1 and not other:
+                        print(f'  ok    {n}: {st} stamp + {ck} clock-only, 0 `../`')
+                    else:
+                        bad.append(f'{n}: {st} stamp, {len(other)} unexplained')
+                if bad:
+                    raise SystemExit('cutover: the post-edit build does not '
+                                     'match:\n  ' + '\n  '.join(bad))
+                writes = plan_writes(names, v2_snap, built, hashes, bgs)
 
         # ATOMIC: every target is written to a sibling `.cutover-new` file
         # first, and only renamed once ALL of them exist. A failure halfway
         # leaves the tree exactly as it was found, which is the one thing a
         # cutover must never get wrong.
-        staged = []
-        try:
-            for target, content in writes:
-                target.parent.mkdir(parents=True, exist_ok=True)
-                tmp_t = target.with_suffix(target.suffix + '.cutover-new')
-                tmp_t.write_text(content, encoding='utf-8')
-                staged.append((tmp_t, target))
-            for tmp_t, target in staged:
-                tmp_t.replace(target)
-        except Exception:
-            for tmp_t, _ in staged:
-                tmp_t.unlink(missing_ok=True)
+                staged = []
+                try:
+                    for target, content in writes:
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        tmp_t = target.with_suffix(target.suffix + '.cutover-new')
+                        tmp_t.write_text(content, encoding='utf-8')
+                        staged.append((tmp_t, target))
+                    for tmp_t, target in staged:
+                        tmp_t.replace(target)
+                except BaseException:
+                    for tmp_t, _ in staged:
+                        tmp_t.unlink(missing_ok=True)
+                    raise
+                for n in names:
+                    (BASE_DIR / 'v2' / n).unlink(missing_ok=True)
+                v2d = BASE_DIR / 'v2'
+                if v2d.exists() and not any(v2d.iterdir()):
+                    v2d.rmdir()
+            finally:
+                shutil.rmtree(tmp2, ignore_errors=True)
+        except BaseException:
+            bv.write_text(original_bv, encoding='utf-8')
             raise
-        for n in names:
-            (BASE_DIR / 'v2' / n).unlink(missing_ok=True)
-        v2d = BASE_DIR / 'v2'
-        if v2d.exists() and not any(v2d.iterdir()):
-            v2d.rmdir()
 
         print(f'  wrote {len(writes)} file(s); v2/ removed')
         print('\nCUTOVER COMPLETE. Now, before committing:')
