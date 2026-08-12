@@ -464,7 +464,20 @@ README says it is meaningful only against the freeze commit.
 ### 6.3 The checks — fix the enumeration, do not add exclusions
 
 Every check that touches pages enumerates them, and there are three different
-mechanisms in play today:
+mechanisms in play today.
+
+**THE LIST BELOW SAYS NINE SITES AND SIX GLOBS. THE REPO HAS SIXTEEN GLOBS.**
+The count was right when this was written and was never revisited while ten more
+were added — `check_section_heads`, `check_section_bars`, `check_v2_footer`,
+`check_finished_edition`, `check_cand_groups`, `check_proj_total`,
+`check_float_clamp`, and a second site inside `check_mock_literals`. Exactly the
+drift that took the offset readers from 4 to 5 in §3 of HANDOFF_CC3, and the
+reason that section lists them with line numbers.
+
+Left uncorrected on purpose, with this note above it: a plan that quietly
+absorbs its own errors teaches nobody. The number is the evidence that a
+hand-maintained list of hand-maintained lists decays, which is the argument for
+the change this section asks for.
 
 ```
 check_b1_switch.py:212        (ROOT/'v2').glob('*.html')

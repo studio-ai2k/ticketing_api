@@ -67,6 +67,7 @@ where pass 0's does. That bump is one constant, `postprocess_html.DASHBOARD_VERS
 which this reads rather than restates.
 """
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -74,7 +75,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
 from pages import v2_pages   # noqa: E402 - CUTOVER 6.3, one page list
-sys.path.insert(0, str(ROOT / 'scripts'))
 
 import postprocess_html as pp          # noqa: E402
 import stamp_footer as sf              # noqa: E402
@@ -105,11 +105,73 @@ def main():
     print(f'0  the version is one constant, read not restated: '
           f'v{pp.DASHBOARD_VERSION}')
 
+    # WHICH FOOTER VARIANT, not just whether one exists. A FINISHED edition must
+    # carry "Données figées · DD/MM" and a live one "Données API · HH:MM".
+    #
+    # THIS EXISTS BECAUSE IT HAPPENED TWICE IN ONE SESSION, both times the same
+    # way: rebuilding a v2 page regenerates the footer as the LIVE variant,
+    # because the frozen one is applied out of band by the workflow's restamp
+    # step. The workflow never rebuilds finished events, so the hazard only
+    # appears when a human rebuilds all six - which the P1/P2 and P3 commits both
+    # did. P3 shipped v2/bordeaux.html and v2/parisxxl.html carrying a live clock
+    # over data frozen on 11/08.
+    #
+    # Every check in this file passed on those pages, because they all asked
+    # whether a footer EXISTS and is STAMPABLE. A page asserting a sync time that
+    # stopped being true is the exact defect this file's own failure message
+    # names, and nothing here could see it.
+    #
+    # Liveness comes from the SERIES FILE, which is where build_series recorded
+    # it once per event - not from a date comparison here, which would make
+    # liveness a property of whoever is looking.
+    live = {}
+    for f in sorted((ROOT / 'series').glob('*.json')):
+        try:
+            live[f.stem] = bool(json.loads(f.read_text(encoding='utf-8'))['live'])
+        except (ValueError, KeyError):
+            continue
+    import csv as _csv
+    owner = {}
+    with (ROOT / 'event_config.csv').open(encoding='utf-8-sig') as f:
+        for row in _csv.DictReader(f):
+            n = (row.get('output_filename') or '').strip()
+            if n and (row.get('status') or '').strip() == 'active' and n not in owner:
+                owner[n] = (row.get('event_id') or '').strip()
+
     for p in pages:
         name = p.name
         prod = ROOT / name
         html = p.read_text(encoding='utf-8')
         bad = []
+
+        eid = owner.get(name)
+        if eid in live:
+            want_frozen = not live[eid]
+            has_frozen = 'Données figées' in html
+            has_api = 'Données API' in html
+            if want_frozen and not has_frozen:
+                bad.append('finished edition carries the LIVE footer')
+                print(f'  FAIL  {name}: {eid} is finished, so its footer must '
+                      f'read "Données figées · DD/MM".')
+                print('        It carries "Données API" - a live sync clock over '
+                      'frozen data,')
+                print('        which is the one thing this footer exists to '
+                      'prevent. Rebuilding')
+                print('        a v2 page regenerates the live variant; restamp '
+                      'it with')
+                print('        scripts/stamp_footer.py --frozen "$(python3 '
+                      'scripts/stamp_footer.py')
+                print(f'        --read-frozen {name})".')
+            elif not want_frozen and not has_api:
+                bad.append('live edition carries the FROZEN footer')
+                print(f'  FAIL  {name}: {eid} is live, so its footer must read '
+                      f'"Données API · HH:MM", not a frozen date.')
+            elif want_frozen and has_api:
+                bad.append('both footer variants present')
+                print(f'  FAIL  {name}: carries BOTH footer variants')
+            else:
+                print(f'  ok    {name}: {"frozen" if want_frozen else "live"} '
+                      f'footer, matching {eid}')
 
         # (1) shape
         feet = FOOTER_RE.findall(html)
