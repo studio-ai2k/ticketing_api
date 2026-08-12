@@ -223,3 +223,117 @@ exactly the open half of O1. Rewriting it now risks making it wrong for both.
 
 **When it is decided:** `dashboard_template.html` is do-not-modify, so the new
 copy ships as a postprocess pass, like every other markup change here.
+
+---
+
+# The Shotgun back-office export — verified on our side, and what it does NOT prove
+
+`valid_orders_535882_2.csv` (epk, 8 392 valid orders, PRICE and CLIENT PRICE).
+The export itself is **not in the build environment**, so everything below is
+derived from our merged CSV plus the four totals quoted with it. The per-ticket
+reconciliation is not done and is the one thing that needs the file.
+
+## Our side reproduces exactly
+
+    all Shotgun   n=8391  face=469,296.88  gross=530,425.53  ratio=1.130256
+
+Identical to the "ours" column, to the cent. `is_paid` filtering does not move
+any of it: 8 387 of the 8 391 are paid and the four free rows carry 0,00 on
+both sides.
+
+## The agreement is NOT circular — this is the strong part
+
+`gross_price` is never `face × 1.1303`. `process_shotgun_ticket` builds it as
+
+    deal_price + deal_service_fee + deal_user_service_fee
+
+— three separate API fields summed, each supplied by Shotgun. And the per-row
+ratio genuinely varies: 16 distinct face values, each with its own fee, ranging
+1.130107 (47,73) to 1.130384 (43,18).
+
+So 1.130256 is an EMERGENT weighted average of real per-row fee data, not a
+constant we imposed and then rediscovered. An aggregate that agreed because both
+sides applied the same assumed multiplier would have proved nothing; this one is
+a measurement on both sides.
+
+**And nothing in the code applies 1.1303.** `dashboard_payload` emits
+`plat: {platform: [tickets, faceTTC, grossPaid]}` — summed real values — and the
+Revenus card derives its multiplier from that. The spec's `face × 1.1303` at
+`DASHBOARD_REDESIGN_SPEC.md:211` is the wrong model, and the code never used it.
+
+## THE RATIO CANNOT MEASURE COMPLETENESS, and six decimals reads as if it can
+
+The ratio agreeing to six places is a right answer to a question adjacent to the
+one it appears to answer. Measured, by dropping random orders from our own set
+and recomputing:
+
+| orders dropped | ratio we would report |
+| ---: | --- |
+| 1 | 1.130256 |
+| 100 | 1.130256 |
+| 250 | 1.130256 |
+| 1000 | 1.130255 |
+
+**Twelve percent of the dataset can go missing and the ratio still matches to
+five decimals.** That is not a defect in the export or in our data — it follows
+from the fee being near-proportional at every price point, so every subset
+inherits the same ratio. The ratio is therefore decisive for the question O1
+actually asks (1.1303 versus 1.030 — a 10% difference it discriminates
+overwhelmingly) and silent on whether the two row sets contain the same tickets.
+
+The TOTALS are the strong test here, and they are absolute rather than
+scale-free. It is worth stating in this direction because the six-decimal figure
+is the one that looks like proof.
+
+## The gap is exactly one ticket, and it is identifiable
+
+    export - ours:   orders +1    face +52.27    gross +59.08    fee +6.81
+
+52,27 is one of our 16 price points, and the ticket at that point carries gross
+59,08 and fee 6,81 — matching the delta on ALL THREE numbers, not just the
+count. We hold 1 578 tickets at exactly that price. So the residual is one
+specific ticket at a known tier, not a systematic drift: a drift would not land
+on a real price point on every component.
+
+Same shape as the DICE statement's one ticket in 9 327.
+
+## "13,03%" is an aggregate, not a per-ticket rate
+
+Worth recording because it is easy to write into a spec as a formula.
+`fee = round(face × r, 2)` has NO solution across the 16 price points — the
+feasible interval for r is empty ([0.130269, 0.130212) — inverted). Nor does any
+two-component `round(face×a,2) + round(face×b,2)` model, searched over a grid.
+
+    face    38.64  fee  5.03   ratio 1.130176
+    face    43.18  fee  5.63   ratio 1.130384
+    face    47.73  fee  6.21   ratio 1.130107
+    face   135.00  fee 17.58   ratio 1.130222
+
+So the fee schedule is per-tier and not a clean percentage. Nothing depends on
+this today — the card sums real gross — but a future "apply 13,03%" would be
+wrong per ticket while looking right in the total.
+
+## Cost of the Shotgun `check_payout_reconciliation` equivalent
+
+The DICE check is 132 lines that pin hardcoded statement totals against a stored
+CSV. The Shotgun shape is the same and would be about as long — **except for one
+thing that changes the price.**
+
+`bordeaux_2026` is FINISHED, so its CSV is frozen and a hardcoded total stays
+true forever. **`epk_2026` is LIVE** — 155 Shotgun orders landed on 2026-08-11
+alone — so a pinned `8391 / 469,296.88 / 530,425.53` fails within a day of
+being written. That is not a reason not to build it; it is a reason it needs one
+input we do not have:
+
+  1. **Filter to the export's cutoff.** Assert over rows with
+     `order_datetime <= <export timestamp>`. Stable under growth, and the
+     closest analogue to the DICE check. **Needs the export's cutoff instant**,
+     which means the file or Leo reading it off.
+  2. **Pin the fee table instead.** Assert every Shotgun row's (face, gross)
+     pair sits in the 16-point schedule above. Survives growth with no cutoff,
+     and is a stronger PER-TICKET claim than any total — it fails if
+     `process_shotgun_ticket` changes for one tier. Costs a decision about what
+     happens when Shotgun legitimately adds a price tier.
+
+Option 2 is the better check and the cheaper one; option 1 is the one that
+matches what the export actually witnesses. They are not exclusive.

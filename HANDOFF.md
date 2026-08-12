@@ -1219,7 +1219,7 @@ Carried forward, not fixed. Each needs a decision or an input we do not have.
 
 | # | item | blocked on |
 | --- | --- | --- |
-| O1 | **Half closed 2026-08-08.** DICE is proved against a payout statement, to one ticket in 9,327. The spec/code conflict is now Shotgun-only: is 13,03% buyer-facing? See `docs/O1_FEE_DECISION.md` | **a SHOTGUN payout statement** — Leo has no access, so Episode or Sonora |
+| O1 | **Both sides now have an external reference (2026-08-12).** DICE: payout statement, one ticket in 9,327. Shotgun: a back-office export for epk, agreeing on face and gross with a gap of exactly one identifiable ticket. Verified on our side only — the export file is not in the build environment, so PER-TICKET reconciliation is still undone. See `docs/O1_FEE_DECISION.md` | **the export file itself**, for per-ticket matching and for the cutoff instant a reconciliation check needs |
 | O10 | **Days are matched between editions by weekday name, not position** — three dashboards affected. Diagnosed, ruling given, mechanism pending. See DD4 below | a ruling on route 1 vs 2 |
 | O11 | **"prix affiché au client" is ambiguous** — advertised (45,57) or charged (49,00)? Card sums the first. `docs/O1_FEE_DECISION.md` §CC2 | Leo looking at both checkout funnels |
 | O9 | **The revenue disclaimer is wrong for DICE** and possibly right for Shotgun — a copy decision, raised not fixed. `docs/O1_FEE_DECISION.md` §CC2 | O1, then a copy call |
