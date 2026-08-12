@@ -264,6 +264,13 @@ never a better message; it is a second value. `-1` now means "could not
 identify", and it prints a different sentence. `only_digits_differ` and
 `predicted_stamp()` were the same shape: one number carrying two claims.
 
+**A value read in one frame and reported in another.** Fourth instance, and the
+cheapest to make: `git log --date=format:` renders in the AUTHOR's timezone, and
+the auto-update commits carry `+0200`. Every timing figure in this session was
+two hours out until someone noticed a commit timestamped 42 minutes in the
+future. Use `--date=format-local:` or `%aI` when the frame matters, and check a
+timestamp against `date -u` before planning around it.
+
 **A loud error can still name the symptom rather than the cause.** `check_b1_switch`
 had `v2` hardcoded in THREE places — a dead constant, the payload read, and the
 HTTP URL. Fixing two of the three left the check fetching `/v2/bordeaux.html`,
