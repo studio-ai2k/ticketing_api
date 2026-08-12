@@ -139,11 +139,23 @@ def parse(text):
                 e2 = inner.find('}', b2)
                 if e2 == -1:
                     break
-                sels = inner[k:b2].strip()
+                raw = inner[k:b2]
+                sels = raw.strip()
                 decls = declarations(inner[b2 + 1:e2])
+                # THE LINE THE SELECTOR STARTS ON, not the scan position. `k`
+                # sits just past the PREVIOUS rule's closing brace, so
+                # line_of(base + k) reported wherever that landed - off by
+                # however much whitespace and however many blank lines came
+                # between two rules. Found by going to delete a line the checker
+                # named and finding it held something else entirely.
+                #
+                # A wrong line number is worse than no line number, because it
+                # gets acted on: the next reader follows it instead of searching
+                # for the text.
+                off = k + (len(raw) - len(raw.lstrip()))
                 for sel in filter(None, (s.strip() for s in sels.split(','))):
                     order += 1
-                    rules.append((order, cond, sel, decls, line_of(base + k)))
+                    rules.append((order, cond, sel, decls, line_of(base + off)))
                 k = e2 + 1
             i = j
             continue
@@ -163,9 +175,13 @@ def parse(text):
         if end == -1:
             break
         decls = declarations(src[brace + 1:end])
+        # Same correction for base rules: the SELECTOR's line, not the brace's.
+        # They differ whenever a selector list wraps, which this sheet does.
+        raw_pre = src[i:brace]
+        off = i + (len(raw_pre) - len(raw_pre.lstrip()))
         for sel in filter(None, (s.strip() for s in prelude.split(','))):
             order += 1
-            rules.append((order, None, sel, decls, line_of(brace)))
+            rules.append((order, None, sel, decls, line_of(off)))
         i = end + 1
     return rules
 
