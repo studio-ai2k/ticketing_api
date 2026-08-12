@@ -160,7 +160,20 @@ The left-hand sides are what the mock and the redesign sheet already carry. At
 root the correct output *is* the input, so the list becomes `[]` and the loop
 becomes identity. The URL ruling settles it: output lands at root, so **delete
 the list and the loop.** Confirmed exhaustive — the only `../` in a shipped page
-are those three (LOGO ×2, `upload.JPG` ×2, series ×1).
+are those five occurrences (LOGO ×2, the login background ×2, series ×1).
+
+**CORRECTION: the second line above is no longer in `PAGE_PATHS`, and deleting
+the list is no longer the whole edit.** P3 moved the login background out, into
+`build_v2.style_transforms(login_bg)`, because it is a per-EVENT value that was
+being rewritten as a constant. That transform emits `url('../<bg>')`, and at
+root the right answer is `url('<bg>')` — **not the identity, and not the pre-P3
+constant either**. So the cutover edits two sites, not one.
+
+This section's own warning applies to itself: `PAGE_PATHS` was never the
+complete list of location-dependent transforms, only the complete list of *path*
+ones. It was written before P3 existed and stopped being complete the day P3
+landed. `scripts/cutover.py` declares both edits in one place, so the stamp it
+predicts, the stamp it produces and the source it writes cannot disagree.
 
 **The thing to flag:** there is a *second* location-dependent behaviour and it is
 not in the list that names them. `strip_placeholders` removes the upload link,
@@ -378,10 +391,31 @@ and it does so at the one moment the comparison exists and cannot be re-run. It 
 also the failure most likely to be waved through as "that's just the stamp", which
 is how a real difference gets waved through beside it.
 
-So **assert the difference instead of ignoring it**: exactly one differing line,
-that line matching `postprocess_html.STAMP_RE`, and nothing else. A second
-differing line then fails, which is the property "compare modulo the stamp" throws
-away.
+So **assert the difference instead of ignoring it**. Two corrections to how,
+both found by building the script against this section — and both the
+spec-disagrees-with-code class, sections written before P1 and P3 existed,
+describing a page and an edit that have since changed underneath them:
+
+**It is `build_v2.V2_STAMP_RE`, not `postprocess_html.STAMP_RE`.** P1 gave v2
+pages their own stamp, `<!-- shared-v2:… -->`, over the wider v2 asset set.
+`STAMP_RE` matches only the production `<!-- shared:… -->` form. Measured:
+`STAMP_RE.search(v2/rennes.html)` is `None`; `V2_STAMP_RE` matches. Asserting
+the regex named above would have failed every page at the one moment the
+comparison cannot be re-run.
+
+**It is THREE differing lines, not one.** The other two are the footer items,
+which carry a build-time clock — the root pages are necessarily built at a
+different minute than the v2 pages were, so "exactly one" would fail a CORRECT
+cutover. The repair is not "allow two more lines", which would pass a footer
+whose date or event name had also changed. The two footer lines must differ
+**only in digit runs, asserted character by character**. A fourth differing
+line, or a non-digit change in either footer line, fails.
+
+**Finished editions are restamped before the comparison**, or they show a third
+kind of difference: a fresh build always emits the LIVE footer, because the
+frozen variant is applied out of band by the restamp step. Without that the
+cutover would ship a live sync clock over frozen data — the regression P3
+shipped — on the only pages there are.
 
 Then, on every run afterwards:
 
