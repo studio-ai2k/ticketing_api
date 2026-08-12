@@ -3704,3 +3704,84 @@ on a row that no longer fits.
 
 **Not fixed — brought back as numbers.** A deliberate two-row layout is a design
 decision, and the ruling was to measure and report rather than pick.
+
+## Trap #24: pagination completeness — a short fetch looks exactly like a small event
+
+Both fetchers page. Neither asserted it had reached the end. That is the worst
+shape a data bug can take, because **a truncated fetch does not produce an
+error or an obviously wrong number — it produces a smaller, entirely plausible
+one**, writes it to the merged CSV, and renders it on a dashboard. Nothing
+downstream can tell 8,000 tickets from 10,000 tickets; both are just numbers.
+
+Three holes, all now closed in `fetch_csv.py`.
+
+### 1. DICE: `totalCount` was fetched, logged, and never compared
+
+`DICE_ORDERS_QUERY` has asked for `totalCount` all along and `fetch_dice` read
+it into `reported_total` on page 1 — to print it. The comparison against
+`total_orders` was simply never written. The server was telling us the answer
+every run and nobody checked it against the work.
+
+Measured on the 2026-08-12 00:57 run before asserting anything:
+
+| event | totalCount | orders processed | pages |
+| --- | ---: | ---: | ---: |
+| `epk_2026` | 1689 | 1689 | 17 |
+| `rennes_2026` | 1673 | 1673 | 17 |
+
+Exact on both. `bordeaux_oct_2026` is Shotgun-only, so it has no DICE side.
+
+**The assertion is ONE-SIDED, and that is the part worth keeping.** Only
+`processed < reported` fails. The reverse — reading more orders than the total
+claimed — is a race, not a hole: `totalCount` is captured from page 1 and these
+fetches run ~8s across 17 pages, so an order placed mid-fetch appears in `edges`
+without being in the page-1 total. That direction means we have everything the
+server had, plus one.
+
+Asserting equality would therefore fail a COMPLETE fetch on a busy event. It
+would have been a false defect, on a guard written specifically to catch missing
+data — and a false defect on a data-loss check is the one people act on fastest,
+because it is telling them the thing they are already afraid of.
+
+### 2. Both fetchers treated "I cannot continue" as "I am finished"
+
+Shotgun's `pagination.next` pointing at an already-fetched URL, and DICE's
+`hasNextPage: true` with no usable `endCursor`, both logged a warning and
+`break`. The generator then returned the pages read so far to a caller that had
+no way to know they were partial — and the warning scrolled past in a job whose
+conclusion was `success`.
+
+Both now raise. Neither condition has a reading in which continuing is correct:
+the API has said there is more and simultaneously made it unreachable, so the
+shortfall is real and its size is unknown.
+
+### 3. `SHOTGUN_PAGE_SIZE` was used and never defined
+
+`record_total` rejects a page-sized total with `value > SHOTGUN_PAGE_SIZE`. That
+name did not exist anywhere in the file. It never crashed because the guard
+short-circuits on `isinstance(value, int)` and the live Shotgun envelope exposes
+none of `TOTAL_KEYS` at the top level — every run logs "total field not
+exposed". So the `NameError` sat behind a branch that has never been taken.
+
+The sting is the timing: it would have fired on the *first* response that made
+the Shotgun total reconciliation work at all. The feature could not activate
+without crashing on activation. Defined as 100, matching the documented page
+size and the `page N: 100 tickets` lines in every log.
+
+**Shotgun still has no completeness assertion, and this does not add one.**
+There is no total to compare against, and the reconciliation at the H3 site only
+runs on incremental fetches and only when `probe['total']` is set — which is
+never, today. Saying that plainly is better than implying both platforms are now
+covered. DICE is covered; Shotgun is guarded against loops and nothing else.
+
+### Broken, then fixed — five cases, each independently
+
+    G0  record_total    NameError gone; rejects page-sized 100, accepts total=4321
+    G1  Shotgun loop    next -> already-seen URL           -> raises
+    G2  DICE stall      hasNextPage true, endCursor None   -> raises
+    G3  DICE short      1 order read, totalCount 50        -> raises, names the 49
+    G3b false-defect    2 read, totalCount 1 (mid-fetch sale) -> PASSES, as designed
+    G4  honest case     2 read, totalCount 2               -> passes
+
+G3b is the control that makes G3 mean something. Without it the check would be
+"fails when the numbers differ", which is not the claim being made.

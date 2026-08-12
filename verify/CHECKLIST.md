@@ -58,6 +58,24 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_b1_switch.py` (diff absence) | 1 (the null coercion restored) |
 | `check_selector.js` (diff absence) | 2 (dead below the % filter; then failing a correct page on `J−25`) |
 | `check_anchor_modes.py` | 2 (the drift claim and the by-construction one) |
+| `fetch_csv.py` pagination guards | 5 (undefined `SHOTGUN_PAGE_SIZE`; Shotgun loop; DICE stall; DICE short fetch; and the false-defect control that must NOT fire) |
+
+---
+
+## Is the fetch complete, or just plausible?
+
+Not a `verify/` script — the claim is about a live fetch, so it cannot be
+checked from the repo. The guards live in `fetch_csv.py` and fail the run.
+
+DICE compares orders processed against the `totalCount` the server already
+returns, **one-sided**: only `processed < reported` is a defect, because
+`totalCount` is read from page 1 and an order placed mid-fetch legitimately puts
+`processed` ahead of it. Both fetchers now raise instead of warning when
+pagination says there is more and makes it unreachable.
+
+**Shotgun has no completeness assertion.** It exposes no total, so there is
+nothing to compare against; it is guarded against pagination loops and nothing
+else. Trap #24 in `HANDOFF.md` for the measurements and the reasoning.
 
 ---
 

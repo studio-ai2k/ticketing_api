@@ -53,6 +53,14 @@ DICE_API = 'https://partners-endpoint.dice.fm/graphql'
 # roughly 0.8 x the number of parallel jobs.
 SHOTGUN_PAGE_PACING_S = float(os.environ.get('SHOTGUN_PAGE_PACING_S') or 0.8)
 
+# Used by record_total to reject a page-sized "total". It was referenced there
+# and never defined, so record_total raised NameError the moment any TOTAL_KEYS
+# entry arrived as an int - which is to say, on the first response that would
+# have made the total reconciliation work at all. It never fired because the
+# live envelope exposes none of those keys at the top level ("total field not
+# exposed", every run), so a dead branch hid an undefined name.
+SHOTGUN_PAGE_SIZE = 100
+
 # A 429 is a per-minute quota, so backing off for seconds just burns retries -
 # the window has to roll over. Wait out the minute instead.
 RATE_LIMIT_BACKOFF_S = 60
@@ -677,11 +685,21 @@ def fetch_shotgun_pages(token, organizer_id, shotgun_event_id, after=None, probe
         url += '&' + urllib.parse.urlencode({'after': after})
 
     page = 0
+    kept = 0
     seen_urls = set()
     while url:
         if url in seen_urls:
-            log("   ⚠ pagination loop detected - stopping")
-            break
+            # Was a log line and a `break`, which handed back the pages read so
+            # far AS IF THEY WERE ALL OF THEM. That is the whole silent-
+            # truncation shape: a smaller, entirely plausible number, written to
+            # the CSV and rendered on a dashboard with nothing marking it short.
+            # A `next` that points at a URL already fetched is always a defect,
+            # so there is no case where continuing with partial data is right.
+            raise RuntimeError(
+                f"Shotgun pagination loop on page {page + 1}: pagination.next "
+                f"points back at a URL already fetched, after {kept} ticket(s). "
+                f"Refusing to return a partial fetch as if it were complete."
+            )
         seen_urls.add(url)
 
         page += 1
@@ -691,6 +709,7 @@ def fetch_shotgun_pages(token, organizer_id, shotgun_event_id, after=None, probe
         for ticket in tickets:
             if probe is not None:
                 record_cursor(probe, ticket)
+            kept += 1
             yield ticket
         if probe is not None and isinstance(payload, dict):
             record_total(probe, payload)
@@ -1000,11 +1019,42 @@ def fetch_dice(event_config, token):
             break
         next_cursor = page_info.get('endCursor')
         if not next_cursor or next_cursor == cursor:
-            log("   ⚠ pagination stalled (no new cursor) - stopping")
-            break
+            # Same correction as the Shotgun loop guard: hasNextPage says there
+            # is more and the cursor says we cannot reach it, so whatever we
+            # have is short by an unknown amount. Warning-and-continue wrote
+            # that unknown amount into the CSV as a fact.
+            raise RuntimeError(
+                f"DICE pagination stalled after page {page}: hasNextPage is "
+                f"true but endCursor is {next_cursor!r}, so the next page is "
+                f"unreachable. {total_orders} order(s) read so far. Refusing to "
+                f"return a partial fetch as if it were complete."
+            )
         cursor = next_cursor
 
     log(f"   orders processed: {total_orders}")
+
+    # PAGINATION COMPLETENESS. The query already asks for totalCount and this
+    # already read it; until now it was logged and never compared, so a fetch
+    # that stopped early produced a smaller, entirely plausible number and
+    # nothing in the repo could contradict it.
+    #
+    # ONE-SIDED, DELIBERATELY. Only `processed < reported` is a defect. The
+    # reverse is a race, not a truncation: totalCount is read from page 1 and
+    # these fetches take ~8s over 17 pages, so an order placed mid-fetch lands
+    # in `edges` without being in the total. That direction means we have
+    # everything the server had plus one, which is not a hole. Asserting
+    # equality would fail a COMPLETE fetch on a busy event - a false defect,
+    # and the failure mode that gets acted on because it looks like a finding.
+    if reported_total is None:
+        log("   ⚠ orders totalCount absent - completeness unverifiable this run")
+    elif total_orders < reported_total:
+        raise RuntimeError(
+            f"DICE fetch is short: processed {total_orders} order(s) but the "
+            f"server reported totalCount={reported_total} on page 1, over "
+            f"{page} page(s). {reported_total - total_orders} order(s) were "
+            f"never read. Refusing to write a truncated file."
+        )
+
     log(f"   raw tickets: {total_raw}")
     log(f"   skipped (order has no tickets): {skipped['empty_order']}")
     log(f"   skipped (no purchasedAt on order): {skipped['date']}")
