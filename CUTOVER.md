@@ -456,6 +456,26 @@ The last line is the one to read: **the cleanup can now move
 leans on.** §6.5's "prove it dead first" is satisfied — it has no readers left
 in `verify/`.
 
+### What changed in KIND, and what holds it
+
+`CARRIED_LINES` is a **maintained literal**. What it replaced was a **derived
+reference** — production's sheet, which nobody editing the redesign could bend
+to agree with them. An edit to the working sheet *and* to the list, made
+together, now passes; every one-sided case still fails.
+
+The two halves are not equally covered, and the file says so:
+
+| | lines | paired with |
+|---|---:|---|
+| the auth overlay | 10 | **`verify/check_v2_gate.py`** — a real browser, no auth token, asserting the overlay is `position:fixed`, covers the viewport, is opaque, and paints above the dashboard's numbers. Written for exactly this failure: the sheet once had no `.db-overlay` rule and everything else passed while revenue sat on a public URL. Verified firing — `position:fixed`→`static` gives *"does not cover the viewport; page centre paints 'dept-tabs'"* |
+| the page footer | 15 | **nothing.** `check_stampable`, `check_v2_footer`, `check_page_anchor` and `assert_redesign.sh` all read the MARKUP, and none is a browser check |
+
+So the footer's failure mode after a coordinated edit is: present, countable,
+stampable, and visually wrong. Bounded, but real. If it is worth closing, the
+shape is a browser assertion on the rendered footer beside `check_v2_gate`'s on
+the overlay — **not** a re-derived reference, which is the thing §3(d)(4) just
+retired.
+
 ---
 
 ## 4. The cleanup, and why mitigation (a) comes first

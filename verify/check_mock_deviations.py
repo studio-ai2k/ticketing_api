@@ -104,6 +104,44 @@ STYLE_RE = re.compile(r'<style>(.*?)</style>', re.DOTALL)
 # carried: they are the mock's own short-form names, present in the LOCKED
 # reference, and pinned by the locked-vs-working diff like every other line.
 # Measured before this list was written, not after.
+#
+# ── WHAT CHANGED IN KIND, AND WHAT CATCHES IT ────────────────────────────────
+#
+# This list is a MAINTAINED LITERAL. The thing it replaced was a DERIVED
+# REFERENCE - it read production's sheet, so nobody editing the redesign could
+# make a carried rule agree with it by editing one file.
+#
+# That difference is the cost, and it is narrow but real: an edit to the working
+# sheet AND to this list, made together, passes here. The one-sided cases do not
+# (see the five negative tests in verify/CHECKLIST.md). So the question is what
+# holds the two-sided case, and the answer differs for the two halves.
+#
+# THE TEN `.db-*` LINES ARE PAIRED, and by the check that exists for exactly
+# this failure. `verify/check_v2_gate.py` loads a built page in a real browser
+# with no auth token and asserts the overlay is `position:fixed`, covers the
+# viewport, is opaque, and paints above the dashboard's own numbers. It was
+# written because the redesign sheet once had NO `.db-overlay` rule at all and
+# every other assertion passed while internal revenue sat on a public URL.
+#
+#   Verified, not assumed: `.db-overlay{position:fixed` -> `position:static` in
+#   the working sheet, page rebuilt, and check_v2_gate says
+#     "FAIL b.html: position:static (want fixed); does not cover the viewport;
+#      page centre paints 'dept-tabs'"
+#   Restored byte-identical afterwards.
+#
+# THE FIFTEEN FOOTER LINES ARE NOT PAIRED. Nothing renders the footer and
+# asserts its appearance: `check_stampable`, `check_v2_footer`,
+# `check_page_anchor` and `assert_redesign.sh` all read the MARKUP - that the
+# `.pgf-item` structure is present, countable and patchable by stamp_footer.py -
+# and none of them is a browser check. A coordinated edit to a `.pgf-*` RULE
+# here and in the sheet would not be caught by anything.
+#
+# That is a real reduction and it is stated rather than papered over. It is
+# bounded: the footer's STRUCTURE stays pinned four ways, so the failure mode is
+# a footer that is present, countable, stampable and visually wrong. If that
+# matters enough to close, the shape is a browser assertion on the rendered
+# footer, next to check_v2_gate's on the overlay - not a re-derived reference,
+# which is what §3(d)(4) just retired.
 CARRIED_LINES = (
     ".db-overlay{position:fixed; inset:0; background:#08080d url('upload.JPG') center center/cover no-repeat; z-index:9999; display:flex; align-items:center; justify-content:center;}",
     ".db-overlay::before{content:''; position:fixed; inset:0; background:rgba(4,4,10,0.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);}",

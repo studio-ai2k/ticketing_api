@@ -62,6 +62,7 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_build_stamp.py` (v2 half) | 3 (12 stale before the rebuild; a v2-only asset fails v2 alone; a shared asset fails both) |
 | `check_shotgun_fee_table.py` | 4 (arithmetic change moves every tier; a witnessed tier vanishes; a new tier — must NOT fail; odd rows at a witnessed tier — must NOT fail) |
 | `check_mock_deviations.py` | 4 |
+| `check_v2_gate.py` (pairs CARRIED_LINES) | 1 (`.db-overlay{position:fixed` -> `position:static` in the working sheet, page rebuilt: "position:static (want fixed); does not cover the viewport; page centre paints 'dept-tabs'". This is what holds the ten carried `.db-*` lines now that they are a maintained literal rather than a derived reference — the fifteen FOOTER lines have no equivalent, stated in check_mock_deviations.py) |
 | `check_mock_deviations.py` (CARRIED_LINES) | 5 (a carried line edited -> invented; deleted -> "no longer present", so the list cannot rot silently; duplicated -> caught, because entries are consumed once each rather than tested for membership in a blob; an invented `.db-*` rule appended -> invented; and `style/dashboard_v6_8.css` MOVED AWAY ENTIRELY -> exit 0, which is the whole point of §3(d)(4)) |
 | `check_v2_gate.py` | 1 (the page that actually shipped) |
 | `check_v2_identity.py` | 2 (the shipped page; and the nav-form regression) |
