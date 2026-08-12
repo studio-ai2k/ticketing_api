@@ -371,12 +371,23 @@ state must be the one you are making.** Four instances in one session:
 - an expectation table asserting a CSS selector sat on L9 when the fixture I had
   retyped put it on L11, reporting "4/6 correct" for a parser that was right on
   all six
+- `grep -c 'dashboard_redesign.css\|dept-tabs-bg'` offered as proof that a
+  rebuild had written a v2 page over a production one. `dept-tabs-bg` is in a
+  CORRECT production page twice, and `dashboard_redesign.css` is in a v2 build
+  zero times because pass 0 inlines the sheet. The count was 2 either way
 
 None of these was a wrong answer to the right question. Each was a right answer
 to a question adjacent to the one being asked, which is worse, because the
 number looks fine and nothing about it invites a second look.
 
-**AND THE DIRECTION IS NOT SOMETHING YOU GET TO ASSUME.** Two of the four failed
+The fifth is the one that shows the pattern is not only about verdicts. The bug
+it "proved" was REAL - confirmed afterwards with markers that do discriminate
+(`const D=` 0 -> 1, the build stamp 1 -> 0). Only the evidence was unsound. A
+right conclusion resting on a wrong measurement still has to be corrected,
+because the measurement is what the next person re-runs, and it will not
+reproduce.
+
+**AND THE DIRECTION IS NOT SOMETHING YOU GET TO ASSUME.** Two of the five failed
 toward a false green — the watcher read a dead pipeline as recovered. Two failed
 toward a false defect — the width sum condemned a layout with 84px of room, and
 the expectation table condemned a parser that was correct. Acting on either of

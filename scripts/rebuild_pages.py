@@ -48,6 +48,46 @@ The parent directory now picks the builder:
     <name>      production        build_dashboard.py then postprocess_html.py
 
 Anything else is refused, for the same reason an unmapped basename is refused.
+
+REACHABLE, AND NEVER REACHED - A DIFFERENT FACT FROM "FIXED"
+------------------------------------------------------------
+**No bad page ever shipped.** All six root pages carry `const D=` 0 times and a
+`<!-- shared: -->` stamp exactly once, which is the production shape; a v2 build
+is the reverse. The bug needs a push race whose conflict lands in a ROOT `.html`,
+and every race so far conflicted only in `v2/`. The path existed and was never
+taken.
+
+Worth stating because "fixed" does not answer the question the next reader
+actually has, which is whether anything downstream is holding bad data.
+
+And it would not have survived long: a v2 build of a production page LOSES the
+build stamp, because pass 0's `</nav>`..`</body>` seam splices away the comment
+`postprocess_html` writes just before `</body>`. `check_build_stamp.py` runs in
+the workflow and fails on a page with no stamp - measured, by running the
+pre-fix script and then the check:
+
+    FAIL  rennes.html: no build stamp.  ->  exit 1
+
+So the blast radius was a failed build, not a silently wrong dashboard. That is
+luck rather than design - the stamp exists to catch stale shared assets, not
+this - but it is the difference between an incident and an inconvenience.
+
+A CORRECTION TO THIS FILE'S OWN FIRST EVIDENCE
+-----------------------------------------------
+The commit that fixed this cited "dashboard_redesign.css and dept-tabs-bg were
+in it afterwards". **Both markers were wrong**, and the bug is real anyway:
+
+  - `dept-tabs-bg` appears TWICE in a correct production page. It is not a v2
+    marker at all, so counting it proves nothing.
+  - `dashboard_redesign.css` appears ZERO times in a v2 build, because pass 0
+    INLINES the sheet's contents rather than linking it.
+
+The sound markers are the two above: `const D=` goes 0 -> 1 and the build stamp
+goes 1 -> 0. Same conclusion, honest evidence. Third time in one session that a
+predicate sitting next to a claim reported on something adjacent to it - see
+HANDOFF_CC3 section 6 - and the first where it did not change the verdict, only
+the proof. A right conclusion resting on a wrong measurement is still a thing to
+correct, because the measurement is what the next person will re-run.
 """
 
 import argparse

@@ -47,6 +47,7 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_spec_example.py` | 4 |
 | `check_suivi_window.py` | 1 (and its own first version failed step 2) |
 | `check_payout_reconciliation.py` | 3 |
+| `check_shotgun_fee_table.py` | 4 (arithmetic change moves every tier; a witnessed tier vanishes; a new tier — must NOT fail; odd rows at a witnessed tier — must NOT fail) |
 | `check_mock_deviations.py` | 4 |
 | `check_v2_gate.py` | 1 (the page that actually shipped) |
 | `check_v2_identity.py` | 2 (the shipped page; and the nav-form regression) |
@@ -306,10 +307,32 @@ was proved against — 9,327 paid, 624 936,39 brut TTC, 38 214,52 commissions,
 and the five tiers verbatim. Tolerance is exactly one known ticket; a second is
 a finding, not noise.
 
+    python3 verify/check_shotgun_fee_table.py
+
+Holds the SHOTGUN side to the 17-tier schedule the 2026-08-12 back-office export
+witnessed on epk. Both platforms now have an external reference.
+
+**A table rather than pinned totals, because `epk_2026` is LIVE.** The DICE
+check pins totals and survives because `bordeaux_2026` is finished and frozen;
+155 Shotgun orders landed on epk on 2026-08-11 alone, so a pinned
+`8391 / 469 296,88` would stop being true before anyone read it. The schedule
+survives growth, and it is the stronger claim: a total is one number many wrong
+row sets produce, where this moves if the arithmetic moves for one tier.
+
+**Asserted on the MODE, not on every row.** `bordeaux_oct_2026` already has a
+tier carrying two fees — 3 728 rows at face 95,00, of which 17 carry 0,50
+instead of 12,37 — so "face determines fee" is false on real data at 0,2% of one
+event. A per-row assertion would have called a fee arrangement a code defect. A
+systematic change moves the mode; a handful of odd rows cannot.
+
+**A new tier is reported, never failed.** Our arithmetic is unchanged and the
+fee is simply unwitnessed, so failing would block a legitimate sale — the
+false-defect direction, on a check that names revenue loss.
+
 These are **the only figures in this project validated against a document
-someone outside it produced.** Settling O1 will mean editing
-`process_shotgun_ticket`, three lines from the DICE path, so this exists to make
-sure the fixed point survives that edit.
+someone outside it produced.** Settling O1 meant reading
+`process_shotgun_ticket`, three lines from the DICE path, so these exist to make
+sure both fixed points survive the next edit there.
 
 ## BEFORE PUBLISHING v2/ — both of these, every time
 
