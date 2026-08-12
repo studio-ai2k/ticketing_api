@@ -54,6 +54,7 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_exact_date.py` | 4 (one per claim, broken separately) |
 | `check_data_freshness.py` | 2 (the outage reconstructed; and threshold below true age) |
 | `check_source_order.py` | 4 (must-flag; correct order; lower specificity; masked) + a new defeat still fails while pinned |
+| `check_duplicate_decls.py` | 4 (disagree; identical; different condition; different property) |
 | `check_b1_switch.py` (diff absence) | 1 (the null coercion restored) |
 | `check_selector.js` (diff absence) | 2 (dead below the % filter; then failing a correct page on `J−25`) |
 | `check_anchor_modes.py` | 2 (the drift claim and the by-construction one) |
@@ -91,6 +92,24 @@ return to exit 0 on restore, and the CSV was verified byte-identical after.
 ## After any change to the stylesheet
 
     python3 verify/check_source_order.py
+    python3 verify/check_duplicate_decls.py
+
+`check_duplicate_decls` asserts one declaration per selector, per property, per
+condition. **A duplicate is only a defect when the two declarations DISAGREE** —
+identical ones are redundant and harmless, so they are reported and never fail.
+Same distinction `check_source_order` draws between defeated and masked, and
+what keeps both honest: a check that failed on all 29 would be demanding
+tidiness rather than correctness.
+
+Measured before it was built, because the count decides whether it is a rule or
+three findings: 29 duplicates across 1497 keys — 14 disagreeing across 6 sites,
+15 identical. Six sites is a rule; fifty would have meant the assertion was
+wrong about the sheet.
+
+The find that justified it: a **four-column** mobile grid for `.grp-h,.kid,.tot,
+.thead` replaced by a five-column one at the same breakpoint, so the four-column
+version had never rendered once. All six sites deleted and verified invisible by
+comparing computed styles at 1180/720/640/480/393 — no difference at any width.
 
 Media queries add NO specificity, so a base rule declared LATER at equal
 specificity beats an earlier `@media` rule. The media rule stays in the file,
@@ -107,10 +126,13 @@ MASKED so nobody reads it as a rendering bug or deletes it as noise. Currently
 3 masked, all benign.
 
 **No allowlist**, deliberately: an allowlist makes the check pass by growing
-instead of the sheet getting better. Two `.cmp-trigger` declarations are PINNED
-instead — the same mechanism `check_spec_example` uses for O1 — because both
-available fixes change the sheet's meaning and the choice is a ruling. A new
-defeat still fails while they are pinned; that was tested.
+instead of the sheet getting better. Two `.cmp-trigger` declarations were PINNED
+for a while — the same mechanism `check_spec_example` uses for O1 — because both
+available fixes changed the sheet's meaning and the choice was a ruling. That
+ruling landed (honour it, not delete it: the declaration moved below the base
+rule it kept losing to), so **`PINNED` is now empty and the check is strict**.
+A new defeat still failed while they were pinned; that was tested before the
+pin was emptied.
 
 It cannot compare selectors as element sets, only as normalised text, so `.a .b`
 versus `.b` is invisible to it. That needs the DOM, which is what the browser

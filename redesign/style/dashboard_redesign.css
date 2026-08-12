@@ -48,7 +48,7 @@
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:96px}
 html,body{overflow-x:clip;min-height:100%;background:var(--bg);
-  font-family:var(--ff-body);-webkit-font-smoothing:antialiased;color:var(--text)}
+  -webkit-font-smoothing:antialiased;color:var(--text)}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
@@ -156,7 +156,6 @@ body {
   .group-pct, .group-vs { display: none; }
   .hero { font-family: var(--ff-display); font-size: var(--fs-hero);  font-family: var(--ff-display);}
   .hero-lg { font-family: var(--ff-display); font-size: var(--fs-display);  font-family: var(--ff-display);}
-  .card { padding: 18px; }
   .group-right { font-size: var(--fs-micro); }
   .nav-top { padding: 0 12px; }
   .nav-sw { padding: 6px 10px 6px 0; margin-right: 6px; }
@@ -168,9 +167,7 @@ body {
   .pr-row, .pr-col-header, .group-header{grid-template-columns:2fr 70px}
   .pr-row .pr-price, .pr-col-header span:last-child, .group-price{display:none}
   .pr-row, .pr-col-header{padding-left:4px;padding-right:4px}
-  .nav-top{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
-  mask-image:linear-gradient(to right,#000 85%,transparent);
-  -webkit-mask-image:linear-gradient(to right,#000 85%,transparent)}
+  .nav-top{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .nav-top::-webkit-scrollbar{display:none}
   .nav-sw-av{width:30px;height:30px}
   .nav-user{width:30px;height:30px}
@@ -316,7 +313,6 @@ body {
   background:rgba(255,255,255,.02);font-family:inherit;font-size:var(--fs-mini);
   color:var(--text-muted);cursor:pointer}
 @media (max-width:720px){
-  .grp-h,.kid,.tot,.thead{grid-template-columns:1fr 58px 44px 46px;gap:7px}
   .sv,.sv-h{grid-template-columns:1fr 64px 1fr;gap:8px}
 }
 /* login overlay */
@@ -382,7 +378,7 @@ body {
 /* details page */
 .page{display:none}
 .page.on{display:block}
-.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dgrid{display:grid;grid-template-columns:1fr 1fr}
 .dk{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:10px 0;
   border-bottom:1px solid rgba(255,255,255,.05)}
 .dk:last-child{border-bottom:0}
@@ -459,7 +455,6 @@ body {
   font-size:var(--fs-micro);color:var(--text-muted);font-variant-numeric:tabular-nums}
 .mb-face b{color:var(--text);font-family:var(--ff-display);font-size:var(--fs-caption);font-weight:600}
 @media (max-width:640px){
-  .mb-key{gap:8px 18px}
   /* pushing the total right strands it on its own line once the legend wraps */
   .mb-tot{margin-left:0;padding-top:0;border-top:0}
 }

@@ -188,6 +188,45 @@ AUTHORISED_CSS = [
     ('SV8', "and the picker group's own alignment, added rather than edited "
             "because the locked sheet has no line for it",
      None, ".svctl>.svctl-p{align-self:flex-start}"),
+    ('DD1', "DUPLICATE DECLARATIONS DELETED, six sites, all dead by "
+            "definition - a later rule on the same selector and condition "
+            "already set the property, so the earlier one never rendered. "
+            "Verified invisible rather than assumed: computed styles compared "
+            "at 1180/720/640/480/393 before and after, no difference at any "
+            "width on any of the six selectors. THE GRID ONE IS WHY THIS "
+            "MATTERED - someone wrote a FOUR-column mobile layout for the group "
+            "rows and a later block at the same breakpoint replaced it with "
+            "five, so the four-column version had never rendered once. Ruled: "
+            "delete it, because five columns is what Leo has been reviewing all "
+            "along and shipping four now would be the surprise",
+     "  .grp-h,.kid,.tot,.thead{grid-template-columns:1fr 58px 44px 46px;gap:7px}",
+     None),
+    ('DD2', "the same, .card's mobile padding: 18px never applied because "
+            "16px 15px follows it at the same breakpoint",
+     "  .card { padding: 18px; }", None),
+    ('DD3', "the same, .nav-top's fade mask at 480: the 85% stop never applied "
+            "because an 86% one follows. The rule keeps its other declarations, "
+            "which are identical duplicates and therefore harmless",
+     "  .nav-top{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;",
+     "  .nav-top{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}"),
+    ('DD4', "the same, the two mask lines that went with it",
+     "  mask-image:linear-gradient(to right,#000 85%,transparent);", None),
+    ('DD5', "and its webkit twin",
+     "  -webkit-mask-image:linear-gradient(to right,#000 85%,transparent)}", None),
+    ('DD6', "the same, .dgrid's base gap: 12px never applied because 26px 34px "
+            "follows on the same selector. display and grid-template-columns "
+            "are IDENTICAL duplicates on that pair and are left alone - "
+            "redundant is not dead",
+     ".dgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}",
+     ".dgrid{display:grid;grid-template-columns:1fr 1fr}"),
+    ('DD7', "the same, .mb-key's gap at 640",
+     "  .mb-key{gap:8px 18px}", None),
+    ('DD8', "the same, body's font-family. --ff-body carries an -apple-system "
+            "fallback that the later literal drops, so the VARIABLE was dead on "
+            "body specifically. Deleting the dead declaration keeps what renders "
+            "today; restoring the fallback would be a change, not a cleanup",
+     "  font-family:var(--ff-body);-webkit-font-smoothing:antialiased;color:var(--text)}",
+     "  -webkit-font-smoothing:antialiased;color:var(--text)}"),
     ('SO1', "the .cmp-trigger mobile padding MOVES below the base rule it kept "
             "losing to. check_source_order found it defeated: media queries add "
             "no specificity, so the base .cmp-trigger at L423 outranked this at "
