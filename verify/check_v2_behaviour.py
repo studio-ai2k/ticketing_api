@@ -186,32 +186,43 @@ const { chromium } = require('playwright');
                    && !!document.getElementById('sep-past'),
         cuts: document.querySelectorAll('#suivi .cut, #sep-past .cut').length,
         scen,
-        // The projection selector, located by SECTION plus the title above it,
-        // and returning -1 when it cannot be found at all.
+        // The projection selector, located by WHAT ITS ITEMS DO. Returns -1
+        // when it cannot be identified at all, which is a different claim from
+        // "it is empty" and prints a different sentence.
         //
-        // It used to be found by a `.cmp-trigger` whose `.cmp-eyebrow` read
-        // `réf.` - markup that ruling X10 DELETED. The ledger records the
-        // decision, the reason and the measurement behind it
-        // (check_mock_deviations, entries X10 and X10-ref: "the four
-        // .cmp-eyebrow labels come out ... with a title above each control they
-        // say the same thing twice"). Zero `.cmp-eyebrow` elements render, so
-        // `find` returned undefined, `wrap` was null, and this reported 0 on a
-        // menu that renders all eight candidates - a false defect on all four
-        // LIVE editions, sitting red on the tree a handoff called green.
+        // TWICE NOW THIS HAS BEEN KEYED TO SOMETHING COSMETIC.
         //
-        // The new anchor is what that ruling PUT THERE rather than what it took
-        // away: `Événement comparatif` is the title X10 says replaces the
-        // eyebrow, inside the section the control belongs to.
+        // v1 looked for a `.cmp-trigger` whose `.cmp-eyebrow` read `réf.`.
+        // Leo's C4 ruling moved the control labels above the dropdowns and
+        // removed the four inline eyebrows - réf., scén., vs, aligné sur -
+        // replacing them with `.kc-k` titles (ledger entries X10 and X10-ref,
+        // a named PURE DELETION). Zero `.cmp-eyebrow` render, so the locator
+        // matched nothing, `wrap` was null, and this reported 0 items on a menu
+        // rendering all eight candidates. Red on every live edition from the
+        // moment C4 shipped, on a tree two handoffs called green.
         //
-        // -1, not 0, when the wrap is absent. Returning 0 made "I could not
-        // find the menu" indistinguishable from "the menu is empty", which is
-        // the whole of why this cost a session to diagnose: the message named
-        // the payload while the defect was in the locator.
+        // v2 keyed on the replacement title text, `Événement comparatif`. That
+        // is the same class of anchor - one ruling away from the same failure -
+        // and it is not what makes this control the projection selector.
+        //
+        // So: BEHAVIOUR. Its items call `pickProj('<candidate id>')`; the other
+        // control in this section calls `pickScen(n)`. A label move cannot
+        // touch either, and if `pickProj` is renamed the control really has
+        // changed and failing is correct. The candidate ids in those handlers
+        // are payload keys, not display strings.
+        //
+        // Identified as "the #sec-projection switcher that is NOT the method
+        // one" rather than "the one containing pickProj", so that a menu
+        // rendered with ZERO candidates is still located and still counted as
+        // 0 - the defect A4 was written for. Ambiguity (no such wrap, or more
+        // than one) is -1.
         projItems: (() => {
-          const wrap = [...document.querySelectorAll('#sec-projection .sw-wrap')]
-            .find(w => (w.previousElementSibling || {}).textContent
-                       === 'Événement comparatif');
-          return wrap ? wrap.querySelectorAll('.sw-item').length : -1;
+          const calls = (w, fn) => [...w.querySelectorAll('.sw-item')].some(
+            i => new RegExp('\\b' + fn + '\\(').test(i.getAttribute('onclick') || ''));
+          const cand = [...document.querySelectorAll('#sec-projection .sw-wrap')]
+            .filter(w => !calls(w, 'pickScen'));
+          return cand.length === 1
+            ? cand[0].querySelectorAll('.sw-item').length : -1;
         })(),
         hasCloseAll: typeof window.swCloseAll === 'function',
         // SHAPE, not a blacklist. "593 421 €593k" contains no NaN, no
@@ -347,11 +358,12 @@ def main(argv):
         # rendering eight, because a broken locator and an empty menu returned
         # the same number.
         if live and r['projItems'] < 0:
-            why.append('A4 the projection selector could not be LOCATED - no '
-                       '.sw-wrap under #sec-projection follows a title reading '
-                       '"Événement comparatif". This says nothing about how '
-                       'many candidates the menu has; the locator is what '
-                       'failed, and it has drifted from a ruling once already.')
+            why.append('A4 the projection selector could not be IDENTIFIED - '
+                       '#sec-projection does not hold exactly one .sw-wrap '
+                       'whose items are not pickScen(). This says nothing about '
+                       'how many candidates the menu has: the locator is what '
+                       'failed, and it has drifted from a ruling twice already, '
+                       'both times by keying on a label.')
         elif live and r['projItems'] < 2:
             why.append(f"A4 the projection selector renders {r['projItems']} item(s)")
         elif not live and r['projItems'] > 0:
