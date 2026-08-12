@@ -488,7 +488,23 @@ def plan_writes(names, v2_snap, built, hashes, bgs):
         # Above the content and INSIDE the gate: someone who never gets past the
         # password sees no figures either, so the banner cannot leak more than
         # the page already does.
-        marker = '<div class="wrap"'
+        #
+        # PRODUCTION'S container, not the redesign's. This read
+        # `<div class="wrap"` - which is the REDESIGN's wrapper, and the page
+        # being banner-stamped here is the PRODUCTION one, because the archive
+        # is what ships today. Measured: `.wrap` is 1 in every v2 page and 0 in
+        # every production page, so --apply refused on the first page it tried:
+        #
+        #   cutover: parisxxl.html has 0 `<div class="wrap"` anchors, want 1
+        #
+        # A marker taken from one pipeline and applied to the other, which is
+        # the shape this project keeps finding. It refused rather than writing a
+        # bannerless archive, and it refused before any page was written.
+        #
+        # `.dashboard` is production's equivalent: measured 1 in every
+        # production page, 0 in every v2 page, sitting immediately after
+        # `</nav>` - above all content, below the nav, inside the gate.
+        marker = '<div class="dashboard">'
         if html.count(marker) != 1:
             raise SystemExit(
                 f'cutover: {n} has {html.count(marker)} `{marker}` anchors, want '
