@@ -47,6 +47,7 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_spec_example.py` | 4 |
 | `check_suivi_window.py` | 1 (and its own first version failed step 2) |
 | `check_payout_reconciliation.py` | 3 |
+| `check_build_stamp.py` (v2 half) | 3 (12 stale before the rebuild; a v2-only asset fails v2 alone; a shared asset fails both) |
 | `check_shotgun_fee_table.py` | 4 (arithmetic change moves every tier; a witnessed tier vanishes; a new tier — must NOT fail; odd rows at a witnessed tier — must NOT fail) |
 | `check_mock_deviations.py` | 4 |
 | `check_v2_gate.py` | 1 (the page that actually shipped) |

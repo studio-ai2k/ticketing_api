@@ -81,6 +81,21 @@ half of the check to read.
 Four items land **before** the cutover — not "any time", because §5's once-only
 snapshot is worth much less without them:
 
+**P0 — RESOLVED, and not by this plan.** The finished-edition footer work gave
+v2 real footer content, so `stamp_footer.py` now exits 0 on a v2 page in both
+modes (`--checked` and `--frozen`, measured 2026-08-12). The restamp step no
+longer fails on day one and needs no repointing. The text below is kept as the
+record of what it was.
+
+**P1 — DONE 2026-08-12.** Pass 0 writes `<!-- shared-v2:HASH -->` over
+`build_v2.V2_SHARED_ASSETS`, asserting first that exactly one `</body>` exists
+and that no production stamp survived the seam.
+
+**P2 — DONE 2026-08-12.** `check_build_stamp` audits both sets, 12 pages. The
+scope note claiming v2 could not go stale is deleted as false. All six
+production pages were rebuilt in the same commit, because `postprocess_html.py`
+is in its own `SHARED_ASSETS` and the signature change moved the hash.
+
 **P1 — pass 0 re-emits the stamp, over a v2 shared set.** The v2 set is a
 superset of production's: pass 0 builds *on* a postprocessed page, so everything
 production is made of still applies, plus the mock, `dashboard_redesign.css`,
