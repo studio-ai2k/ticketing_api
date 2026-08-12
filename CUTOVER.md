@@ -354,13 +354,27 @@ root. Run it as a test, not as a belief.
 The probe above asks whether the BUILD survives the move. It does. The question
 nobody asked is whether the CHECKS do, and the answer is no:
 
-| reader | line | what it uses the sheet for |
-|---|---|---|
-| `verify/check_mock_deviations.py` | 1220 | `prod_css`, for the carried-across `.db-*` rules and `_carried_block`'s page-footer run |
-| `verify/assert_redesign.sh` | 27 | `$CSS`, the source every `@media` count is derived from |
+| reader | line | what it uses the sheet for | status |
+|---|---|---|---|
+| `verify/check_mock_deviations.py` | 1220 | `prod_css`, for the carried-across `.db-*` rules and `_carried_block`'s page-footer run | **live** |
+| `verify/assert_redesign.sh` | 27 | `$CSS`, the source every `@media` count was derived from | **gone** — P4 deleted the CSS half |
 
-Both do a plain `read_text` / path read on `style/dashboard_v6_8.css`. Move the
-file to `legacy/` and both raise on a missing file.
+`assert_redesign.sh` no longer reads the sheet at all: the eight `@media`,
+`fs-*` and `font-size` assertions that derived from it were subsumed by
+`check_pages` and removed. **One reader is left**, and it does a plain
+`read_text` on `style/dashboard_v6_8.css` — move the file and it raises.
+
+**How much of the sheet is actually load-bearing: about 33 lines of 626.**
+
+```
+production sheet                  46 947 bytes   626 lines
+  .db-* lines the carry consults                  17
+  of those, matched verbatim against production   10
+  the page-footer block, located by its banner    16
+```
+
+Reproduce with the `_carried_block` / `CARRIED` logic at
+`check_mock_deviations.py:1300-1315`.
 
 **`check_mock_deviations` is the one that matters, because it is what P4 makes
 the cutover lean on.** The whole argument for deleting the CSS half of
@@ -374,15 +388,47 @@ all.
 
 This is §7ter's rule with the ordering inverted: not "a check that reads the
 retiring pipeline", but **a check that reads the retiring pipeline in order to
-assert the NEW one**. The carry-across is legitimate — those rules genuinely
-come from production's sheet and must match it verbatim — so the repair is not
-to stop reading it. It is to decide, before the cleanup and not during it,
-whether the sheet moves to `legacy/` (and both readers follow it there) or stays
-at root as the source of the carry (and the cleanup says why a retired
-pipeline's stylesheet is still a live input).
+assert the NEW one**.
 
-**Not resolved here.** It is a decision, and §6.5's rule applies — prove the file
-dead before deleting it, and it is demonstrably not dead.
+### The three options, and what is wrong with each
+
+**A — the sheet stays at root.** One line of cleanup notes deleted, nothing
+else. Cost: a retired pipeline's stylesheet sits at the repo root permanently,
+and the only stated reason is that a check reads it. §6.5 asks for a file to be
+proved dead before deletion; this proves it alive for a reason that has nothing
+to do with the pipeline it belongs to.
+
+**B — the sheet moves to `legacy/` and the reader follows it.** A one-line path
+change, and the verbatim-provenance claim survives. **But `legacy/` is frozen by
+definition** (§6.2), so after the move the check compares the redesign's
+carried rules against a file that can never change again. An assertion whose
+reference cannot move is one that can never fail — decoration, in the §5 sense,
+and the third time this plan has met that shape.
+
+**C — the carried rules are absorbed and the carry-across retires by name.**
+The ~33 lines become ordinary lines of the redesign sheet, entered in the ledger
+as authorised additions (the mechanism already exists — `old_line is None`
+authorises a pure addition, `check_mock_deviations.py:1252`), the locked
+reference is updated in the same commit, and the sheet moves to `legacy/` with
+no reader at all. Retiring a check by name is the pattern §5.6 already uses for
+`check_eligibility`'s P4.
+
+Cost: it is real work, and it gives up the claim "these rules are verbatim
+production's". **That claim is worth less after cutover than it reads** — it is
+a statement about provenance from a pipeline that no longer runs. The rules do
+not stop being correct; they stop being *production's*, because there is no
+production.
+
+### The question this actually turns on
+
+Not "where should the file live". It is: **after the old pipeline retires, is
+"these rules came from production's stylesheet" still a property worth
+asserting, or is it history?** A says yes and pays for it at the root. B says
+yes and gets an assertion that cannot fail. C says it is history and writes that
+down.
+
+**Not resolved here — Leo's call.** §6.5's rule applies either way: prove the
+file dead before deleting it, and it is demonstrably not dead today.
 
 ---
 

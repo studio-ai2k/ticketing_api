@@ -40,7 +40,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
-from pages import pass0_pages   # noqa: E402 - CUTOVER 6.3, one page list
+from pages import pass0_pages, pass0_dir   # noqa: E402 - CUTOVER 6.3, one page list
 CHROME = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
 
 D_RE = re.compile(r'const D=(\{.*?\});\s*\n', re.DOTALL)
@@ -322,7 +322,10 @@ def main(argv):
 
     failures = []
     for r in rows:
-        why, info = payload_problems(ROOT / 'v2' / r['file'])
+        # pass0_dir(), not a literal `v2/` - same reason as check_b1_switch:317.
+        # The browser half drives pass0_pages(); this half must read the same
+        # file, not a path that happens to agree today.
+        why, info = payload_problems(pass0_dir() / r['file'])
         live = info['live']
         g = r['gated']
         if g['overlayUp'] and g['scrolled']:
