@@ -358,8 +358,7 @@ empty.**
 ### The same habit, generalised: state the claim you are making
 
 A probe, a watcher and a measurement all state a claim, and **the claim they
-state must be the one you are making.** Three instances in one session, all
-failing toward a false green:
+state must be the one you are making.** Four instances in one session:
 
 - a watcher on "main moved" when the question was "did the BOT commit" — it
   tripped on my own push and read as the pipeline recovering
@@ -369,13 +368,33 @@ failing toward a false green:
 - a width sum over both children of a row whose entire point is that they sit on
   SEPARATE rows, reporting "OVERFLOWS by 37" for a layout that fits with 84px
   spare
+- an expectation table asserting a CSS selector sat on L9 when the fixture I had
+  retyped put it on L11, reporting "4/6 correct" for a parser that was right on
+  all six
 
 None of these was a wrong answer to the right question. Each was a right answer
 to a question adjacent to the one being asked, which is worse, because the
-number looks fine and nothing about it invites a second look. The probe habit
-says run it once against a case that must violate; this is the same move applied
-to the predicate rather than the data — **if your check cannot distinguish your
-own action from the event you are waiting for, it has not been tested at all.** That is the same move as "a negative test on the pair where the effect is
+number looks fine and nothing about it invites a second look.
+
+**AND THE DIRECTION IS NOT SOMETHING YOU GET TO ASSUME.** Two of the four failed
+toward a false green — the watcher read a dead pipeline as recovered. Two failed
+toward a false defect — the width sum condemned a layout with 84px of room, and
+the expectation table condemned a parser that was correct. Acting on either of
+the last two would have broken working code, which is the failure mode that does
+not announce itself as a failure: you are looking at a number that says
+something is wrong, and being wrong about that feels exactly like being right.
+
+So "measurements fail safe" is not the lesson and cannot be leaned on. The
+lesson is narrower and holds in both directions: a measurement adjacent to the
+claim will send you somewhere, and which way is a property of the mistake, not
+of the fact that you made one. When a probe says a thing you believe is broken,
+that is the moment to check the probe — not only when it says everything is
+fine.
+
+The probe habit says run it once against a case that must violate; this is the
+same move applied to the predicate rather than the data — **if your check cannot
+distinguish your own action from the event you are waiting for, it has not been
+tested at all.** That is the same move as "a negative test on the pair where the effect is
 smallest cannot fail", applied one level earlier. The `bordeaux_2025` control run
 in §2 is what makes the 7 mean something.
 
