@@ -419,16 +419,42 @@ a statement about provenance from a pipeline that no longer runs. The rules do
 not stop being correct; they stop being *production's*, because there is no
 production.
 
-### The question this actually turns on
+### RULED: it is history. The dependency is deleted.
 
-Not "where should the file live". It is: **after the old pipeline retires, is
-"these rules came from production's stylesheet" still a property worth
-asserting, or is it history?** A says yes and pays for it at the root. B says
-yes and gets an assertion that cannot fail. C says it is history and writes that
-down.
+**Leo, this session.** "It is history, not a property. The chain is complete
+without it." B was rejected in the same breath and for the reason it was flagged:
+a reference frozen by definition is an assertion that cannot fail.
 
-**Not resolved here — Leo's call.** §6.5's rule applies either way: prove the
-file dead before deleting it, and it is demonstrably not dead today.
+**Confirmed BEFORE deleting, as ruled.** The 17 `.db-*` lines in the working
+sheet split cleanly:
+
+| | lines | pinned by |
+|---|---:|---|
+| verbatim in production | 10 | the carry-across — `.db-overlay`, `.db-modal*`, `.db-pw-*`, production's long-form auth overlay |
+| **not** in production | 7 | the LOCKED reference — `.db-m`, `.db-logo`, `.db-t`, `.db-s`, `.db-i`, `.db-b`, `.db-e`, the mock's own short-form names |
+
+All seven of the non-matching lines are in `dashboard_redesign.LOCKED.css`, so
+they were never carried and are pinned by the locked-vs-working diff like every
+other line. **None of them moves; all of them stay.**
+
+The carry-across excused **25** added lines in total — those 10 plus the 15-line
+page-footer run. Those 25 are now an explicit literal, `CARRIED_LINES`, in
+`check_mock_deviations.py`, matched **exactly and consumed once each**. The
+production stylesheet is read nowhere in `verify/`.
+
+What that gives up is provenance. What it keeps is falsifiability, which is the
+half that matters after the pipeline retires:
+
+```
+a carried line EDITED       -> FAIL (invented)      a carried line DELETED   -> FAIL (no longer present)
+a carried line DUPLICATED   -> FAIL (used once)     an invented .db-* rule   -> FAIL (invented)
+the production sheet MOVED AWAY ENTIRELY           -> exit 0   <- the point
+```
+
+The last line is the one to read: **the cleanup can now move
+`style/dashboard_v6_8.css` to `legacy/` without darkening the gate the cutover
+leans on.** §6.5's "prove it dead first" is satisfied — it has no readers left
+in `verify/`.
 
 ---
 

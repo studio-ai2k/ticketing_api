@@ -252,3 +252,30 @@ From `HANDOFF_CC3.md` §6, and it earned its place twice more this session:
 > write performed neither. Model compared to model, and it read as clean.
 
 Say what is unverified when it is. That habit is most of why this project works.
+
+### Three more, and the last two are the same family from the tooling side
+
+**Two quantities that mean different things, reported through one number.** The
+adjacent-metric pattern, fourth instance: `projItems` returned `0` both when the
+projection menu was empty and when the locator could not find it. A locator
+fault read as a payload regression for two sessions, and the investigation that
+followed went to the emitter — the one place the defect was not. The repair is
+never a better message; it is a second value. `-1` now means "could not
+identify", and it prints a different sentence. `only_digits_differ` and
+`predicted_stamp()` were the same shape: one number carrying two claims.
+
+**A loud error can still name the symptom rather than the cause.** `check_b1_switch`
+had `v2` hardcoded in THREE places — a dead constant, the payload read, and the
+HTTP URL. Fixing two of the three left the check fetching `/v2/bordeaux.html`,
+which 404s, so the browser evaluated against an empty body and node died on
+`pickMode is not defined`. Nothing was silent and nothing was wrong with
+`pickMode`. **A fix that addresses every instance it found is not a fix that
+addresses every instance** — grep the file for the pattern, not the line.
+
+**A harness produces findings indistinguishable from real ones.** The
+post-cutover-shaped tree reported `series_path(...) -> None`, which reads
+exactly like a cutover break and was `csv_database/` never being linked into the
+tree. The only thing separating a harness fault from a finding is checking the
+harness *before* believing its output — the same discipline as the negative
+test, applied to the thing running the test. If a simulated environment produces
+a failure, the first suspect is the simulation.
