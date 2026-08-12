@@ -271,12 +271,17 @@ jobs:
           cp "api_output/${{ matrix.event.id }}_merged.csv" \
              "data/${{ matrix.event.id }}_merged.csv"
           python scripts/build_series.py
-          # v2/ - the redesign, published alongside production on the same
-          # branch. Path derived here, not from output_filename, which is free
-          # text on 22 rows.
+          # CUTOVER §3(a): pass 0 publishes to the ROOT. It was `v2/<out>` while
+          # the redesign shipped alongside production; the old pipeline's pages
+          # now live in legacy/ and this is the only builder. Path derived here,
+          # not from output_filename, which is free text on 22 rows.
+          #
+          # scripts/cutover.py --apply REFUSES while this still says v2/, because
+          # moving the pages without this leaves production stale within four
+          # hours while every check still passes (§7bis).
           python scripts/build_v2.py --event "${{ matrix.event.id }}" \
             --csv "api_output/${{ matrix.event.id }}_merged.csv" \
-            --out "v2/${{ matrix.event.out }}"
+            --out "${{ matrix.event.out }}"
 
       # N4: M1 skips the rebuild when the CSV is byte-identical, which also
       # freezes the footer's "Données API · HH:MM". That stamp answers "how
@@ -295,14 +300,23 @@ jobs:
         if: steps.change.outputs.changed != 'true' || matrix.event.fetch != 'true'
         run: |
           OUT="${{ matrix.event.out }}"
-          # v2 carries production's footer markup verbatim, so it restamps with
-          # the same call. It is listed here and not left to the rebuild step:
-          # this whole step exists BECAUSE a quiet run skips the rebuild, and
-          # the v2 page is skipped by exactly the same condition. A footer that
-          # exists and never refreshes is worse than none - it asserts a sync
-          # time that stopped being true, which is the class this project keeps
-          # finding, and it was misdiagnosed twice on production before M1.
-          TARGETS="$OUT v2/$OUT"
+          # ONE location since the cutover: the page at the root IS pass 0's.
+          # It used to name the staging copy as well - both halves of a pipeline
+          # that no longer has two. That literal is deliberately NOT repeated in
+          # this comment: check_v2_footer clause 5 greps this step's body as
+          # text, so a comment mentioning it would satisfy the check that is
+          # supposed to track the change. Found by running the check rather than
+          # assuming it would go red.
+          #
+          # This step exists BECAUSE a quiet run skips the
+          # rebuild - a footer that exists and never refreshes is worse than
+          # none, it asserts a sync time that stopped being true, which is the
+          # class this project keeps finding and misdiagnosed twice before M1.
+          #
+          # check_v2_footer clause 5 asserts this from the other side, derived
+          # from pages.pass0_dir() rather than a literal, so it tracks the
+          # change instead of being broken by it.
+          TARGETS="$OUT"
           if [ "${{ matrix.event.fetch }}" = "true" ]; then
             # Fetched, nothing moved. Bump the check time.
             # TZ=Europe/Paris, not bare date: the runner is UTC, so a bare
@@ -387,7 +401,6 @@ jobs:
           name: dashboard-${{ matrix.event.id }}
           path: |
             ${{ matrix.event.out }}
-            v2/${{ matrix.event.out }}
             data/${{ matrix.event.id }}_merged.csv
             series/${{ matrix.event.id }}.json
           if-no-files-found: error
@@ -424,7 +437,17 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- '*.html' ':!dashboard_template.html'
+          # RECURSIVE, and that is what makes the exclusions load-bearing
+          # (CUTOVER §6.4). This is what staged `v2/*.html` before the cutover -
+          # intended, never stated - and it is what would sweep `legacy/*.html`
+          # into every daily commit now. An archive re-staged daily is not an
+          # archive: the frozen pages would keep reappearing in the history as
+          # though something still built them, and their banner would say
+          # otherwise on the same commit.
+          #
+          # Excluded by name with the reason, per §6.4, rather than by a pattern
+          # that happens to miss them.
+          git add -- '*.html' ':!dashboard_template.html' ':!legacy/*.html'
           # The merged CSVs are the state an incremental fetch resumes from.
           # Explicit paths only - data/ also holds Railway's raw uploads, which
           # carry contact details and must never be committed.
@@ -534,10 +557,28 @@ jobs:
               echo "conflicts: $unresolved"
               for f in $unresolved; do
                 case "$f" in
-                  v2/*.html|*.html|series/*.json)
+                  legacy/*)
+                    # BEFORE the artefact branch, and it must stay before it.
+                    # A `case` pattern matches slashes, so `*.html` alone
+                    # matches `legacy/rennes.html` - which would take a side
+                    # arbitrarily and then hand the file to rebuild_pages.py,
+                    # REBUILDING a frozen archive from live data. The banner
+                    # would still say the numbers stopped moving.
+                    #
+                    # A conflict here is not a generated artefact about to be
+                    # overwritten. It is someone editing the archive, and that
+                    # needs a human.
+                    echo "::error::conflict in $f - legacy/ is a frozen \
+                    archive, not a rebuildable artefact"
+                    git rebase --abort || true
+                    exit 1 ;;
+                  *.html|series/*.json)
                     # Take a side ARBITRARILY - it is about to be overwritten by
                     # a rebuild. Which side wins does not matter; that no merge
                     # happens is the whole point.
+                    #
+                    # `v2/*.html` was dropped from this list at cutover: it was
+                    # always redundant, because `case` matches `/` inside `*`.
                     git checkout --ours -- "$f" 2>/dev/null \
                       || git checkout --theirs -- "$f" ;;
                   *)
