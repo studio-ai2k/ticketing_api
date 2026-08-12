@@ -50,7 +50,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
-from pages import v2_pages   # noqa: E402 - CUTOVER 6.3, one page list
+from pages import pass0_pages   # noqa: E402 - CUTOVER 6.3, one page list
 sys.path.insert(0, str(ROOT / 'scripts'))
 MOCK = ROOT / 'redesign' / 'mock' / 'dashboard_v3.39.html'
 
@@ -152,7 +152,7 @@ def main():
         mine = pat.search(src)
         if not mine:
             continue
-        for page in v2_pages():
+        for page in pass0_pages():
             got = pat.search(page.read_text(encoding='utf-8'))
             if got and got.group(1) == mine.group(1):
                 failures.append(f'{page.name}: {n} not substituted')
@@ -173,7 +173,7 @@ def main():
               f'{len(found & STRUCTURAL)} structural, none stray')
 
     # ---- 2. no FOREIGN year on any built page ---------------------------
-    for page in v2_pages():
+    for page in pass0_pages():
         raw = page.read_text(encoding='utf-8')
         m = re.search(r'const D=(\{.*?\});\s*\n', raw, re.DOTALL)
         if not m:

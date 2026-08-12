@@ -643,6 +643,41 @@ Written so someone can *use* the folder, not just identify it:
 
 ---
 
+## 7bis. Irreversible behind reversible — and why the obvious order deadlocks
+
+**A step that cannot be reviewed afterwards goes BEHIND one that can, never
+beside it.** `scripts/cutover.py --apply` refuses while the workflow still
+builds pass 0 to `v2/`, because moving the pages without that leaves production
+stale within four hours **while every check still passes** — pages at root, the
+workflow rebuilding a directory nobody reads, and the page checks looking at the
+wrong place and finding it healthy. A half-state that passes everything is worse
+than a failure.
+
+**But the obvious repair — land the workflow edit first — deadlocks, and worse
+than deadlocks.** The workflow writes production with
+`cp api_output/<id>.html "${{ matrix.event.out }}"` and pass 0 with
+`--out "v2/${{ matrix.event.out }}"`. Point the second at `${{ matrix.event.out }}`
+and both write the same file, pass 0 last — so **the next scheduled run performs
+the cutover by itself**: no `legacy/`, no archive hashes, no version bump, and
+§5's once-only assertion never runs. Four hours, unattended.
+
+Checks-first has the mirror problem: a page check repointed at root is FALSE
+until the pages move.
+
+So there is no ordering of {workflow, checks, pages} in which any one goes
+first. The resolution is not to sequence them but to remove the dependency:
+
+  1. **Make the checks location-agnostic** (`pages.pass0_dir()` → `v2/` if it
+     exists, else root). Correct on both sides, landable today, reversible.
+  2. **The cutover is ONE commit**: the workflow edit and `--apply`'s writes
+     together, since neither is correct without the other.
+
+The principle survives intact — the reversible work still goes first. What
+changes is which work is reversible: not the workflow edit, as first assumed,
+but the checks that had to stop caring.
+
+---
+
 ## 8. Ordering
 
 ```

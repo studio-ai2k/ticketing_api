@@ -65,7 +65,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
-from pages import v2_pages   # noqa: E402 - CUTOVER 6.3, one page list
+from pages import pass0_pages   # noqa: E402 - CUTOVER 6.3, one page list
 V2 = ROOT / 'v2'
 CHROME = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
 D_RE = re.compile(r'const D=(\{.*?\});\s*\n', re.DOTALL)
@@ -134,7 +134,7 @@ const { chromium } = require('playwright');
 
 
 def main():
-    pages = v2_pages()
+    pages = pass0_pages()
     if not pages:
         print('no v2 pages')
         return 1

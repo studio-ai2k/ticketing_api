@@ -76,7 +76,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
-from pages import v2_pages   # noqa: E402 - CUTOVER 6.3, one page list
+from pages import pass0_pages   # noqa: E402 - CUTOVER 6.3, one page list
 sys.path.insert(0, str(ROOT / 'scripts'))
 sys.path.insert(0, str(ROOT))
 
@@ -89,7 +89,7 @@ SERIES_DIR = ROOT / 'series'
 
 
 def pages():
-    for p in v2_pages():
+    for p in pass0_pages():
         m = D_RE.search(p.read_text(encoding='utf-8'))
         if m:
             yield p.name, json.loads(m.group(1))

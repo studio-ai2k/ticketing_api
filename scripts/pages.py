@@ -100,8 +100,32 @@ def pages_in(directory='', root=None, config=None):
     return present, missing
 
 
-def v2_pages(root=None, config=None):
-    """Sorted Paths for every config page under `v2/`. RAISES if one is absent.
+def pass0_dir(root=None):
+    """WHERE PASS 0 PUBLISHES — `v2/` before cutover, the repo root after.
+
+    Named for the pipeline rather than the directory, because the directory is
+    the thing that changes. Before cutover there are two page sets: production
+    at root and pass 0 under `v2/`. After cutover there is one, and it is pass
+    0's, at root.
+
+    Resolving this at call time is what lets the sixteen page checks be correct
+    on BOTH sides of the cutover instead of being repointed on the day. That
+    ordering matters more than it looks: a check repointed at root BEFORE the
+    pages move is false, and one left at `v2/` after they move reads a directory
+    that no longer exists - so there is no moment at which a flag-day edit to
+    sixteen files is safe.
+    """
+    base = Path(root or BASE_DIR)
+    return base / 'v2' if (base / 'v2').is_dir() else base
+
+
+def pass0_pages(root=None, config=None):
+    """Sorted Paths for every config page pass 0 publishes. RAISES if one is absent.
+
+    NOT `v2_pages`, deliberately. A check that keeps a v2 name while reading the
+    repo root tells the next reader there is a v2 half still running, when there
+    is not - the same shape as `CHECKLIST` saying PINNED while `PINNED` was
+    empty. The name follows the pipeline, which does not move.
 
     Raising rather than returning what happens to be there is the whole point of
     replacing the globs. `glob('*.html')` on a directory missing a page returns
@@ -110,10 +134,13 @@ def v2_pages(root=None, config=None):
     that is the finding, and it belongs before the assertions rather than
     hidden among them.
     """
-    present, missing = pages_in('v2', root, config)
+    d = pass0_dir(root)
+    where = d.name + '/' if d != Path(root or BASE_DIR) else 'the repo root'
+    present, missing = pages_in(d.name if d != Path(root or BASE_DIR) else '',
+                                root, config)
     if missing:
         raise SystemExit(
-            'v2/ is missing ' + ', '.join(p.name for p in missing) +
+            where + ' is missing ' + ', '.join(p.name for p in missing) +
             ' - event_config declares ' + str(len(present) + len(missing)) +
             ' active page(s) and only ' + str(len(present)) + ' were built. '
             'Every page assertion would otherwise pass on the smaller set.')

@@ -74,7 +74,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
-from pages import v2_pages   # noqa: E402 - CUTOVER 6.3, one page list
+from pages import pass0_pages   # noqa: E402 - CUTOVER 6.3, one page list
 
 import postprocess_html as pp          # noqa: E402
 import stamp_footer as sf              # noqa: E402
@@ -96,7 +96,7 @@ def items(html):
 
 
 def main():
-    pages = v2_pages()
+    pages = pass0_pages()
     if not pages:
         print('no v2 pages')
         return 1

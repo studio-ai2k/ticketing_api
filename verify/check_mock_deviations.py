@@ -64,7 +64,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'scripts'))
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
-from pages import v2_pages   # noqa: E402 - CUTOVER 6.3, one page list
+from pages import pass0_pages   # noqa: E402 - CUTOVER 6.3, one page list
 LOCK_HTML = ROOT / 'redesign' / 'locked' / 'dashboard_v3.39.LOCKED.html'
 WORK_HTML = ROOT / 'redesign' / 'mock' / 'dashboard_v3.39.html'
 LOCK_CSS = ROOT / 'redesign' / 'locked' / 'dashboard_redesign.LOCKED.css'
@@ -1111,7 +1111,7 @@ def check_pages():
     right under /v2/ and wrong at the root - so a second copy here would go
     stale at cutover and disagree with the build silently.
     """
-    pages = v2_pages()
+    pages = pass0_pages()
     if not pages:
         # Not a silent pass: say which property is unverified and why.
         print('\nno pages under v2/ - the file-vs-page assertion did not run')

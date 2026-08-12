@@ -57,7 +57,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
-from pages import v2_pages   # noqa: E402 - CUTOVER 6.3, one page list
+from pages import pass0_pages   # noqa: E402 - CUTOVER 6.3, one page list
 sys.path.insert(0, str(ROOT / 'scripts'))
 sys.path.insert(0, str(ROOT))
 CHROME = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
@@ -265,7 +265,7 @@ def expected_weekly(event, cand, cutoff, cfg_all, mode='j_minus'):
 
 
 def main():
-    pages = v2_pages()
+    pages = pass0_pages()
     if not pages:
         print('no v2 pages - nothing to check')
         return 1
