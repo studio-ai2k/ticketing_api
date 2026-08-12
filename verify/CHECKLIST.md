@@ -59,6 +59,8 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_duplicate_decls.py` | 4 (disagree; identical; different condition; different property) |
 | `check_b1_switch.py` (diff absence) | 1 (the null coercion restored) |
 | `check_page_anchor.py` | 6 (six empty files — the artefact it was written for; then one per claim, broken separately: truncated mid-payload, payload id swapped to another event, build stamp removed, a `.pg-footer` lost, a second `<style>` added — with a sixth page left untouched as the control) |
+| `cutover.built_page_problems` | 4 (wrong build stamp — the `eac8f37bfef8` the second attempt actually shipped; version bump missed; a `../` survived; both at once — plus a correct post-edit page, which must NOT fail) |
+| `cutover.PRE_BUILD_EDITS` ordering | 1 (drop `postprocess_html.py` from the tuple: predicted stamp reverts `8f54ebb8db3d` → `eac8f37bfef8`. NOTE: the dry run still passed — that is what exposed `predicted_stamp()` being decorative, and is why `built_page_problems` exists) |
 | `cutover.footer_line_ok` | 9 (both directions. FALSE PASS: date `12/08`→`13/08`, version `v6.8`→`v7.0` — the old character-level test returned True for both. FALSE DEFECT: 254 of 1439 clock values misclassified, now 0 of 1440. Plus non-HH:MM clock, key rename, markup beside the fields, the frozen `Données figées` variant moving, and the legitimate clock move — which must NOT fail) |
 | `check_selector.js` (diff absence) | 2 (dead below the % filter; then failing a correct page on `J−25`) |
 | `check_anchor_modes.py` | 2 (the drift claim and the by-construction one) |
