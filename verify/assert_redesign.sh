@@ -8,7 +8,20 @@
 # after the markup/JS pass has landed.
 
 set -uo pipefail
-DIR="${1:-.}"
+# WHERE PASS 0 PUBLISHES, resolved at call time - `v2/` before cutover, the repo
+# root after. The same rule the sixteen python page checks already follow
+# (CUTOVER §6.3), and for the same reason: a gate repointed at root BEFORE the
+# pages move is false, and one left at `v2/` after they move reads a directory
+# that no longer exists, so no flag-day edit is safe on any day.
+#
+# It used to default to `.`, which meant PRODUCTION. That was right while this
+# gate asserted production's markup and is wrong now that it asserts pass 0's -
+# see verify/check_page_anchor.py. An explicit directory is still honoured.
+DIR="${1:-$(python3 -c 'import sys; sys.path.insert(0, "'"$(dirname "$0")"'/../scripts"); import pages; print(pages.pass0_dir())')}"
+if [[ -z "$DIR" ]]; then
+  echo "  FAIL  cannot resolve where pass 0 publishes"; exit 1
+fi
+echo "gate: asserting pass-0 pages in $DIR"
 # CUTOVER 6.3: the page list comes from event_config's active rows, not from a
 # hand-written array here. `scripts/pages.py` is the one declaration; it exits
 # non-zero rather than printing a short list, so a config this cannot read stops
@@ -32,10 +45,32 @@ pass() { echo "  ok    $1"; }
 # count occurrences without tripping `set -e` on a zero match
 count() { grep -o -- "$1" "$2" 2>/dev/null | wc -l | tr -d ' '; }
 
+# Pages that failed the anchor. Every later loop skips them: an absence
+# assertion on a page that is not a whole dashboard is not a pass, and printing
+# it as one beside a real failure is how 396 green lines came to describe six
+# empty files.
+ANCHOR_FAILED=""
+
 for f in "${FILES[@]}"; do
   p="$DIR/$f"
   echo "── $f"
-  if [[ ! -f "$p" ]]; then fail "missing file"; continue; fi
+  if [[ ! -f "$p" ]]; then fail "missing file"; ANCHOR_FAILED="$ANCHOR_FAILED $f"; continue; fi
+
+  # ---- 0. THE ANCHOR — before any assertion that could pass vacuously ----
+  # 174 of this gate's 396 assertions passed against six ZERO-BYTE files.
+  # Absence assertions hold on a page containing nothing, and so does every
+  # count whose baseline is derived from the page itself. This says the page is
+  # a whole dashboard and is its own event, so the rest has an artefact to be
+  # true of. See verify/check_page_anchor.py.
+  anchor_why="$(python3 "$(dirname "$0")/check_page_anchor.py" "$p" 2>&1 >/dev/null)"
+  anchor_n="$(python3 "$(dirname "$0")/check_page_anchor.py" "$p" 2>/dev/null)"
+  if [[ "$anchor_n" != "0" ]]; then
+    fail "NOT A COMPLETE DASHBOARD — every assertion below would be vacuous:"
+    while IFS= read -r line; do [[ -n "$line" ]] && echo "          $line"; done <<< "$anchor_why"
+    ANCHOR_FAILED="$ANCHOR_FAILED $f"
+    continue
+  fi
+  pass "anchored: whole, stamped, and its own event"
 
   # ---- 1. old class names must be gone (the rename, section 3) ----
   for old in details-toggle details-panel yoy-badge session-sw; do
@@ -130,6 +165,9 @@ echo "── DEPLOY 2"
 for f in "${FILES[@]}"; do
   p="$DIR/$f"
   [[ -f "$p" ]] || continue
+  # Skipped rather than asserted: see the anchor at the top. A page that is
+  # not a whole dashboard makes every absence assertion below meaningless.
+  [[ " $ANCHOR_FAILED " == *" $f "* ]] && continue
 
   for m in 'class="proj-grid"' 'class="chart-tabs"' 'class="chart-tab"' \
            'id="proj-day' 'id="proj-logique"' 'class="chart-subtitle"'; do
@@ -194,6 +232,9 @@ echo "── DEPLOY 3"
 for f in "${FILES[@]}"; do
   p="$DIR/$f"
   [[ -f "$p" ]] || continue
+  # Skipped rather than asserted: see the anchor at the top. A page that is
+  # not a whole dashboard makes every absence assertion below meaningless.
+  [[ " $ANCHOR_FAILED " == *" $f "* ]] && continue
 
   # --- suivi ---
   for sep in sep-prev-days sep-prev-weeks; do

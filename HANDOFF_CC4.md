@@ -9,10 +9,25 @@ Production is the old pipeline. Root pages carry `<!-- shared:… -->` and
 production markup; `v2/` holds six pass-0 pages. Nothing is half-landed.
 
 ```
-bash verify/assert_redesign.sh .
+bash verify/assert_redesign.sh        # CC4: no argument. It now resolves where
+                                      # pass 0 publishes, like every other page
+                                      # check (§6.3). `.` meant production, which
+                                      # is no longer what this gate asserts.
+python3 verify/check_page_anchor.py   # CC4: added. Run it first if the gate is red
 python3 verify/check_build_stamp.py
 python3 scripts/cutover.py            # dry run, writes nothing
 ```
+
+**CC4 correction to §0's `main`:** confirm the tree with
+`git ls-remote origin main`, not a local ref. A stale local `main` at `273457f`
+is an unrelated "Add files via upload" root that DELETES the whole `verify/`
+suite; CC3 hit it too. The real `origin/main` carries all six root pages, `v2/`,
+`verify/` and `scripts/`.
+
+**The dry run is RED as of CC4, and correctly so.** It reports the §3(b2)
+version bump landing after the build that stamps it — the ordering bug named in
+§3 below, now surfaced by an assertion instead of by a reader. See
+`verify/P4_KEEP_DROP.md`.
 
 Run them first. Not because they are expected to fail, but because a handoff
 that says "green" is a claim about a tree you have not seen.

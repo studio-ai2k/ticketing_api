@@ -58,6 +58,8 @@ Checks in this file that have passed step 2, with the failure modes exercised:
 | `check_source_order.py` | 4 (must-flag; correct order; lower specificity; masked) + a new defeat still fails while pinned |
 | `check_duplicate_decls.py` | 4 (disagree; identical; different condition; different property) |
 | `check_b1_switch.py` (diff absence) | 1 (the null coercion restored) |
+| `check_page_anchor.py` | 6 (six empty files — the artefact it was written for; then one per claim, broken separately: truncated mid-payload, payload id swapped to another event, build stamp removed, a `.pg-footer` lost, a second `<style>` added — with a sixth page left untouched as the control) |
+| `cutover.footer_line_ok` | 9 (both directions. FALSE PASS: date `12/08`→`13/08`, version `v6.8`→`v7.0` — the old character-level test returned True for both. FALSE DEFECT: 254 of 1439 clock values misclassified, now 0 of 1440. Plus non-HH:MM clock, key rename, markup beside the fields, the frozen `Données figées` variant moving, and the legitimate clock move — which must NOT fail) |
 | `check_selector.js` (diff absence) | 2 (dead below the % filter; then failing a correct page on `J−25`) |
 | `check_anchor_modes.py` | 2 (the drift claim and the by-construction one) |
 | `check_v2_footer.py` (frozen/live variant) | 2 (a finished edition rebuilt to the live footer — the regression I shipped; and a live edition given a frozen one) |

@@ -226,41 +226,116 @@ def build_root_pages(outdir):
     return built
 
 
-def only_digits_differ(a, b):
-    """True when two lines differ ONLY in digit runs.
+FOOT_PAIR_RE = re.compile(
+    r'<span class="pgf-k">(.*?)</span><span class="pgf-v">(.*?)</span>')
+FOOT_VER_RE = re.compile(r'<span class="pgf-ver">(.*?)</span>')
+# The ONE footer field that legitimately moves between the v2 build and the
+# root build. Measured across all six pages: `Dernier billet` is data-derived
+# and identical, `Données figées` is the frozen variant and identical, the
+# brand and every SVG are identical. Only this one differs, and only in HH:MM.
+CLOCK_KEY = 'Données API'
+CLOCK_RE = re.compile(r'^\d{2}:\d{2}$')
+CLOCK_MASK = re.compile(
+    r'(<span class="pgf-k">' + CLOCK_KEY + r'</span><span class="pgf-v">)'
+    r'[^<]*(</span>)')
+VER_MASK = re.compile(r'(<span class="pgf-ver">)[^<]*(</span>)')
 
-    §5 asks for "exactly one differing line". Measured, it is THREE - the build
-    stamp and the two footer items, which carry a build-time clock, so the root
-    pages are necessarily built at a different minute than the v2 pages were.
-    "Two footer lines differ" would be the loose repair, and it would pass a
-    footer whose DATE or EVENT NAME had also changed. So the difference is
-    asserted at character level: every changed segment, on both sides, must be
-    digits and nothing else.
+
+def predicted_version():
+    """The footer version string AFTER the bump, from the edited source.
+
+    The mirror of predicted_stamp(), and for the same reason: §3(b2) bumps
+    DASHBOARD_VERSION during the cutover, so the footer version moves at the one
+    moment the §5 comparison exists. Predicted here and then asserted, rather
+    than absorbed - see footer_line_ok's docstring for what absorbing it cost.
     """
-    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a, b).get_opcodes():
-        if tag == 'equal':
-            continue
-        if not (a[i1:i2].isdigit() or not a[i1:i2]):
-            return False
-        if not (b[j1:j2].isdigit() or not b[j1:j2]):
-            return False
-    return True
+    src = (BASE_DIR / 'scripts' / 'postprocess_html.py').read_text(encoding='utf-8')
+    m = re.search(r"DASHBOARD_VERSION = '([\d.]+)'", src)
+    if not m:
+        raise SystemExit('cutover: cannot read DASHBOARD_VERSION from '
+                         'postprocess_html.py - the version cannot be predicted, '
+                         'so the footer comparison cannot be asserted.')
+    return 'v7.0' if m.group(1) == '6.8' else f'v{m.group(1)}'
 
 
-def classify(diff):
-    """(stamp_pairs, clock_pairs, unexplained) over a unified diff's -/+ lines."""
+def footer_line_ok(a, b, want_ver):
+    """(ok, reason) for a footer line that may differ ONLY in the build clock.
+
+    REPLACES a character-level "every changed segment is digits" test, which was
+    wrong in BOTH directions - and the tightening that produced it was itself
+    the cause, because a date is digits too:
+
+      FALSE PASS. `12/08 · 14:33` -> `13/08 · 14:33` returned True, as did
+      `v6.8` -> `v7.0`. §5 names a changed DATE as the exact thing the check
+      exists to prevent, and the §3(b2) version bump would have been absorbed
+      as "clock digits" inside the one assertion that cannot be re-run.
+
+      FALSE DEFECT. difflib aligns whole lines, so a replace span can straddle
+      the `:` in a clock: measured against the shipped `14:48`, 254 of the 1439
+      possible HH:MM values classified as UNEXPLAINED. A CORRECT cutover failed
+      about one run in six per page, presenting as two footer lines that look
+      identical - whose obvious response is "re-run, it's green", on the one
+      assertion §5 says must never be waved through.
+
+    So the difference is addressed by FIELD rather than by character. The footer
+    is structured markup; the clock lives in a named field, and every other
+    field must be byte-identical. Everything OUTSIDE the two mutable fields is
+    then compared as a whole string, because a check that only reads the fields
+    it knows about is blind to any markup change beside them.
+    """
+    ka, kb = FOOT_PAIR_RE.findall(a), FOOT_PAIR_RE.findall(b)
+    if [k for k, _ in ka] != [k for k, _ in kb]:
+        return False, (f'footer keys changed: {[k for k, _ in ka]} -> '
+                       f'{[k for k, _ in kb]}')
+    if not ka:
+        return False, 'no pgf-k/pgf-v pairs in a line that looks like a footer'
+    for (k, va), (_, vb) in zip(ka, kb):
+        if k == CLOCK_KEY:
+            if not (CLOCK_RE.match(va) and CLOCK_RE.match(vb)):
+                return False, (f'{k}: {va!r} -> {vb!r}, and the build clock must '
+                               f'be HH:MM on BOTH sides')
+        elif va != vb:
+            return False, (f'{k}: {va!r} -> {vb!r}. This field does not carry '
+                           f'the build clock, so it must not move.')
+    va_, vb_ = FOOT_VER_RE.findall(a), FOOT_VER_RE.findall(b)
+    if len(va_) != 1 or len(vb_) != 1:
+        return False, f'{len(va_)} -> {len(vb_)} .pgf-ver span(s), want 1 each'
+    if vb_[0] != want_ver:
+        return False, (f'footer version is {vb_[0]!r}, want {want_ver!r}. The '
+                       f'§3(b2) bump must land BEFORE the build that stamps it '
+                       f'- the same ordering rule as the PAGE_PATHS edit.')
+    ma = VER_MASK.sub(r'\1@V@\2', CLOCK_MASK.sub(r'\1@C@\2', a))
+    mb = VER_MASK.sub(r'\1@V@\2', CLOCK_MASK.sub(r'\1@C@\2', b))
+    if ma != mb:
+        return False, 'the footer differs outside the build clock and the version'
+    return True, ''
+
+
+def classify(diff, want_ver):
+    """(stamp_pairs, clock_pairs, unexplained) over a unified diff's -/+ lines.
+
+    `unexplained` carries the REASON each line was rejected. The old version
+    returned the line pair alone, so a rejected footer printed as two strings
+    identical for their first 104 columns and named nothing - which is how a
+    false defect here reads as noise to be re-run rather than as a finding.
+    """
     olds = [l[1:] for l in diff if l.startswith('-')]
     news = [l[1:] for l in diff if l.startswith('+')]
     stamp, clock, other = 0, 0, []
     for a, b in zip(olds, news):
         if stamp_line(a) and stamp_line(b):
             stamp += 1
-        elif 'pg-footer' in a and 'pg-footer' in b and only_digits_differ(a, b):
-            clock += 1
+        elif 'pg-footer' in a and 'pg-footer' in b:
+            ok, why = footer_line_ok(a, b, want_ver)
+            if ok:
+                clock += 1
+            else:
+                other.append((a, b, why))
         else:
-            other.append((a, b))
+            other.append((a, b, 'not the build stamp and not a footer line'))
     if len(olds) != len(news):
-        other.append(('<line count differs>', f'{len(olds)} vs {len(news)}'))
+        other.append(('<line count differs>', f'{len(olds)} vs {len(news)}',
+                      'a line was added or removed, not changed'))
     return stamp, clock, other
 
 
@@ -429,6 +504,8 @@ def main():
         built = build_root_pages(tmp)
 
         want_stamp = predicted_stamp()
+        want_ver = predicted_version()
+        print(f'EXPECTED FOOTER VERSION AFTER THE BUMP: {want_ver}  (§3(b2))')
         print(f'EXPECTED STAMP AFTER THE EDIT: {want_stamp}')
         print(f'  today: {stamp_line(v2_snap[names[0]])}')
         print('  computed from build_v2.py AS THE CUTOVER LEAVES IT, not '
@@ -446,16 +523,29 @@ def main():
             here = stamp_line(new_html)
             if here:
                 new_html = new_html.replace(here, want_stamp)
+            # POSITIVE, not via the diff. classify() only ever sees lines that
+            # DIFFER, so a page that missed the bump would carry v6.8 on both
+            # sides, produce an identical footer line, never reach the version
+            # test, and pass. The blindness the diff has is exactly the one the
+            # bump would land in, so the version is asserted on the built page
+            # directly, every page, whether or not anything differs.
+            vers = FOOT_VER_RE.findall(new_html)
+            if vers != [want_ver] * 2:
+                failures.append(n)
+                print(f'  FAIL  {n}: footer version(s) {vers}, want '
+                      f'{[want_ver] * 2} - §3(b2)')
+                continue
             diff = compare(n, new_html, v2_snap[n], bgs[n])
-            stamp, clock, other = classify(diff)
+            stamp, clock, other = classify(diff, want_ver)
             if stamp == 1 and not other:
                 print(f'  ok    {n}: {stamp} build stamp + {clock} footer '
-                      f'line(s) differing in clock digits only, nothing else')
+                      f'line(s) differing in the build clock only, nothing else')
             else:
                 failures.append(n)
                 print(f'  FAIL  {n}: {stamp} stamp, {clock} clock-only, '
                       f'{len(other)} UNEXPLAINED')
-                for a, b in other[:3]:
+                for a, b, why in other[:3]:
+                    print(f'          why: {why}')
                     print(f'          - {a[:104]}')
                     print(f'          + {b[:104]}')
         print()
@@ -522,11 +612,18 @@ def main():
                     if '../' in raw:
                         bad.append(f'{n}: {raw.count("../")} `../` survived the edit')
                         continue
-                    st, ck, other = classify(compare(n, raw, v2_snap[n], bgs[n]))
+                    vers = FOOT_VER_RE.findall(raw)
+                    if vers != [want_ver] * 2:
+                        bad.append(f'{n}: footer version(s) {vers}, want '
+                                   f'{[want_ver] * 2} - §3(b2)')
+                        continue
+                    st, ck, other = classify(
+                        compare(n, raw, v2_snap[n], bgs[n]), want_ver)
                     if st == 1 and not other:
                         print(f'  ok    {n}: {st} stamp + {ck} clock-only, 0 `../`')
                     else:
-                        bad.append(f'{n}: {st} stamp, {len(other)} unexplained')
+                        bad.append(f'{n}: {st} stamp, {len(other)} unexplained'
+                                   + ''.join(f'\n      {w}' for _, _, w in other[:3]))
                 if bad:
                     raise SystemExit('cutover: the post-edit build does not '
                                      'match:\n  ' + '\n  '.join(bad))
