@@ -69,8 +69,18 @@ Two mitigations, both priced and neither built:
       that ever stops being true — an asset pipeline, a CDN, a generated image
       — they belong in the set.
 
-SCOPE: BOTH SETS, AND THE NOTE THAT USED TO BE HERE WAS FALSE
---------------------------------------------------------------
+SCOPE: THE SETS THAT EXIST — TWO NOW, ONE AFTER CUTOVER
+--------------------------------------------------------
+While `v2/` exists there are genuinely two page sets and both are audited.
+After cutover the pages at root ARE pass 0's, production's set has no members,
+and **the production half is not skipped — it is not constructed.** A clause
+reporting "nothing to check, by design" is indistinguishable from one that is
+working, which is the PINNED-when-empty shape this project has now found three
+times: `CHECKLIST` saying PINNED with `PINNED = set()`, a `v2_pages` function
+reading the repo root, and this.
+
+AND THE NOTE THAT USED TO BE HERE WAS FALSE
+--------------------------------------------
 This said: *"`build_v2.py` runs unconditionally in the workflow, so a v2 page
 cannot go stale — the exemption is a production-only property."* It was wrong
 when written and wrong in exactly the way this check exists to catch — a
@@ -107,7 +117,8 @@ sys.path.insert(0, str(ROOT / 'scripts'))
 
 import build_v2  # noqa: E402
 import postprocess_html as pp  # noqa: E402
-from pages import page_names  # noqa: E402 - CUTOVER 6.3, one page list
+import pages  # noqa: E402 - CUTOVER 6.3
+from pages import page_names  # noqa: E402
 
 # CUTOVER 6.3. This was a hand-written six-name tuple - the same hazard as the
 # page->event map that was wrong in all six rows, sitting in the layer whose job
@@ -158,10 +169,31 @@ def audit(label, pages, prefix, want, assets, stamp_re):
 
 
 def main():
-    failures = audit('production', PAGES, '', pp.shared_hash(ROOT),
-                     pp.SHARED_ASSETS, pp.STAMP_RE)
-    failures += audit('v2', PAGES, 'v2/', build_v2.v2_shared_hash(ROOT),
-                      build_v2.V2_SHARED_ASSETS, build_v2.V2_STAMP_RE)
+    # ONE SET AFTER CUTOVER, and the production half does not survive as a
+    # branch reporting "nothing to check, by design". A half that can never fire
+    # is the PINNED-when-empty shape, and this project has now found it three
+    # times: CHECKLIST saying PINNED with `PINNED = set()`, a v2-named function
+    # reading the repo root, and this. A clause that always passes is
+    # indistinguishable from one that is working.
+    #
+    # So the sets are derived from what EXISTS. While `v2/` is there, both are
+    # real and both are audited: production pages built by run.py + postprocess,
+    # carrying `shared:`, and pass 0's carrying `shared-v2:`. Once `v2/` is gone
+    # the pages at root ARE pass 0's, production's set has no members, and the
+    # production half is not skipped - it is not constructed.
+    sets = []
+    if pages.pass0_dir(ROOT) != ROOT:
+        sets.append(('production', '', pp.shared_hash(ROOT),
+                     pp.SHARED_ASSETS, pp.STAMP_RE))
+        sets.append(('pass 0', 'v2/', build_v2.v2_shared_hash(ROOT),
+                     build_v2.V2_SHARED_ASSETS, build_v2.V2_STAMP_RE))
+    else:
+        sets.append(('pass 0', '', build_v2.v2_shared_hash(ROOT),
+                     build_v2.V2_SHARED_ASSETS, build_v2.V2_STAMP_RE))
+
+    failures = []
+    for label, prefix, want, assets, rx in sets:
+        failures += audit(label, PAGES, prefix, want, assets, rx)
 
     if failures:
         print(f'FAILED: {len(failures)} page(s) built from stale shared assets.')
@@ -170,7 +202,7 @@ def main():
         print('`if: changed == true` step, so an event whose CSV did not move is')
         print('skipped on BOTH sides - which is the exemption this catches.')
         return 1
-    print(f'all {2 * len(PAGES)} page(s) built from their current shared set')
+    print(f'all {len(sets) * len(PAGES)} page(s) built from their current shared set')
     return 0
 
 
