@@ -392,6 +392,39 @@ this pattern keeps shipping. Three real bugs came from it.
 
 Anything ranked REDESIGN deserves a look. Anything at 0% is layering and fine.
 
+## Editing `event_config.csv` — do it at byte level, never through `csv`
+
+**Authorised to change one field is not authorised to reformat the file.**
+
+The file has NO BOM and CRLF line endings. Round-tripping it through
+`csv.DictReader`/`csv.DictWriter` with `encoding='utf-8-sig'` — the obvious
+thing to reach for, and what the next person will reach for, because every
+reader in this repo opens it that way — ADDS a BOM on write. `run.load_event_config`
+then raises `KeyError: 'event_id'`, because the first header cell is now
+`\ufeffevent_id`. Every build stops.
+
+Read the bytes, split on `\r\n`, find the column index from the header row,
+replace that one field, join and write back:
+
+    raw = Path('event_config.csv').read_bytes()
+    lines = raw.split(b'\r\n')
+    col = lines[0].decode().split(',').index('login_bg_image')
+    ...
+    Path('event_config.csv').write_bytes(b'\r\n'.join(lines))
+
+Then prove the edit was surgical, both directions:
+
+    git diff --numstat event_config.csv     # 1 1, never more
+    python3 -c "import run; print(len(run.load_event_config('event_config.csv')))"
+
+and after reverting, `git diff --quiet event_config.csv` must be silent — the
+file byte-identical, not merely equivalent.
+
+The event rows are also DUPLICATED: `geneve_2026`, `bordeaux_2026` and others
+appear more than once, with the trailing copies carrying an empty
+`event_name`. Match on a non-empty name, or a rewrite will change a row nothing
+reads and appear to do nothing.
+
 ## After changing the login overlay or the template's `<style>`
 
 The background is checked by `assert_redesign.sh` via `check_login_bg.py`, and
