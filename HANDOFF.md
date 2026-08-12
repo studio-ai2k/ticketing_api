@@ -1226,6 +1226,7 @@ Carried forward, not fixed. Each needs a decision or an input we do not have.
 | O2 | ~~a 2h DICE/Shotgun skew~~ **— measured 2026-08-08, and there is no cross-platform skew.** Both streams share a clock; that clock is UTC | a decision on displaying Paris local |
 | O7 | Shotgun `GET /events` exists (400, not 404) and nobody has called it | a decision — it may carry the capacity/phase metadata `/tickets` lacks |
 | O8 | Whether DICE `viewer.orders` already nets out returns (28 on `rennes_2026`) | a reconciliation |
+| O12 | **Shotgun has no pagination-completeness assertion** — it exposes no total, so DICE's `totalCount` comparison (Trap #24) has no Shotgun counterpart. 8,391 of `epk_2026`'s 10,781 tickets are unasserted. A stored-vs-fetched shrink detector is the only route, and it needs a tolerance | **a measurement of real refund/cancellation churn** — picking a threshold before measuring is the thing we keep declining to do |
 | O3 | `dice_url` form is wrong on the platform cards | Leo |
 | O4 | `geneve_2026 dice_mio_id` deliberately not added — data-loss risk | Leo (A6) |
 | O5 | General user-facing launch-vs-event anchor toggle | not specced |
@@ -3773,6 +3774,14 @@ There is no total to compare against, and the reconciliation at the H3 site only
 runs on incremental fetches and only when `probe['total']` is set — which is
 never, today. Saying that plainly is better than implying both platforms are now
 covered. DICE is covered; Shotgun is guarded against loops and nothing else.
+
+**That gap is O12, logged rather than built**, and it is the honest counterpart
+to DICE being covered: 8,391 of `epk_2026`'s 10,781 tickets come from Shotgun
+and nothing asserts they are all there. A stored-vs-fetched shrink detector is
+the only route without a server-side total, and it needs a tolerance, because
+refunds and cancellations legitimately shrink a re-fetch. Picking that number
+before measuring real churn is the move this project keeps declining to make, so
+it stays open until someone measures.
 
 ### Broken, then fixed — five cases, each independently
 
