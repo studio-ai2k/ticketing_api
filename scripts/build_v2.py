@@ -49,6 +49,40 @@ sys.path.insert(0, str(BASE_DIR / 'scripts'))
 MOCK = BASE_DIR / 'redesign' / 'mock' / 'dashboard_v3.39.html'
 SHEET = BASE_DIR / 'redesign' / 'style' / 'dashboard_redesign.css'
 
+# ---------------------------------------------------------- build stamp --
+# P1. `postprocess_html` writes `<!-- shared:HASH -->` immediately before
+# `</body>`, which sits INSIDE this file's `</nav>`..`</body>` seam - so pass 0
+# splices it away and a v2 page carried no stamp at all. Production's staleness
+# guard therefore had nothing to read on v2, and Trap #17 was live there:
+# v2/bordeaux.html and v2/parisxxl.html are finished events whose CSV never
+# moves, so the conditional build step skips them and they accumulate the exact
+# exemption the stamp exists to catch.
+#
+# THE V2 SET IS A SUPERSET. Pass 0 builds ON a postprocessed page, so everything
+# production is made of still applies - hence `+ SHARED_ASSETS` rather than a
+# fresh list. On top: the mock, the redesign sheet, and the three scripts that
+# turn one into the other.
+#
+# MOCK and SHEET are reused rather than restated so a mock version bump moves
+# the set with it. The mock's filename carries its version (dashboard_v3.39),
+# so a literal here would silently start hashing `<absent>` the day it changes.
+V2_SHARED_ASSETS = postprocess_html.SHARED_ASSETS + (
+    str(MOCK.relative_to(BASE_DIR)),
+    str(SHEET.relative_to(BASE_DIR)),
+    'scripts/build_v2.py',
+    'scripts/build_series.py',
+    'scripts/dashboard_payload.py',
+)
+# A DISTINCT MARKER, not the same one. `shared:` and `shared-v2:` are different
+# claims about different asset sets, and STAMP_RE cannot match the v2 form - so
+# a v2 page can never satisfy the production check by accident, and a production
+# page can never satisfy the v2 one.
+V2_STAMP_RE = re.compile(r'<!-- shared-v2:([0-9a-f]{12}) -->')
+
+
+def v2_shared_hash(root=None):
+    return postprocess_html.shared_hash(root or BASE_DIR, V2_SHARED_ASSETS)
+
 STYLE_RE = re.compile(r'<style>.*?</style>', re.DOTALL)
 PAYLOAD_RE = re.compile(r'(const D=)(\{.*?\})(;\s*\n)', re.DOTALL)
 # `const D` was not the only payload in the mock. `LG` drove the "Logique de
@@ -566,8 +600,21 @@ def main():
     out.parent.mkdir(parents=True, exist_ok=True)
     ident = event_identity(cfg_all[a.event], cfg_all.get(ref),
                            (cfg_all.get(ref) or {}).get('event_name', ref))
-    out.write_text(apply_v2_body(base.read_text(encoding='utf-8'), D, ident),
-                   encoding='utf-8')
+    html = apply_v2_body(base.read_text(encoding='utf-8'), D, ident)
+
+    # P1. Re-emit the stamp the seam removed, over the v2 set. Asserted rather
+    # than assumed: `</body>` appears once and the production stamp is gone,
+    # which is what makes this a REPLACEMENT rather than a second stamp nobody
+    # noticed was redundant.
+    if html.count('</body>') != 1:
+        raise SystemExit(f'pass 0: {html.count("</body>")} </body> tags, want 1 '
+                         f'- the build stamp needs exactly one place to go')
+    if postprocess_html.STAMP_RE.search(html):
+        raise SystemExit('pass 0: a production build stamp survived the seam. '
+                         'It would claim the production asset set for a page '
+                         'built from the wider v2 one.')
+    html = html.replace('</body>', f'<!-- shared-v2:{v2_shared_hash()} -->\n</body>', 1)
+    out.write_text(html, encoding='utf-8')
     print(f'{out}: {out.stat().st_size / 1024:.0f} KB  (cutoff {cutoff}, ref {ref or "none"})')
     return 0
 

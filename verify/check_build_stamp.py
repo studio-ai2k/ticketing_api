@@ -69,11 +69,33 @@ Two mitigations, both priced and neither built:
       that ever stops being true — an asset pipeline, a CDN, a generated image
       — they belong in the set.
 
-SCOPE: PRODUCTION ONLY
-----------------------
-`build_v2.py` runs unconditionally in the workflow, so a v2 page cannot go
-stale — the exemption is a production-only property. If that ever changes, this
-check has to grow a v2 half, and the shared set for v2 is a different list.
+SCOPE: BOTH SETS, AND THE NOTE THAT USED TO BE HERE WAS FALSE
+--------------------------------------------------------------
+This said: *"`build_v2.py` runs unconditionally in the workflow, so a v2 page
+cannot go stale — the exemption is a production-only property."* It was wrong
+when written and wrong in exactly the way this check exists to catch — a
+true-sounding statement about the wrong mechanism.
+
+`build_v2.py` runs INSIDE the conditional step:
+
+    .github/workflows/daily-dashboards.yml:239   - name: Build dashboard
+                                          240     if: steps.change.outputs.changed == 'true'
+
+So Trap #17 was live in v2, and worse than in production, because **v2 pages
+carried no stamp at all**: `postprocess_html` writes it immediately before
+`</body>`, which falls inside pass 0's `</nav>`..`</body>` seam and was spliced
+away. There was nothing for a check to read, so the gap could not be seen from
+the artefact — only from the workflow.
+
+`v2/bordeaux.html` and `v2/parisxxl.html` are the two finished events. Their
+CSVs never move, so the conditional never fires for them, and every shared
+change between the redesign starting and now missed those two files.
+
+The v2 set is a SUPERSET, not a different list: pass 0 builds on a
+postprocessed page, so everything production is made of still applies, plus the
+mock, the redesign sheet, and `build_v2` / `build_series` / `dashboard_payload`.
+It is imported from `build_v2.V2_SHARED_ASSETS` for the same reason the
+production one is imported rather than restated.
 """
 
 import subprocess
@@ -83,49 +105,60 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
 
+import build_v2  # noqa: E402
 import postprocess_html as pp  # noqa: E402
 
 PAGES = ('parisxxl.html', 'bordeaux.html', 'epk.html', 'bordeaux_oct.html',
          'geneve.html', 'rennes.html')
 
 
-def main():
-    want = pp.shared_hash(ROOT)
-    print(f'shared assets hash to {want}')
-    for rel in pp.SHARED_ASSETS:
+def audit(label, pages, prefix, want, assets, stamp_re):
+    print(f'{label}: {len(assets)} shared asset(s) hash to {want}')
+    for rel in assets:
         if not (ROOT / rel).exists():
-            print(f'  warning: {rel} is in SHARED_ASSETS and does not exist')
+            print(f'  warning: {rel} is in the {label} set and does not exist')
 
     failures = []
-    for name in PAGES:
-        page = ROOT / name
+    for name in pages:
+        rel = f'{prefix}{name}'
+        page = ROOT / rel
         if not page.exists():
-            print(f'  FAIL  {name}: missing')
-            failures.append(name)
+            print(f'  FAIL  {rel}: missing')
+            failures.append(rel)
             continue
-        m = pp.STAMP_RE.search(page.read_text(encoding='utf-8'))
+        m = stamp_re.search(page.read_text(encoding='utf-8'))
         if not m:
-            failures.append(name)
-            print(f'  FAIL  {name}: no build stamp. It predates the stamp, so')
+            failures.append(rel)
+            print(f'  FAIL  {rel}: no build stamp. It predates the stamp, so')
             print(f'        it also predates everything else since - rebuild it.')
         elif m.group(1) != want:
-            failures.append(name)
-            print(f'  FAIL  {name}: built from shared assets {m.group(1)}, not '
+            failures.append(rel)
+            print(f'  FAIL  {rel}: built from shared assets {m.group(1)}, not '
                   f'{want}.')
             print(f'        Something it renders with has changed since it was')
             print(f'        built. This page is frozen because its own CSV has')
             print(f'        not moved, which is the wrong trigger for a shared')
             print(f'        change. Rebuild it.')
         else:
-            print(f'  ok    {name}')
-
+            print(f'  ok    {rel}')
     print()
+    return failures
+
+
+def main():
+    failures = audit('production', PAGES, '', pp.shared_hash(ROOT),
+                     pp.SHARED_ASSETS, pp.STAMP_RE)
+    failures += audit('v2', PAGES, 'v2/', build_v2.v2_shared_hash(ROOT),
+                      build_v2.V2_SHARED_ASSETS, build_v2.V2_STAMP_RE)
+
     if failures:
         print(f'FAILED: {len(failures)} page(s) built from stale shared assets.')
         print('A change to shared code or shared CSS forces a FULL rebuild, not')
-        print('an incremental one.')
+        print('an incremental one. Both builds run inside the workflow\'s')
+        print('`if: changed == true` step, so an event whose CSV did not move is')
+        print('skipped on BOTH sides - which is the exemption this catches.')
         return 1
-    print(f'all {len(PAGES)} production page(s) built from the current shared set')
+    print(f'all {2 * len(PAGES)} page(s) built from their current shared set')
     return 0
 
 

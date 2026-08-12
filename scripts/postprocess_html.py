@@ -2020,16 +2020,23 @@ SHARED_ASSETS = (
 STAMP_RE = re.compile(r'<!-- shared:([0-9a-f]{12}) -->')
 
 
-def shared_hash(root=None):
+def shared_hash(root=None, assets=None):
     """One hash over every shared asset, content not mtime.
 
     mtime moves on a checkout and says nothing; content is what the page was
     built from. Missing files hash as absent rather than raising, so a renamed
     asset changes the stamp instead of crashing the check.
+
+    `assets` exists so pass 0 can hash the V2 set - a superset of this one -
+    through the SAME function rather than a copy of it. A v2 page is built on a
+    postprocessed page, so everything production is made of still applies, plus
+    the mock, the redesign sheet and the three scripts that build it. Restating
+    six lines of hashing in build_v2.py would have risked the two drifting in
+    the algorithm rather than in the list, which is the harder drift to see.
     """
     root = Path(root or BASE_DIR)
     h = hashlib.sha256()
-    for rel in SHARED_ASSETS:
+    for rel in (SHARED_ASSETS if assets is None else assets):
         f = root / rel
         h.update(rel.encode())
         h.update(f.read_bytes() if f.exists() else b'<absent>')
