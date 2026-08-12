@@ -294,14 +294,11 @@ def event_identity(cfg, ref_cfg, ref_label):
 # the replaced region - so these are applied to the whole page, not the region.
 # /v2/ is one directory deeper, so every relative path resolves one level wrong.
 # The nav logo works only because it happens to be an absolute URL.
-PAGE_PATHS = [
-    ('src="LOGO_ROND_JAUNE.png"', 'src="../LOGO_ROND_JAUNE.png"'),
-    # B1's series files. Third asset class to go one directory deep, and the
-    # only one that would fail at RUNTIME rather than at first paint - a broken
-    # image is obvious, a fetch that 404s renders as "comparaison indisponible"
-    # on every pick. Emitted as a root-relative template and rewritten here.
-    ('"series/{id}.json"', '"../series/{id}.json"'),
-]
+# CUTOVER §3(a): DELETED, not made conditional. Every entry rewrote a
+# root-relative original into a `../` form, and the pages now land at root - so
+# the correct output IS the input and the loop is identity. An empty list kept
+# "for later" is a location-dependence nobody can see any more.
+PAGE_PATHS = []
 # P3. `url('upload.JPG')` USED TO BE THE SECOND ENTRY ABOVE, and that is the
 # defect: it is a per-EVENT value being rewritten as though it were a constant.
 # It now lives in `style_transforms` below, which is a function of the page.
@@ -340,7 +337,11 @@ def style_transforms(login_bg):
     is a per-event value. `../` for the same reason as PAGE_PATHS: v2/ is one
     directory deeper than the images.
     """
-    return [(f"url('{SHEET_LOGIN_BG}')", f"url('../{login_bg}')")]
+    # CUTOVER §3(a), second half: the `../` goes with the move to root. P3 added
+    # this transform AFTER §3(a) was written, so the section's list of
+    # location-dependent transforms did not include it - see that section's own
+    # warning that PAGE_PATHS was never the complete list.
+    return [(f"url('{SHEET_LOGIN_BG}')", f"url('{login_bg}')")]
 
 
 def login_bg_of(page):

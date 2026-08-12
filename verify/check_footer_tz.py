@@ -77,11 +77,11 @@ def main():
         '<div style="text-align:center;padding:10px">'
         '🎟 Dernier billet vendu · 02/06 · 17:00'
         '&nbsp;·&nbsp;🔄 Données API · 09:30'
-        '&nbsp;·&nbsp;Festiflow Dashboard v6.8</div>'
+        '&nbsp;·&nbsp;Festiflow Dashboard v7.0</div>'
         '<div class="det-footer">'
         '🎟 Dernier billet vendu · 02/06 · 17:00'
         '&nbsp;·&nbsp;🔄 Données API · 09:30'
-        '&nbsp;·&nbsp;Festiflow Dashboard v6.8</div>'
+        '&nbsp;·&nbsp;Festiflow Dashboard v7.0</div>'
     )
     out, problems, n = pp.apply_footer(html)
     check('both footers rebuilt', n, 2)
