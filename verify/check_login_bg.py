@@ -20,7 +20,15 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-OVERLAY_RE = re.compile(r"\.db-overlay \{[^}]*url\('([^']*)'\)")
+# `\s*` before the brace, and it is load-bearing rather than defensive. The
+# production TEMPLATE writes `.db-overlay {` and the redesign sheet writes
+# `.db-overlay{`, so the original single-space pattern matched production and
+# could not match a v2 page at all - `actual` returned "(no .db-overlay url)"
+# for all six. Today that is invisible because assert_redesign only walks the
+# root pages; at cutover this check runs on a v2 page and would have failed
+# every one of them, on a formatting difference, while reporting a missing
+# login background. Found while making P3's negative test real.
+OVERLAY_RE = re.compile(r"\.db-overlay\s*\{[^}]*url\('([^']*)'\)")
 
 
 def main():
@@ -34,10 +42,28 @@ def main():
     # handed a path, not an event id.
     for row in csv.DictReader(open(REPO / 'event_config.csv', encoding='utf-8-sig')):
         if (row.get('output_filename') or '').strip() == path.name:
-            print((row.get('login_bg_image') or '').strip() or 'upload.JPG')
+            bg = (row.get('login_bg_image') or '').strip() or 'upload.JPG'
+            print(as_written(bg, path))
             return 0
     print('(no config row for ' + path.name + ')')
     return 0
+
+
+def as_written(bg, path):
+    """The url() a page at THIS location should carry.
+
+    A v2 page is one directory deeper, so it carries `../<bg>` where a root page
+    carries `<bg>`. The prefix is not spelled here: it comes from
+    `build_v2.style_transforms`, the same declaration pass 0 builds with and
+    `check_pages` replays. Location-dependence is exactly what PAGE_PATHS'
+    docstring warns a second copy gets wrong.
+    """
+    if path.parent.name != 'v2':
+        return bg
+    sys.path.insert(0, str(REPO / 'scripts'))
+    from build_v2 import style_transforms
+    (_, new), = style_transforms(bg)
+    return re.search(r"url\('([^']*)'\)", new).group(1)
 
 
 if __name__ == '__main__':

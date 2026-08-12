@@ -1116,28 +1116,48 @@ def check_pages():
         return []
 
     try:
-        from build_v2 import PAGE_PATHS
+        from build_v2 import PAGE_PATHS, login_bg_by_page, style_transforms
     except Exception as exc:                                # pragma: no cover
-        print(f'\nFAIL  cannot import build_v2.PAGE_PATHS: {exc}')
-        return ['build_v2.PAGE_PATHS unavailable']
+        print(f'\nFAIL  cannot import build_v2 transforms: {exc}')
+        return ['build_v2 transforms unavailable']
 
     css = WORK_CSS.read_text(encoding='utf-8')
-    want = css
+    # PAGE_PATHS is page-wide and, since P3, touches nothing in the sheet. It is
+    # still applied here rather than dropped: the claim is "the file through
+    # exactly the transforms build_v2 declares", and a future entry that DOES
+    # hit CSS should be covered the day it lands, not the day someone remembers.
+    base = css
     for old, new in PAGE_PATHS:
-        want = want.replace(old, new)
-    want = '\n' + want + '\n'                # the exact wrapper pass 0 writes
+        base = base.replace(old, new)
 
-    print(f'\nshipped <style> vs the file, through {len(PAGE_PATHS)} known '
-          f'substitution(s):')
+    # P3. The login background is per EVENT, so the expected stylesheet is per
+    # PAGE. Resolved from event_config here and from the built artefact in
+    # build_v2 - two routes to one value, and this failing is what says they
+    # disagree. A single `want` computed once would have had to pick one page's
+    # background and call it every page's.
+    bgs = login_bg_by_page()
+    print(f'\nshipped <style> vs the file, through {len(PAGE_PATHS)} page '
+          f'substitution(s) + the per-page login background:')
     failures = []
     for page in pages:
+        bg = bgs.get(page.name)
+        if bg is None:
+            failures.append(f'{page.name}: no config row')
+            print(f'  FAIL  {page.name}: no event_config row owns this filename, '
+                  f'so its login background cannot be derived')
+            continue
+        want = base
+        for old, new in style_transforms(bg):
+            want = want.replace(old, new)
+        want = '\n' + want + '\n'            # the exact wrapper pass 0 writes
+
         blocks = STYLE_RE.findall(page.read_text(encoding='utf-8'))
         if len(blocks) != 1:
             failures.append(f'{page.name}: {len(blocks)} <style> blocks')
             print(f'  FAIL  {page.name}: {len(blocks)} <style> block(s), want 1')
             continue
         if blocks[0] == want:
-            print(f'  ok    {page.name}')
+            print(f'  ok    {page.name}  (login bg {bg})')
             continue
         failures.append(f'{page.name}: inlined style is not the file')
         print(f'  FAIL  {page.name}: the inlined stylesheet is NOT the file put')

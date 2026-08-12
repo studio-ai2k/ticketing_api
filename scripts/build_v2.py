@@ -296,13 +296,88 @@ def event_identity(cfg, ref_cfg, ref_label):
 # The nav logo works only because it happens to be an absolute URL.
 PAGE_PATHS = [
     ('src="LOGO_ROND_JAUNE.png"', 'src="../LOGO_ROND_JAUNE.png"'),
-    ("url('upload.JPG')", "url('../upload.JPG')"),
     # B1's series files. Third asset class to go one directory deep, and the
     # only one that would fail at RUNTIME rather than at first paint - a broken
     # image is obvious, a fetch that 404s renders as "comparaison indisponible"
     # on every pick. Emitted as a root-relative template and rewritten here.
     ('"series/{id}.json"', '"../series/{id}.json"'),
 ]
+# P3. `url('upload.JPG')` USED TO BE THE SECOND ENTRY ABOVE, and that is the
+# defect: it is a per-EVENT value being rewritten as though it were a constant.
+# It now lives in `style_transforms` below, which is a function of the page.
+
+
+# ------------------------------------------------- P3: the login background --
+# `dashboard_template.html` renders {{LOGIN_BG_IMAGE}} INSIDE its <style>, and
+# both stylesheet swaps replace that block wholesale - so the templated value is
+# destroyed and has to be carried across. `postprocess_html` already does this
+# for production: it reads the value before the swap and restores it after.
+# Pass 0 did not, so the redesign sheet's baked-in `upload.JPG` won on every v2
+# page and the config column stopped being read.
+#
+# INVISIBLE TODAY, WHICH IS THE WHOLE PROBLEM. All six configured values are
+# `upload.JPG` (five explicit, paris_xxl blank -> default), so a v2 page pointing
+# at the sheet's constant is indistinguishable from one honouring its config.
+# `check_login_bg` matches by `path.name` and would report "ok" while reading a
+# value pass 0 could no longer vary. Trap #14: nothing has a fingerprint.
+#
+# WHY A NAMED TRANSFORM RATHER THAN AN EXCEPTION IN check_pages.
+# `check_mock_deviations.check_pages` asserts the inlined <style> equals the file
+# through exactly the substitutions this module declares. A per-page background
+# makes a single static list FALSE BY DESIGN - each page's <style> now differs
+# from the sheet in a different way. The cheap exit at that point is to loosen
+# check_pages, which is the one assertion guarding the stylesheet. So this is
+# exported and imported the way PAGE_PATHS is, and check_pages replays it per
+# page. Not an exception, not a tolerance.
+SHEET_LOGIN_BG = 'upload.JPG'          # what the redesign sheet is baked with
+DEFAULT_LOGIN_BG = postprocess_html.DEFAULT_LOGIN_BG
+
+
+def style_transforms(login_bg):
+    """Every substitution pass 0 makes INSIDE the stylesheet, for ONE page.
+
+    A function of the page rather than a constant, because the login background
+    is a per-event value. `../` for the same reason as PAGE_PATHS: v2/ is one
+    directory deeper than the images.
+    """
+    return [(f"url('{SHEET_LOGIN_BG}')", f"url('../{login_bg}')")]
+
+
+def login_bg_of(page):
+    """The background PRODUCTION resolved, read back off the postprocessed page.
+
+    Read from the artefact rather than from event_config on purpose. Production
+    has already applied the config value and its own default; re-deriving it
+    here would be a second implementation of the same rule, free to disagree.
+    `check_login_bg` is what asserts the page agrees with the config, and it
+    stays the single place that claim is made.
+    """
+    m = postprocess_html.OVERLAY_BG_RE.search(page)
+    if not m:
+        raise SystemExit(
+            'pass 0: no .db-overlay url() on the postprocessed page - the rule '
+            'carrying the per-event login background has moved or gone, and '
+            'pass 0 cannot carry a value it cannot find.')
+    return m.group(2) or DEFAULT_LOGIN_BG
+
+
+def login_bg_by_page(config=None):
+    """{output_filename: login background} from event_config.
+
+    For the CHECKS, which have no build to read from. Deliberately the other
+    route to the same value: the build reads the artefact, this reads the
+    config, and check_pages failing is what says the two disagree.
+    """
+    import csv as _csv
+    out = {}
+    path = Path(config or BASE_DIR / 'event_config.csv')
+    with path.open(encoding='utf-8-sig') as f:
+        for row in _csv.DictReader(f):
+            name = (row.get('output_filename') or '').strip()
+            if name and name not in out:
+                out[name] = ((row.get('login_bg_image') or '').strip()
+                             or DEFAULT_LOGIN_BG)
+    return out
 
 
 def strip_placeholders(region):
@@ -460,13 +535,35 @@ def apply_v2_body(page, payload, identity=()):
     out = transplant_footer(out, page)
 
     css = SHEET.read_text(encoding='utf-8')
+
+    # P3. Carry the per-event background across the swap, the way production
+    # does - read before, apply after. Here it is applied to the SHEET rather
+    # than to the page, so the inlined <style> is the file through a declared
+    # transform and check_pages can replay it exactly.
+    bg = login_bg_of(page)
+    for old, new in style_transforms(bg):
+        # TWO, asserted, because the sheet carries the gate background twice:
+        # `.db` and `.db-overlay`. Production's restorer substitutes count=1 and
+        # is right for production's sheet; copying that number here would have
+        # left `.db` on the baked value - a second rule pointing at a different
+        # image than the one beside it, which renders as the right background
+        # under a wrong one during load.
+        n = css.count(old)
+        if n != 2:
+            raise SystemExit(
+                f'pass 0: login background {old!r} matched {n} time(s) in the '
+                f'sheet, want 2 (.db and .db-overlay). The gate\'s background '
+                f'rules have changed shape and the per-event value would be '
+                f'carried to some of them and not others.')
+        css = css.replace(old, new)
+
     out, sn = STYLE_RE.subn(lambda m: '<style>\n' + css + '\n</style>', out, count=1)
     if sn != 1:
         raise SystemExit(f'pass 0: stylesheet swap matched {sn} <style> blocks (want 1)')
 
-    # AFTER the style swap, not before: the swap re-introduces url('upload.JPG')
-    # from the .db-overlay rule carried across for the gate. Rewriting paths
-    # first left the login background pointing one directory up from nothing.
+    # PAGE_PATHS no longer touches the stylesheet at all - the login background
+    # was its only entry that did, and it is now a per-page transform above.
+    # These are markup and script paths, applied to the whole page.
     for old, new in PAGE_PATHS:
         if old in out:
             out = out.replace(old, new)
