@@ -518,9 +518,25 @@ def plan_writes(names, v2_snap, built, hashes, bgs):
              'will never move again. Each carries one archive banner saying so,',
              'inserted at freeze time and nowhere else in the file.', '',
              '## Provenance', '',
-             'SHA-256 of each page **as it shipped, before the banner was',
-             'inserted**. Strip the single `<div id="' + BANNER_ID + '">…</div>`',
-             'and its following newline+indent, and the hash returns:', '',
+             'SHA-256 of each page **as it shipped, before the banner was '
+             'inserted**.', '',
+             '**The exact span to remove**: everything from '
+             '`<div id="' + BANNER_ID + '"` through the first `</div>` after it',
+             '- one line, no newlines inside - **plus the next 3 bytes, which',
+             'are `\\n` and two spaces**. Nothing else in the file is touched.',
+             '',
+             'Paste this; every hash it prints must appear in the table below:',
+             '', '```bash',
+             "python3 - legacy/*.html <<'EOF'",
+             'import hashlib, re, sys',
+             'for p in sys.argv[1:]:',
+             "    d = open(p, 'rb').read()",
+             '    d = re.sub(rb\'<div id="' + BANNER_ID + '".*?</div>\\n  \', '
+             "b'', d, count=1, flags=re.S)",
+             "    print(hashlib.sha256(d).hexdigest(), p.split('/')[-1])",
+             'EOF', '```', '',
+             'A provenance record that takes three guesses to verify is one most',
+             'readers will not verify, which makes it decoration. Run it:', '',
              '| page | sha256 (pre-banner) |', '| --- | --- |']
     lines += [f'| `{n}` | `{hashes[n]}` |' for n in names if n in hashes]
     lines += ['', 'These pages keep their original `<!-- shared:… -->` build',
