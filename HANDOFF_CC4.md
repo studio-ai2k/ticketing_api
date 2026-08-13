@@ -279,6 +279,27 @@ which 404s, so the browser evaluated against an empty body and node died on
 `pickMode`. **A fix that addresses every instance it found is not a fix that
 addresses every instance** — grep the file for the pattern, not the line.
 
+**A decision correct in its own scope, invalidating a claim in another.** The
+newest member, and the one with no obvious guard. §3(a) deleted `PAGE_PATHS`
+because at root the input IS the output — unarguable for the six root pages, and
+the reasoning is written out at length. It is also what broke `preview/`, which
+is one directory deeper and was the only remaining consumer of the machinery
+being removed. Nothing connected the two: no check spans "the thing being
+deleted" and "everything that depended on it", because they were reasoned about
+in different sections, by different arguments, both sound.
+
+The deleted lines' own comment had named the failure in advance — *"the only one
+that would fail at RUNTIME rather than at first paint — a fetch that 404s renders
+as 'comparaison indisponible' on every pick"* — and it was deleted along with the
+code it described, which is how the warning left with the thing it warned about.
+
+What makes this one different from the rest of the family: every other instance
+was a probe stating the wrong claim, and the repair was to fix the probe. Here
+both claims were right. The gap is that **no assertion spanned them**, and the
+only thing that would have caught it is the one that did: publishing something
+through `preview/` and looking. A directory whose contents are never exercised
+is a description, not a mechanism.
+
 **A harness produces findings indistinguishable from real ones.** The
 post-cutover-shaped tree reported `series_path(...) -> None`, which reads
 exactly like a cutover break and was `csv_database/` never being linked into the
