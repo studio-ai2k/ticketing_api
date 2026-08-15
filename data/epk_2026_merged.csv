@@ -3341,7 +3341,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-04-16,2026-04-16 17:50:05,2-jours,vip,"['samedi', 'dimanche']",VIP Yellow Stage - Tickets Acces Scene + Backstage,Shotgun,135.0,152.58,1,1
 2026-04-16,2026-04-16 18:28:53,2-jours,regular,,Pass 2 Jours,Shotgun,75.91,85.8,1,1
 2026-04-16,2026-04-16 18:50:45,samedi,regular,['samedi'],Pass Samedi,Shotgun,47.73,53.94,1,1
-2026-04-16,2026-04-16 19:13:33,samedi,regular,['samedi'],Pass Samedi,Shotgun,47.73,53.94,1,1
 2026-04-16,2026-04-16 19:44:43,2-jours,regular,,Pass 2 Jours,Shotgun,75.91,85.8,1,1
 2026-04-16,2026-04-16 19:46:57,2-jours,regular,,Pass 2 Jours,Shotgun,75.91,85.8,1,1
 2026-04-16,2026-04-16 20:51:36,samedi,regular,['samedi'],Pass Samedi,Shotgun,47.73,53.94,1,1
@@ -11850,3 +11849,34 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-15,2026-08-15 11:58:30,2-jours,regular,,Pass 2 Jours,Shotgun,90.0,101.72,1,1
 2026-08-15,2026-08-15 11:58:30,2-jours,regular,,Pass 2 Jours,Shotgun,90.0,101.72,1,1
 2026-08-15,2026-08-15 12:15:47,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 12:25:25,2-jours,regular,,Pass 2 Jours,Shotgun,90.0,101.72,1,1
+2026-08-15,2026-08-15 12:25:47,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 12:47:25,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 12:49:39,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 12:49:39,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 12:50:26,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 12:53:27,dimanche,regular,['dimanche'],Pass Dimanche,Shotgun,45.0,50.86,1,1
+2026-08-15,2026-08-15 12:54:23,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 13:03:40,dimanche,regular,['dimanche'],Pass Festival + Croisiere,Shotgun,57.26,64.72,1,1
+2026-08-15,2026-08-15 13:08:32,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 13:08:37,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 13:25:57,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 13:27:19,dimanche,regular,['dimanche'],Pass Dimanche,Shotgun,45.0,50.86,1,1
+2026-08-15,2026-08-15 13:27:19,dimanche,regular,['dimanche'],Pass Dimanche,Shotgun,45.0,50.86,1,1
+2026-08-15,2026-08-15 13:29:23,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 13:42:28,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 13:51:32,dimanche,regular,['dimanche'],Pass Festival + Croisiere,Shotgun,57.26,64.72,1,1
+2026-08-15,2026-08-15 14:09:35,2-jours,regular,,Pass 2 Jours,Shotgun,90.0,101.72,1,1
+2026-08-15,2026-08-15 14:44:15,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 14:44:15,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 14:56:10,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 14:56:10,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 15:07:41,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 15:08:09,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 15:13:11,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 15:20:33,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 15:20:33,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 15:45:17,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 15:48:42,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 15:48:42,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-15,2026-08-15 15:55:48,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
