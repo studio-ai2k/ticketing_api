@@ -3376,7 +3376,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-04-17,2026-04-17 20:09:29,dimanche,regular,['dimanche'],Pass Dimanche,Shotgun,39.09,44.18,1,1
 2026-04-17,2026-04-17 20:13:38,dimanche,regular,['dimanche'],Pass Dimanche,Shotgun,39.09,44.18,1,1
 2026-04-17,2026-04-17 20:34:52,2-jours,regular,,Pass 2 Jours,Shotgun,75.91,85.8,1,1
-2026-04-17,2026-04-17 20:34:52,2-jours,regular,,Pass 2 Jours,Shotgun,75.91,85.8,1,1
 2026-04-17,2026-04-17 20:34:57,samedi,regular,['samedi'],Pass Samedi,Shotgun,47.73,53.94,1,1
 2026-04-17,2026-04-17 21:28:44,samedi,regular,['samedi'],Pass Samedi,Shotgun,47.73,53.94,1,1
 2026-04-17,2026-04-17 21:28:44,samedi,regular,['samedi'],Pass Samedi,Shotgun,47.73,53.94,1,1
@@ -9328,7 +9327,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-04,2026-08-04 13:20:16,2-jours,regular,,Pass Festival + Croisiere,Shotgun,98.09,110.87,1,1
 2026-08-04,2026-08-04 13:20:16,2-jours,regular,,Pass Festival + Croisiere,Shotgun,98.09,110.87,1,1
 2026-08-04,2026-08-04 13:20:45,2-jours,regular,,Pass 2 Jours,Shotgun,85.91,97.1,1,1
-2026-08-04,2026-08-04 13:20:59,dimanche,regular,['dimanche'],Pass Festival + Croisiere,Shotgun,57.26,64.72,1,1
 2026-08-04,2026-08-04 13:21:11,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
 2026-08-04,2026-08-04 13:22:49,dimanche,regular,['dimanche'],Pass Dimanche,Shotgun,43.18,48.81,1,1
 2026-08-04,2026-08-04 13:36:54,dimanche,regular,['dimanche'],Pass Dimanche,Shotgun,43.18,48.81,1,1
@@ -12194,3 +12192,36 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-17,2026-08-17 12:15:40,dimanche,regular,['dimanche'],Pass Dimanche,Shotgun,45.0,50.86,1,1
 2026-08-17,2026-08-17 12:18:59,dimanche,regular,['dimanche'],Pass Dimanche,Shotgun,45.0,50.86,1,1
 2026-08-17,2026-08-17 12:20:45,dimanche,regular,['dimanche'],Pass Dimanche,Shotgun,45.0,50.86,1,1
+2026-08-17,2026-08-17 12:31:51,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 12:35:44,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 12:57:43,dimanche,regular,['dimanche'],Pass Festival + Croisiere,Shotgun,57.26,64.72,1,1
+2026-08-17,2026-08-17 13:00:11,dimanche,regular,['dimanche'],Pass Festival + Croisiere,Shotgun,57.26,64.72,1,1
+2026-08-17,2026-08-17 13:01:51,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 13:14:20,dimanche,regular,['dimanche'],Pass Dimanche,Shotgun,45.0,50.86,1,1
+2026-08-17,2026-08-17 13:14:20,dimanche,regular,['dimanche'],Pass Dimanche,Shotgun,45.0,50.86,1,1
+2026-08-17,2026-08-17 13:18:22,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 13:23:15,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 13:34:29,dimanche,regular,['dimanche'],Pass Dimanche,Shotgun,45.0,50.86,1,1
+2026-08-17,2026-08-17 13:36:57,samedi,regular,['samedi'],Pass Samedi,DICE,48.97,52.5,1,1
+2026-08-17,2026-08-17 13:51:34,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 14:10:11,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 14:10:11,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 14:26:22,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 14:52:06,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 14:52:06,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 14:57:00,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 15:28:30,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 15:28:55,2-jours,regular,,Pass 2 Jours,Shotgun,90.0,101.72,1,1
+2026-08-17,2026-08-17 15:28:55,2-jours,regular,,Pass 2 Jours,Shotgun,90.0,101.72,1,1
+2026-08-17,2026-08-17 15:35:08,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 15:35:08,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 15:51:54,samedi,regular,['samedi'],Pass Samedi,DICE,48.97,52.5,1,1
+2026-08-17,2026-08-17 15:57:23,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 15:57:23,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 16:04:22,dimanche,vip,['dimanche'],VIP Red Stage - Tickets Acces Scene + Backstage,Shotgun,65.0,73.47,1,1
+2026-08-17,2026-08-17 16:04:22,dimanche,vip,['dimanche'],VIP Red Stage - Tickets Acces Scene + Backstage,Shotgun,65.0,73.47,1,1
+2026-08-17,2026-08-17 16:04:34,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 16:04:34,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 16:06:36,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 16:08:37,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-17,2026-08-17 16:08:37,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
