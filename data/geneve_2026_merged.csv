@@ -4515,3 +4515,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-18,2026-08-18 01:40:22,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
 2026-08-18,2026-08-18 01:40:22,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
 2026-08-18,2026-08-18 01:40:22,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-08-18,2026-08-18 07:40:12,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
+2026-08-18,2026-08-18 07:56:37,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
+2026-08-18,2026-08-18 07:56:37,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
