@@ -632,7 +632,26 @@ def weekly_rows(cur_n, cur_rev, ref_n, ref_rev, cur_ev, ref_ev, cutoff, ref_cut,
         # and its own shift; under `exact_date` it is our week's span mapped back
         # N calendar years. Both live in `Align.week_span` so the label cannot
         # be derived from a different rule than the bucket.
-        sb, eb = align.week_span(w)
+        # OUR GRAIN MUST NOT DEPEND ON A REFERENCE EXISTING. This was an
+        # unconditional `align.week_span(w)`, and `align` is only built when
+        # there is a configured reference - so a first edition raised
+        #   AttributeError: 'NoneType' object has no attribute 'week_span'
+        # and `D['weekly']` was gated to `[]` upstream to avoid it. That gate
+        # was the symptom; this line was the cause.
+        #
+        # Our own bucketing above is already reference-free -
+        # `(cur_ev - d).days // 7`, which is exactly the rule
+        # reference_suivi_candidates.py has specified all project: each side
+        # buckets by its own (event_date_first - order_date)//7. Solo is that
+        # rule with one side absent, not a new rule. Only the REFERENCE half of
+        # the row label needs `align`, and the output below already emits
+        # `sb`/`eb` only `if has_b`.
+        #
+        # Keyed on `has_b` rather than on `align` being truthy: a row has a
+        # reference span exactly when it has a reference bucket, and `has_b`
+        # can only be true when ref rows were counted, which is only possible
+        # when `align` exists. Derived from the data, not from a null check.
+        sb, eb = align.week_span(w) if has_b else (None, None)
         out.append({'w': w, 'a': a, 'b': b, 'ra': round(ra),
                     'rb': round(rb) if rb is not None else None,
                     'pa': round(a / ta * 100, 1),
@@ -940,7 +959,13 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
                               cur_cfg['event_date_first'],
                               ref_cfg['event_date_first'] if ref_cfg else None,
                               cutoff, ref_cut, D['jx'], D['cap'],
-                              align) if ref_cfg else []
+                              # NO LONGER `if ref_cfg else []`. The weekly grain
+                              # is OUR data bucketed by OUR event; gating it on a
+                              # configured reference is the same conflation as
+                              # gating the Suivi selector on HAS_CMP, one layer
+                              # down. It left the "Semaine" button rendered with
+                              # nothing behind it on a first edition.
+                              align)
     D['maxjx'] = max((r['jx'] for r in D['daily']), default=span)
     # The last ten days LIVED, not the last ten rows: with future rows in the
     # list the tail is all `–`.

@@ -417,7 +417,9 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 1159
+# 1159 -> 1166: CAN_CMP's seven lines (C1a/C1b). Raised in the same commit as
+# the ledger entries, which is the rule this file states.
+BUDGET_ADDED = 1166
 BUDGET_REMOVED = 203
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
@@ -540,6 +542,23 @@ AUTHORISED = [a for a in AUTHORISED if a[0] not in ('D16', 'D17', 'D18')] + [
     ('D25c', 'D5 - the VAT segment', 'background:rgba(52,211,153,'),
     ('D25d', 'D5 - the fee segment', '--fc:rgba(52,211,153,'),
     ('D23c', 'D4 - the group dot takes its colour by name', 'background:${gcol(g.g)}"></span>'),
+    # CAN_CMP. Two hunks, two entries, for the D14/D15 reason: the constant and
+    # the gate that reads it could be reverted independently, and either alone
+    # is broken - the constant with no reader is dead, the gate with no constant
+    # is a ReferenceError.
+    ('C1a', "HAS_CMP answers \"is a comparison SELECTED\" and was being asked "
+            "\"can this event compare AT ALL\". Those differ on a first "
+            "edition: sonora_impact has no compare_to, so D.ref.n is 0 - and 12 "
+            "candidates in D.cands that comparison_eligible admits. CAN_CMP is "
+            "the second question, asked of the payload's own candidate list",
+     'const CAN_CMP = !!(D.cands && D.cands.length);'),
+    ('C1b', "the Suivi control panel gated on CAN_CMP rather than HAS_CMP. "
+            "Measured on the built page before and after: sec-suivi carried 0 "
+            "comparison triggers against sec-projection's 2, so the only "
+            "control that could SELECT a comparison was removed because none "
+            "was selected yet. The Jour/Semaine buttons sit outside this gate "
+            "and always rendered, which is why the section looked complete",
+     '${CAN_CMP ? `<div class="svctl-p">${cmpMenu()}${modeMenu()}</div>` : \'\'}'),
 ]
 
 

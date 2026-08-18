@@ -310,8 +310,13 @@ def event_identity(cfg, ref_cfg, ref_label):
         # whichever of the three alignments was on. The mock now computes both
         # headers itself from AMODE, CYR, YC and CSEL, so there is no literal
         # here to substitute and nothing for this list to keep in step.
+        # "Choisir une édition" when nothing is selected, not "—" and not
+        # "Aucune comparaison". The dash is meaningless on a control, and naming
+        # the state you are NOT in is what ruled out `dtog` for the scenario
+        # picker: this is a trigger that opens a menu of 12 candidates, so it
+        # should invite the action rather than report the absence.
         ("let CSEL = 'Elektric Park 2023'",
-         "let CSEL = " + repr(ref_label or '—')),
+         "let CSEL = " + repr(ref_label or 'Choisir une édition')),
         # The CANDS group literal used to be substituted here. D12 replaced the
         # hardcoded menu with one built from D.cands, so there is no literal
         # left to fix - the identity it carried is now data.

@@ -961,6 +961,13 @@ function moneyBar(p, v, MAX){
 const VAT = D.vat || 0.055;
 const A_REV = D.cur.rev;
 const HAS_CMP = !!(D.ref && D.ref.n > 0);
+/* HAS_CMP answers "is a comparison SELECTED", and it was being asked "can this
+   event compare AT ALL". Those differ on a first edition: sonora_impact has no
+   compare_to, so D.ref.n is 0 - and 12 candidates in D.cands that
+   comparison_eligible admits. Gating the Suivi selector on HAS_CMP removed the
+   only control that could select one, so the capability was unreachable because
+   nothing was chosen yet. */
+const CAN_CMP = !!(D.cands && D.cands.length);
 const YC = D.cur_year || 2026, YR = D.ref_year || 2023;
 /* The year of the SELECTED comparison. Declared here, beside YR, because
    the velocity card reads it at load and the Suivi block that moves it
@@ -2426,7 +2433,7 @@ function renderSuivi(){
        <div class="scen" style="max-width:200px">
          <button class="scen-b ${isD?'on':''}" onclick="grain('jour')">Jour</button>
          <button class="scen-b ${isD?'':'on'}" onclick="grain('semaine')">Semaine</button></div>
-       ${HAS_CMP ? `<div class="svctl-p">${cmpMenu()}${modeMenu()}</div>` : ''}</div>
+       ${CAN_CMP ? `<div class="svctl-p">${cmpMenu()}${modeMenu()}</div>` : ''}</div>
      ${HAS_CMP ? `<div class="sec-note" style="margin:8px 0 11px">
        ${alignNote()}${
        /* A LIVE candidate under Jour J alignment: its own J−x has not happened
