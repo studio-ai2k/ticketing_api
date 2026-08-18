@@ -233,8 +233,33 @@ def event_identity(cfg, ref_cfg, ref_label):
         return f'{a.day} {MONTHS_FR[a.month - 1]}\u2013{b.day} {MONTHS_FR[b.month - 1]}'
 
     ref_span = _span(ref_cfg)
-    ref_venue = (ref_cfg or {}).get('venue') or '—'
+    ref_venue = (ref_cfg or {}).get('venue') or ''
     ref_city = (ref_cfg or {}).get('city') or ''
+
+    # ABSENT READS AS ABSENT. SONORA x IMPACT was added with no venue and no
+    # city - not supplied, and deliberately not invented - and the row rendered
+    # as `Lieu —`, a label with a placeholder under it. An em dash says "there
+    # is a value here and it is nothing"; the honest rendering of "we were never
+    # told" is no row.
+    #
+    # The DASHBOARD_TEMPLATE has the same row as `{{VENUE}}, {{CITY}}`, which
+    # renders as a bare `, ` - but that markup is INSIDE the `</nav>`..`</body>`
+    # seam and pass 0 discards it, so it never ships and is not the thing to
+    # fix. (run.py:3854 prints `Venue: , ` to the build log for the same reason;
+    # run.py is do-not-modify and a log line is not an artefact.) The row that
+    # SHIPS is this substitution, so the suppression goes here.
+    #
+    # Both halves empty, not either: a venue with no city, or a city with no
+    # venue, is partial information and still worth showing.
+    def _lieu(venue, city):
+        venue, city = (venue or '').strip(), (city or '').strip()
+        if not venue and not city:
+            return ''
+        # row(k, v, s) renders `s` as a <small> under the value, and omits it
+        # when falsy - so a city with no venue becomes the value itself rather
+        # than a subtitle with nothing above it.
+        value, sub = (venue, city) if venue else (city, '')
+        return "${row('Lieu'," + repr(value) + "," + repr(sub) + ")}\n        "
     ref_cap = f"{(ref_cfg or {}).get('total_capacity', 0):,}".replace(',', '\u202f') or '—'
     name = cfg.get('event_name', '').strip()
     brand = (cfg.get('brand') or name).strip()
@@ -253,9 +278,8 @@ def event_identity(cfg, ref_cfg, ref_label):
         # scan below is what found it.
         ("${row('Lieu','Île des Impressionnistes','Chatou')}\n        "
          "${row('Dates','5\u20136 septembre ' + YC)}",
-         "${row('Lieu'," + repr(cfg.get('venue', '—') or '—') + ","
-         + repr(cfg.get('city', '') or '') + ")}\n        "
-         "${row('Dates'," + repr(span.replace('les ', '').replace('le ', '')) + " + ' ' + YC)}"),
+         _lieu(cfg.get('venue'), cfg.get('city'))
+         + "${row('Dates'," + repr(span.replace('les ', '').replace('le ', '')) + " + ' ' + YC)}"),
         # The REFERENCE edition's Détails block - its own dates, venue and
         # capacity, all epk_2023's. Three separate hardcoded blocks carry event
         # identity in this mock; finding them took a residual-leak scan, not
@@ -263,9 +287,13 @@ def event_identity(cfg, ref_cfg, ref_label):
         ("${row('Dates','1\u20132 septembre ' + YR)}\n        "
          "${row('Lieu','Île de Chatou','Chatou')}\n        "
          "${row('Jauge','35 000')}",
+         # Same rule on the reference edition's block. Fixing only the current
+         # event's row would be the §9 shape "a fix that addresses every
+         # instance it FOUND": a comparison edition with no venue would still
+         # render `Lieu —` beside a current event that correctly shows nothing.
          "${row('Dates'," + repr(ref_span) + " + ' ' + YR)}\n        "
-         "${row('Lieu'," + repr(ref_venue) + "," + repr(ref_city) + ")}\n        "
-         "${row('Jauge'," + repr(ref_cap) + ")}"),
+         + _lieu(ref_venue, ref_city)
+         + "${row('Jauge'," + repr(ref_cap) + ")}"),
         # The Suivi column headers. The mock defines YC/YR from the payload and
         # uses them in 19 places - and hardcodes the years in these two. So the
         # rennes page (2026 vs 2025) headed its reference column "2023 (même

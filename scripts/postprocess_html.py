@@ -2074,9 +2074,26 @@ def postprocess(path):
         for p in seam_discarded:
             print(f"      · {p}", file=sys.stderr)
 
+    # THE REASON GOES TO STDERR, BECAUSE THE ONE CALLER THAT MATTERS DISCARDS
+    # STDOUT. build_v2.py:595 runs this file with stdout=subprocess.DEVNULL and
+    # check=True, so on stdout alone a failed page surfaces as a bare
+    # `CalledProcessError: ... returned non-zero exit status 1` with nothing
+    # saying which assertion fired.
+    #
+    # The SONORA x IMPACT failure looked legible only by accident: the workflow
+    # ALSO invokes this file directly, one line above build_v2, so `bash -e`
+    # stopped there and the ten lines were on the direct call's stdout. Any
+    # failure reached through build_v2 - the rebuild-on-conflict path, a local
+    # `build_v2.py` run, anything after that direct call is removed - would have
+    # printed the exit code and nothing else.
+    #
+    # Kept on stdout as well: the direct invocation's output is what the
+    # workflow log and a human at a terminal already read, and moving it would
+    # trade one silence for another.
     if problems:
         for p in problems:
             print(f"  ❌ {p}")
+            print(f"  ❌ {path.name}: {p}", file=sys.stderr)
         return False
     if link_count == 0:
         print("  ⚠ no upload link found - template may have changed")
