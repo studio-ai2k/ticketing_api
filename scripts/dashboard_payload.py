@@ -898,8 +898,27 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
         'cur_year': cur_cfg['event_date_first'].year,
         'ref_year': ref_cfg['event_date_first'].year if ref_cfg else None,
         'cur': {**totals(cur_rows, cutoff), 'vel': velocity(cur_rows, cutoff)},
-        'ref': ({**totals(ref_rows, ref_cut), 'vel': velocity(ref_rows, ref_cut)}
-                if ref_rows and ref_cut else {'n': 0}),
+        # A FIRST EDITION GETS THE SAME SHAPE, ZEROED - NOT A SMALLER OBJECT.
+        # `{'n': 0}` was nine keys short of a populated `ref`, and the mock
+        # reads `B.vel[w]` at the top of its velocity block BEFORE consulting
+        # HAS_CMP, so SONORA x IMPACT threw
+        #   TypeError: Cannot read properties of undefined (reading '3')
+        # which killed the rest of that script and took Vélocité, Présence,
+        # Répartition and Suivi off the page with it.
+        #
+        # redesign/fixtures/fixture_no_comparison.html is the design's answer
+        # for this case and it does NOT throw: its `ref` carries the SAME TEN
+        # KEYS as a real populated page, all zeroed, and lets HAS_CMP alone
+        # decide what renders. Measured - the fixture's key set and rennes.html's
+        # are identical. The page was disagreeing with the fixture; the fixture
+        # was right.
+        #
+        # Built by running the SAME functions over no rows, so the zero shape
+        # cannot drift from the populated one. Restating the keys as a literal
+        # is what produced this bug.
+        'ref': {**totals(ref_rows if ref_rows and ref_cut else [], ref_cut or cutoff),
+                'vel': velocity(ref_rows if ref_rows and ref_cut else [],
+                                ref_cut or cutoff)},
         'ref_final': ({'n': sum(1 for r in ref_rows if r['_paid']),
                        'rev': round(sum(r['_price'] for r in ref_rows if r['_paid']))}
                       if ref_rows else {'n': 0, 'rev': 0}),
@@ -955,12 +974,21 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
                           if r['_paid'] and r['ticket_type'] == t))}
         for t, c in Counter(r['ticket_type'] for r in cur_rows if r['_paid']).most_common()]
 
-    if D['ref'].get('n'):
-        ref_pres = {b['refday']: b['ref'] for b in blocks if b['refday']}
-        D['ref']['pres'] = ref_pres
-        D['ref']['pres_tot'] = sum(ref_pres.values())
-        D['ref']['pct'] = round(D['ref']['pres_tot'] / D['cap'] * 100, 1) if D['cap'] else 0
-        D['ref']['types'] = []
+    # THE SECOND GATE THAT SHORTENED THE SHAPE. This was `if D['ref'].get('n')`,
+    # so on a first edition the four keys below were never added - the other
+    # half of the nine `ref` was missing. Unconditional now: with no reference
+    # rows every `b['refday']` is None, so the comprehension is empty and these
+    # DERIVE to {} / 0 / 0 / [] rather than being hardcoded to them. Same values,
+    # same shape, one code path.
+    #
+    # HAS_CMP is what decides whether any of this RENDERS, and it still keys on
+    # `n` alone: `!!(D.ref && D.ref.n > 0)`. Shape and visibility are separate
+    # questions, and conflating them is what broke the page.
+    ref_pres = {b['refday']: b['ref'] for b in blocks if b['refday']}
+    D['ref']['pres'] = ref_pres
+    D['ref']['pres_tot'] = sum(ref_pres.values())
+    D['ref']['pct'] = round(D['ref']['pres_tot'] / D['cap'] * 100, 1) if D['cap'] else 0
+    D['ref']['types'] = []
 
     D['perday'] = {b['k']: {'now': b['now'], 'ref': b['ref'], 'vel14': b['vel14'],
                             'cap': b['cap'], 'one': b['comp']['single'],
