@@ -308,6 +308,26 @@ harness *before* believing its output — the same discipline as the negative
 test, applied to the thing running the test. If a simulated environment produces
 a failure, the first suspect is the simulation.
 
+**A process check that includes its own command line cannot distinguish RUNNING
+from ASKING.** `pgrep -f check_b1_switch` matches the shell running
+`pgrep -f check_b1_switch`, so it answers "yes" whether or not the thing exists.
+It cost two false "still running" reports in one session — once on a check that
+had been dead for twelve hours, killed by a `timeout 1500` cap set from a
+measurement taken when the suite had one page fewer; once on a run that had
+already finished and gone red. Both times the report to Leo was confident and
+wrong, and the second one asserted green-in-progress over an actual failure.
+
+Match the real thing: `pgrep -x`, a pidfile, `ps -eo pid,etimes,cmd | grep
+"[c]heck_b1_switch"` with the bracket trick, or the exit status of the job
+itself. And a background wait must key on the PROCESS exiting, not on a log
+going quiet — a log that stops growing looks identical to a log whose writer
+died.
+
+Same family as the `-1` vs `0` locator and the two-quantities-one-number
+entries above: the predicate answered a question adjacent to the one asked. The
+tell is the same too — the answer was available and cheap, and I preferred the
+one already in my hand.
+
 *Second instance, same session, one command later.* Running the suite as
 `for f in verify/check_*.py; do python3 $f; done` gave **20 red**, not 17. The
 three extra were `check_login_bg`, `check_platform_cards` and

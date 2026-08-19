@@ -422,9 +422,13 @@ AUTHORISED_CSS = [
 # render sites it replaces (C2a-C2e), plus their comments. Removed goes 203 ->
 # 205: two of the six swapped lines are one-line `if (!HAS_CMP) return` bodies
 # that count as removals rather than edits.
+# 1188 -> 1193: C2b's comment grew when `CMPSEL = HAS_CMP || nref > 0` became
+# `CMPSEL = true`. The condition was wrong, not just wordy: `nref > 0` meant a
+# candidate with no shared dates un-selected itself and took X4's empty-state
+# banner with it. The five lines are what that costs to write down.
 # Raised in the same commit as the ledger entries, which is the rule this file
 # states.
-BUDGET_ADDED = 1188
+BUDGET_ADDED = 1193
 BUDGET_REMOVED = 205
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
@@ -584,7 +588,7 @@ AUTHORISED = [a for a in AUTHORISED if a[0] not in ('D16', 'D17', 'D18')] + [
             "it was and CMPERR renders the failure - D13's path. Measured both "
             "ways: pick succeeds -> 0 solo rows; series 404s -> 145 solo rows, "
             "CMPSEL false, CMPERR set",
-     'CMPSEL = HAS_CMP || nref > 0;'),
+     'CMPSEL = true;'),
     # Two entries, not one, and D15 is why: the daily and weekly row renderers
     # are separate functions, so a single signature would let one be reverted
     # in silence while the other kept the ledger green.

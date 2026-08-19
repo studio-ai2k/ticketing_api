@@ -2378,10 +2378,15 @@ function applySeries(s){
     CMPGAP = Math.max(...jrs) < lastJr ? 'over'
            : Math.min(...jrs) > Math.max(...sold) ? 'unopened' : 'gap';
     CMPANY = nref > 0;
-    /* The apply succeeded AND brought reference rows with it. Recomputed rather
-       than latched, and `HAS_CMP ||` keeps a configured page pinned true so its
-       output cannot move. */
-    CMPSEL = HAS_CMP || nref > 0;
+    /* THE APPLY SUCCEEDED. Not "and brought rows with it" - that is CMPANY's
+       job one line up, and conflating the two put the no-overlap state back
+       where X4 and X5 found it. `nref > 0` here meant that picking a candidate
+       with no shared dates flipped every row back to .sv-solo AND took the
+       empty-state banner with it, because the banner lives inside this gate.
+       Measured on sonora vs Paris XXL 2025 under exact_date: CMPGAP 'over',
+       145 solo rows, banner null - the page knew why and could not say so,
+       which is the state X5 names, because it looks like data. */
+    CMPSEL = true;
   }
 
   /* Weekly asks `A.weekOf`, never the daily offset. Under the constant-offset
@@ -3172,6 +3177,6 @@ function ac(el){
 })();
 
 </script>
-<!-- shared-v2:c13bb4a799ed -->
+<!-- shared-v2:8568c556748c -->
 </body>
 </html>
