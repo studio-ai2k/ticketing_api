@@ -317,11 +317,35 @@ measurement taken when the suite had one page fewer; once on a run that had
 already finished and gone red. Both times the report to Leo was confident and
 wrong, and the second one asserted green-in-progress over an actual failure.
 
-Match the real thing: `pgrep -x`, a pidfile, `ps -eo pid,etimes,cmd | grep
-"[c]heck_b1_switch"` with the bracket trick, or the exit status of the job
-itself. And a background wait must key on the PROCESS exiting, not on a log
+Match the real thing: `pgrep -x`, a pidfile, or the exit status of the job
+itself. The bracket trick (`grep "[c]heck_b1_switch"`) is not enough either — it
+failed here the moment the name appeared in the command line for an unrelated
+reason, because a commit message being passed to `git commit` happened to
+contain it. And a background wait must key on the PROCESS exiting, not on a log
 going quiet — a log that stops growing looks identical to a log whose writer
 died.
+
+**AND THE SAME PATTERN IN `pkill` DOES NOT MISREPORT, IT KILLS YOU.**
+`pkill -f "http.server 8732"` matches the shell running that command, so it
+terminates its own caller: exit 144, and every line after it in the block never
+runs. That is the more expensive half, because what usually sits after a `pkill`
+is the cleanup.
+
+Four instances in one session, all the same shape:
+  - two file edits silently not applied, and reported as applied
+  - `_before_rennes.html`, 351 KB of scratch, shipped to main because the `rm`
+    that would have removed it sat after the `pkill`
+  - two more scratch files left untracked minutes after writing the commit
+    message about the first one
+
+None of it was caught by the suite, and that is the second half of the lesson:
+every page assertion enumerates from `event_config`, so a stray file the config
+does not know about is invisible to all of them. Green meant "every configured
+page is correct", never "the repository is clean".
+
+Kill by PID, or use a pattern that cannot match the caller. Put cleanup BEFORE
+anything that can terminate the shell, or in a `trap`, and never at the end of a
+chain whose earlier commands can fail.
 
 Same family as the `-1` vs `0` locator and the two-quantities-one-number
 entries above: the predicate answered a question adjacent to the one asked. The
