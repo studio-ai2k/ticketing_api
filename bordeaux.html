@@ -477,8 +477,8 @@ body {
   border-radius:1px;box-shadow:0 0 0 1px rgba(8,8,13,.85);z-index:2}
 .mb-sw-r{background:var(--ref);width:3px;height:12px;border-radius:2px}
 .mb-pct{font-family:var(--ff-body);font-size:var(--fs-micro);font-weight:600;margin-left:8px}
-.sv-solo{grid-template-columns:1fr}
-.sv-solo .sv-r{text-align:left}
+.sv-solo .sv-r{grid-column:3}
+.sv-solo::before{content:'\2014';grid-column:1;align-self:center;color:var(--text-dim);opacity:.35}
 .dk-strong .dk-k{color:var(--text);font-weight:600}
 .dk-strong .dk-v{color:var(--text)}
 .prov{margin-top:26px;padding-top:14px;border-top:1px solid var(--border)}
@@ -3177,6 +3177,6 @@ function ac(el){
 })();
 
 </script>
-<!-- shared-v2:8568c556748c -->
+<!-- shared-v2:608db3f0cd30 -->
 </body>
 </html>

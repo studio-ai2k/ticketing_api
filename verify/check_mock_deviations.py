@@ -648,6 +648,30 @@ AUTHORISED_CSS += [
              "at 560 and 393 before and after: zero visual consequence",
      "  .ck-va,.ck-vb{font-size:var(--fs-micro)}",
      None),
+    # SOLO VIEW KEEPS OUR COLUMN WHERE THE HEADER SAYS IT IS. Two entries
+    # because it is two locked lines, and the ledger's unit is the line.
+    ('SOLO1', "RULED: our data stays in the RIGHT-hand column in solo view - the "
+              "column must never move. `.sv-solo{grid-template-columns:1fr}` "
+              "collapsed the row to one column while `.sv-h` kept three, so the "
+              "header's '2026 (actuel)' sat at x=658 and the figures it labels "
+              "sat at x=0. Measured on the rendered page, both widths. That rule "
+              "was written when solo was a rare degraded state; a first edition "
+              "makes it the DEFAULT view, so a reader learns one layout and then "
+              "watches it jump on picking a comparison. Dropping the override "
+              "lets the row inherit `.sv`'s own 1fr 92px 1fr, and grid-column:3 "
+              "puts our cell in the column the header names",
+     ".sv-solo{grid-template-columns:1fr}",
+     ".sv-solo .sv-r{grid-column:3}"),
+    ('SOLO2', "the alignment override goes with it - base `.sv-r{text-align:right}` "
+              "is now correct rather than something to undo - and the vacated "
+              "left column carries a muted em-dash. RULED after seeing both "
+              "rendered at 1200 and 393: 409px of blank beside a right-aligned "
+              "number reads as a fault, and the em-dash reuses the vocabulary a "
+              "no-counterpart row already carries inside a comparison rather "
+              "than inventing a mark. No font-size: the locked `--fs-large` on "
+              ".sv-n set the row height already",
+     ".sv-solo .sv-r{text-align:left}",
+     ".sv-solo::before{content:'\\2014';grid-column:1;align-self:center;color:var(--text-dim);opacity:.35}"),
     ('TS6', "the same deletion for .ck-jx, and its own entry because it is its "
             "own line and could be restored alone. Never had an AUTHORISED_CSS "
             "entry at all - it was locked-mock content that source order had "
