@@ -428,8 +428,9 @@ AUTHORISED_CSS = [
 # banner with it. The five lines are what that costs to write down.
 # Raised in the same commit as the ledger entries, which is the rule this file
 # states.
-BUDGET_ADDED = 1193
-BUDGET_REMOVED = 205
+# 1193 -> 1195 / 205 -> 206: REF1/REF2.
+BUDGET_ADDED = 1195
+BUDGET_REMOVED = 206
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
 AUTHORISED = [
@@ -568,6 +569,16 @@ AUTHORISED = [a for a in AUTHORISED if a[0] not in ('D16', 'D17', 'D18')] + [
             "was selected yet. The Jour/Semaine buttons sit outside this gate "
             "and always rendered, which is why the section looked complete",
      '${CAN_CMP ? `<div class="svctl-p">${cmpMenu()}${modeMenu()}</div>` : \'\'}'),
+    # The 2023 that was never this event's. Two entries, two hunks: one is a
+    # structural omission, the other is copy, and they fail differently.
+    ('REF2', "RULED: name the ROLE, not a year that does not exist. The em-dash "
+             "belongs in the VALUE, not the label - a dash says 'no figure "
+             "here', a header says what the column is and stays meaningful when "
+             "empty. The value beneath already renders '—' over 'pas de "
+             "comparatif', so the alternative read as nothing said three times. "
+             "No tension with the .sv-solo em-dash: different slot, different "
+             "job. Chosen from renders at 1200 and 393, not from the argument",
+     "${CMPSEL ? YR + ' au même point' : 'Référence'}"),
     # CMPSEL. Same one-entry-per-hunk rule: the declaration, the apply-site
     # assignment and each render site could be reverted alone, and the failure
     # of each is different. Six render sites are covered by three signatures
@@ -1182,8 +1193,13 @@ AUTHORISED += [
     ('X14-fut', 'the À VENIR header too. Its own entry because it is a separate '
                 'line that could be reverted alone, leaving the lived rows '
                 'naming the alignment and the future rows still saying "2023 '
-                '(référence)" - half-fixed reads as fixed',
-     "H(hdrRef(true),'J−X',YC + ' (à venir)') +"),
+                '(référence)" - half-fixed reads as fixed. SIGNATURE UPDATED '
+                'for REF1: the line now carries the solo form its twin one line '
+                'above already had. X14-fut named the exact string this later '
+                'became - "the future rows still saying 2023 (référence)" - and '
+                'that is what a first edition rendered, because the ruling '
+                'reached the alignment WORD and not the CMPSEL gate around it',
+     "(CMPSEL ? H(hdrRef(true),'J−X',YC + ' (à venir)')"),
     ('X14-w', 'the alignment word itself, its own entry because it is the part '
               'a later reader would edit',
      "function alignWord(){"),

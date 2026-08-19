@@ -1544,7 +1544,7 @@ const soldPct = pc(A.pres_tot != null ? A.pres_tot : A.n, CAP);
               <div class="kc-s">${d.now>d.cap ? 'jauge dépassée'
                 : d.now===d.cap ? 'complet'
                 : d.vel14 ? `${Math.ceil((d.cap-d.now)/d.vel14)} j au rythme actuel` : '—'}</div></div>
-            <div class="kc"><div class="kc-k">${YR} au même point</div>
+            <div class="kc"><div class="kc-k">${CMPSEL ? YR + ' au même point' : 'Référence'}</div>
               <div class="kc-v" style="color:var(--ref);font-size:var(--fs-body)">${d.ref?nf(d.ref):'—'}</div>
               <div class="kc-s">${dy!==null?sign(dy):'pas de comparatif'}</div></div>
           </div>
@@ -2750,7 +2750,8 @@ function renderSuivi(){
      <div id="sep-past" style="display:none">${CUT('Précédent')}</div>
      ${now.map(R).join('')}
      ${fut.length ? CUT('À venir') +
-       H(hdrRef(true),'J−X',YC + ' (à venir)') +
+       (CMPSEL ? H(hdrRef(true),'J−X',YC + ' (à venir)')
+                : H('','',YC + ' (à venir)')) +
        `<button class="show-more-btn more" onclick="tog('fut')" id="b-fut">Voir les ${fut.length}
           ${isD?'jours restants':'semaines restantes'}</button>
         <div class="box" id="fut" style="display:none;max-height:340px;overflow-y:auto">
@@ -3177,6 +3178,6 @@ function ac(el){
 })();
 
 </script>
-<!-- shared-v2:608db3f0cd30 -->
+<!-- shared-v2:aba78b6db952 -->
 </body>
 </html>
