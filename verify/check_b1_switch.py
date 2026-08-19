@@ -509,6 +509,22 @@ def main():
     for k, (nd, nw, tot) in sorted(diffs.items()):
         print(f'  {k}: daily differs on {nd}/{tot} pair(s), '
               f'weekly on {nw}/{tot}')
+    # PER PAGE, because the whole-set number cannot say WHERE. "82 of 84
+    # pair(s)" against a predicted 64 is a true statement that points nowhere,
+    # and the question it leaves - did a constant go stale, or did the existing
+    # pairs move - is the only one worth asking when it fires. The split answers
+    # it on the same run rather than needing a second instrumented one, which is
+    # what it cost this time.
+    perpage = {}
+    for (pg, cid), byk in BYMODE.items():
+        if 'j_minus' in byk and 'exact_date' in byk:
+            e = perpage.setdefault(pg, [0, 0, 0])
+            e[2] += 1
+            if byk['j_minus'][0] != byk['exact_date'][0]: e[0] += 1
+            if byk['j_minus'][1] != byk['exact_date'][1]: e[1] += 1
+    print('  PER PAGE (j_minus vs exact_date):')
+    for pg, (nd, nw, tot) in sorted(perpage.items()):
+        print(f'    {pg:24} daily {nd}/{tot}  weekly {nw}/{tot}')
     # ---- exact_date, RE-DERIVED FROM THE CALENDAR RULE -------------------
     # These two numbers used to be 21/45 daily and 0/45 weekly. BOTH were
     # properties of the BROKEN mode: 21 was the non-zero-snap count, because
