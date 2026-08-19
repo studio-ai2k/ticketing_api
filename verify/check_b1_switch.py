@@ -66,10 +66,23 @@ import run  # noqa: E402
 import dashboard_payload as dp  # noqa: E402
 import build_series  # noqa: E402
 
-PAGE_EVENT = {'rennes.html': 'rennes_2026', 'bordeaux.html': 'bordeaux_2026',
-              'epk.html': 'epk_2026', 'geneve.html': 'geneve_2026',
-              'parisxxl.html': 'paris_xxl_2026',
-              'bordeaux_oct.html': 'bordeaux_oct_2026'}
+# DERIVED, NOT LISTED. This was a hardcoded six-entry dict, and it went stale
+# the moment a seventh event was added: `PAGE_EVENT.get('sonora_impact.html')`
+# returned None and the check died with
+#     KeyError: None   at  cfg, ccfg = cfg_all[event], cfg_all[cand]
+# after passing all six pages it did know about. A crash rather than a reported
+# failure, so it read as "the check is broken" rather than "the check has never
+# heard of this page" - and it would have read the same way for every event
+# added from now on.
+#
+# `rebuild_pages.page_map` is already the definition of "output filename ->
+# event id", built from event_config's active rows. Reusing it means this check
+# cannot fall behind the config, and a page with no owning event now raises
+# where it is read rather than resolving to None and travelling.
+import rebuild_pages  # noqa: E402
+
+PAGE_EVENT = rebuild_pages.page_map(Path(run.__file__).resolve().parent /
+                                    'event_config.csv')
 
 JS = r"""
 const { chromium } = require('playwright');
