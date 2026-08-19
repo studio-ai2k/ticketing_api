@@ -632,7 +632,26 @@ def weekly_rows(cur_n, cur_rev, ref_n, ref_rev, cur_ev, ref_ev, cutoff, ref_cut,
         # and its own shift; under `exact_date` it is our week's span mapped back
         # N calendar years. Both live in `Align.week_span` so the label cannot
         # be derived from a different rule than the bucket.
-        sb, eb = align.week_span(w)
+        # OUR GRAIN MUST NOT DEPEND ON A REFERENCE EXISTING. This was an
+        # unconditional `align.week_span(w)`, and `align` is only built when
+        # there is a configured reference - so a first edition raised
+        #   AttributeError: 'NoneType' object has no attribute 'week_span'
+        # and `D['weekly']` was gated to `[]` upstream to avoid it. That gate
+        # was the symptom; this line was the cause.
+        #
+        # Our own bucketing above is already reference-free -
+        # `(cur_ev - d).days // 7`, which is exactly the rule
+        # reference_suivi_candidates.py has specified all project: each side
+        # buckets by its own (event_date_first - order_date)//7. Solo is that
+        # rule with one side absent, not a new rule. Only the REFERENCE half of
+        # the row label needs `align`, and the output below already emits
+        # `sb`/`eb` only `if has_b`.
+        #
+        # Keyed on `has_b` rather than on `align` being truthy: a row has a
+        # reference span exactly when it has a reference bucket, and `has_b`
+        # can only be true when ref rows were counted, which is only possible
+        # when `align` exists. Derived from the data, not from a null check.
+        sb, eb = align.week_span(w) if has_b else (None, None)
         out.append({'w': w, 'a': a, 'b': b, 'ra': round(ra),
                     'rb': round(rb) if rb is not None else None,
                     'pa': round(a / ta * 100, 1),
@@ -898,8 +917,27 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
         'cur_year': cur_cfg['event_date_first'].year,
         'ref_year': ref_cfg['event_date_first'].year if ref_cfg else None,
         'cur': {**totals(cur_rows, cutoff), 'vel': velocity(cur_rows, cutoff)},
-        'ref': ({**totals(ref_rows, ref_cut), 'vel': velocity(ref_rows, ref_cut)}
-                if ref_rows and ref_cut else {'n': 0}),
+        # A FIRST EDITION GETS THE SAME SHAPE, ZEROED - NOT A SMALLER OBJECT.
+        # `{'n': 0}` was nine keys short of a populated `ref`, and the mock
+        # reads `B.vel[w]` at the top of its velocity block BEFORE consulting
+        # HAS_CMP, so SONORA x IMPACT threw
+        #   TypeError: Cannot read properties of undefined (reading '3')
+        # which killed the rest of that script and took Vélocité, Présence,
+        # Répartition and Suivi off the page with it.
+        #
+        # redesign/fixtures/fixture_no_comparison.html is the design's answer
+        # for this case and it does NOT throw: its `ref` carries the SAME TEN
+        # KEYS as a real populated page, all zeroed, and lets HAS_CMP alone
+        # decide what renders. Measured - the fixture's key set and rennes.html's
+        # are identical. The page was disagreeing with the fixture; the fixture
+        # was right.
+        #
+        # Built by running the SAME functions over no rows, so the zero shape
+        # cannot drift from the populated one. Restating the keys as a literal
+        # is what produced this bug.
+        'ref': {**totals(ref_rows if ref_rows and ref_cut else [], ref_cut or cutoff),
+                'vel': velocity(ref_rows if ref_rows and ref_cut else [],
+                                ref_cut or cutoff)},
         'ref_final': ({'n': sum(1 for r in ref_rows if r['_paid']),
                        'rev': round(sum(r['_price'] for r in ref_rows if r['_paid']))}
                       if ref_rows else {'n': 0, 'rev': 0}),
@@ -921,7 +959,13 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
                               cur_cfg['event_date_first'],
                               ref_cfg['event_date_first'] if ref_cfg else None,
                               cutoff, ref_cut, D['jx'], D['cap'],
-                              align) if ref_cfg else []
+                              # NO LONGER `if ref_cfg else []`. The weekly grain
+                              # is OUR data bucketed by OUR event; gating it on a
+                              # configured reference is the same conflation as
+                              # gating the Suivi selector on HAS_CMP, one layer
+                              # down. It left the "Semaine" button rendered with
+                              # nothing behind it on a first edition.
+                              align)
     D['maxjx'] = max((r['jx'] for r in D['daily']), default=span)
     # The last ten days LIVED, not the last ten rows: with future rows in the
     # list the tail is all `–`.
@@ -955,12 +999,21 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
                           if r['_paid'] and r['ticket_type'] == t))}
         for t, c in Counter(r['ticket_type'] for r in cur_rows if r['_paid']).most_common()]
 
-    if D['ref'].get('n'):
-        ref_pres = {b['refday']: b['ref'] for b in blocks if b['refday']}
-        D['ref']['pres'] = ref_pres
-        D['ref']['pres_tot'] = sum(ref_pres.values())
-        D['ref']['pct'] = round(D['ref']['pres_tot'] / D['cap'] * 100, 1) if D['cap'] else 0
-        D['ref']['types'] = []
+    # THE SECOND GATE THAT SHORTENED THE SHAPE. This was `if D['ref'].get('n')`,
+    # so on a first edition the four keys below were never added - the other
+    # half of the nine `ref` was missing. Unconditional now: with no reference
+    # rows every `b['refday']` is None, so the comprehension is empty and these
+    # DERIVE to {} / 0 / 0 / [] rather than being hardcoded to them. Same values,
+    # same shape, one code path.
+    #
+    # HAS_CMP is what decides whether any of this RENDERS, and it still keys on
+    # `n` alone: `!!(D.ref && D.ref.n > 0)`. Shape and visibility are separate
+    # questions, and conflating them is what broke the page.
+    ref_pres = {b['refday']: b['ref'] for b in blocks if b['refday']}
+    D['ref']['pres'] = ref_pres
+    D['ref']['pres_tot'] = sum(ref_pres.values())
+    D['ref']['pct'] = round(D['ref']['pres_tot'] / D['cap'] * 100, 1) if D['cap'] else 0
+    D['ref']['types'] = []
 
     D['perday'] = {b['k']: {'now': b['now'], 'ref': b['ref'], 'vel14': b['vel14'],
                             'cap': b['cap'], 'one': b['comp']['single'],

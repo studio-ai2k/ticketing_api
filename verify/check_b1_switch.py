@@ -66,10 +66,23 @@ import run  # noqa: E402
 import dashboard_payload as dp  # noqa: E402
 import build_series  # noqa: E402
 
-PAGE_EVENT = {'rennes.html': 'rennes_2026', 'bordeaux.html': 'bordeaux_2026',
-              'epk.html': 'epk_2026', 'geneve.html': 'geneve_2026',
-              'parisxxl.html': 'paris_xxl_2026',
-              'bordeaux_oct.html': 'bordeaux_oct_2026'}
+# DERIVED, NOT LISTED. This was a hardcoded six-entry dict, and it went stale
+# the moment a seventh event was added: `PAGE_EVENT.get('sonora_impact.html')`
+# returned None and the check died with
+#     KeyError: None   at  cfg, ccfg = cfg_all[event], cfg_all[cand]
+# after passing all six pages it did know about. A crash rather than a reported
+# failure, so it read as "the check is broken" rather than "the check has never
+# heard of this page" - and it would have read the same way for every event
+# added from now on.
+#
+# `rebuild_pages.page_map` is already the definition of "output filename ->
+# event id", built from event_config's active rows. Reusing it means this check
+# cannot fall behind the config, and a page with no owning event now raises
+# where it is read rather than resolving to None and travelling.
+import rebuild_pages  # noqa: E402
+
+PAGE_EVENT = rebuild_pages.page_map(Path(run.__file__).resolve().parent /
+                                    'event_config.csv')
 
 JS = r"""
 const { chromium } = require('playwright');
@@ -496,6 +509,22 @@ def main():
     for k, (nd, nw, tot) in sorted(diffs.items()):
         print(f'  {k}: daily differs on {nd}/{tot} pair(s), '
               f'weekly on {nw}/{tot}')
+    # PER PAGE, because the whole-set number cannot say WHERE. "82 of 84
+    # pair(s)" against a predicted 64 is a true statement that points nowhere,
+    # and the question it leaves - did a constant go stale, or did the existing
+    # pairs move - is the only one worth asking when it fires. The split answers
+    # it on the same run rather than needing a second instrumented one, which is
+    # what it cost this time.
+    perpage = {}
+    for (pg, cid), byk in BYMODE.items():
+        if 'j_minus' in byk and 'exact_date' in byk:
+            e = perpage.setdefault(pg, [0, 0, 0])
+            e[2] += 1
+            if byk['j_minus'][0] != byk['exact_date'][0]: e[0] += 1
+            if byk['j_minus'][1] != byk['exact_date'][1]: e[1] += 1
+    print('  PER PAGE (j_minus vs exact_date):')
+    for pg, (nd, nw, tot) in sorted(perpage.items()):
+        print(f'    {pg:24} daily {nd}/{tot}  weekly {nw}/{tot}')
     # ---- exact_date, RE-DERIVED FROM THE CALENDAR RULE -------------------
     # These two numbers used to be 21/45 daily and 0/45 weekly. BOTH were
     # properties of the BROKEN mode: 21 was the non-zero-snap count, because
@@ -503,16 +532,51 @@ def main():
     # when the weekly shift is zero on both sides. They could not have been
     # adjusted into correctness - the rule underneath them changed.
     #
-    # Derived independently from the four formulas, before this check was run:
+    # THEN THEY WERE 64 AND 64, AND THAT WENT STALE THE WAY PAGE_EVENT DID.
+    # 64 was derived by hand over the 66 pairs SIX pages reach. Adding a seventh
+    # event moved the pair count to 84 - twelve pairs for its own page, plus one
+    # more on each existing page because it joins their candidate menus - and the
+    # observed count went to 82. Nothing had moved: the per-page split shows the
+    # same TWO coincidence pairs, still on bordeaux_oct and geneve.
+    #
+    # So 64 was the invariant FUSED WITH A MOVING QUANTITY - "how many pairs
+    # coincide" (2, stable) plus "how many pairs exist" (grows with the config)
+    # carried as one number. That is the adjacent-metric family from
+    # HANDOFF_CC4 section 9, in a constant rather than in a probe.
+    #
+    # PREDICTION AND OBSERVATION MUST NOT SHARE A SOURCE. That is what
+    # `predicted_stamp()` got wrong - it modelled the edit, asserted against the
+    # model, and read as clean. So the prediction below is computed from
+    # `event_config` DATES ONLY, through arithmetic that touches neither the
+    # rendered pages nor the row builders they are compared against. The
+    # observation stays where it was: read out of the DOM.
     #
     #   daily   a pair differs unless the calendar drift Y equals the weekday
-    #           snap smod7(G) on every row of the pair
-    #   weekly  a pair differs unless Y is a multiple of 7
+    #           snap smod7(G)
+    #   weekly  a pair differs unless Y is ZERO
     #
-    # over all 66 reachable page x candidate pairs that gives 64 daily and 64
-    # weekly. The two that do not differ are the pairs whose drift happens to
-    # coincide with their snap. Predicted 64/64; observed below.
-    XD, XW = 64, 64
+    # THE WEEKLY RULE IS CORRECTED HERE, and the old one was wrong rather than
+    # stale. It read "unless Y is a multiple of 7", which predicts 60 of 84
+    # against an observed 82. If the offset c is 7k then (x - c)//7 == x//7 - k:
+    # the week SPANS line up and every week INDEX shifts by k, so the rows still
+    # differ. Bucket equality needs c == 0, not c = 0 mod 7. The rule confused
+    # "the weeks align" with "the week numbers are equal" - and it was invisible
+    # while the two counts happened to agree at 64.
+    #
+    # Y == 0 predicts exactly the two pairs the daily rule finds, which is what
+    # a calendar coincidence means: the mapped reference event IS our event.
+    XD = XW = 0
+    for (pg, cid) in BYMODE:
+        # The pair SET comes from what was exercised; the VERDICT on each pair
+        # comes from the config. Sharing the domain is not sharing the source.
+        ev = PAGE_EVENT.get(pg)
+        if ev is None or ev not in cfg_all or cid not in cfg_all:
+            continue
+        cur_ev, ref_ev = (cfg_all[ev]['event_date_first'],
+                          cfg_all[cid]['event_date_first'])
+        Y = (cur_ev - dp.cal_shift(ref_ev, cur_ev.year - ref_ev.year)).days
+        XD += Y != signed_mod7((cur_ev - ref_ev).days)
+        XW += Y != 0
     xd, xw, xt = diffs.get('j_minus vs exact_date', [0, 0, 0])
     if (xd, xw) != (XD, XW):
         failures.append(f'exact_date differs on {xd}/{xw}, want {XD}/{XW}')

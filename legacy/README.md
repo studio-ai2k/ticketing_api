@@ -7,9 +7,29 @@ inserted at freeze time and nowhere else in the file.
 
 ## Provenance
 
-SHA-256 of each page **as it shipped, before the banner was
-inserted**. Strip the single `<div id="cutover-archive-banner">…</div>`
-and its following newline+indent, and the hash returns:
+SHA-256 of each page **as it shipped, before the banner was inserted**.
+
+**The exact span to remove**, because "the banner and its following
+newline+indent" cost the review seat three attempts to guess: everything from
+`<div id="cutover-archive-banner"` through the first `</div>` after it — one
+line, no newlines inside — **plus the next 3 bytes, which are `\n` and two
+spaces**. Nothing else in the file is touched.
+
+Paste this; it prints one line per page and every hash must appear in the table
+below:
+
+```bash
+python3 - legacy/*.html <<'EOF'
+import hashlib, re, sys
+for p in sys.argv[1:]:
+    d = open(p, 'rb').read()
+    d = re.sub(rb'<div id="cutover-archive-banner".*?</div>\n  ', b'', d, count=1, flags=re.S)
+    print(hashlib.sha256(d).hexdigest(), p.split('/')[-1])
+EOF
+```
+
+A provenance record that takes three guesses to verify is one most readers will
+not verify, which makes it decoration. Run it:
 
 | page | sha256 (pre-banner) |
 | --- | --- |

@@ -417,8 +417,19 @@ AUTHORISED_CSS = [
 # budget check below for why this exists and why it is one pair of numbers
 # rather than a count per entry. Raising it is an act of authorisation and
 # belongs in the same commit as the ledger entry that explains the lines.
-BUDGET_ADDED = 1159
-BUDGET_REMOVED = 203
+# 1159 -> 1166: CAN_CMP's seven lines (C1a/C1b).
+# 1166 -> 1188: CMPSEL's declaration, its apply-site assignment and the six
+# render sites it replaces (C2a-C2e), plus their comments. Removed goes 203 ->
+# 205: two of the six swapped lines are one-line `if (!HAS_CMP) return` bodies
+# that count as removals rather than edits.
+# 1188 -> 1193: C2b's comment grew when `CMPSEL = HAS_CMP || nref > 0` became
+# `CMPSEL = true`. The condition was wrong, not just wordy: `nref > 0` meant a
+# candidate with no shared dates un-selected itself and took X4's empty-state
+# banner with it. The five lines are what that costs to write down.
+# Raised in the same commit as the ledger entries, which is the rule this file
+# states.
+BUDGET_ADDED = 1193
+BUDGET_REMOVED = 205
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
 AUTHORISED = [
@@ -540,6 +551,53 @@ AUTHORISED = [a for a in AUTHORISED if a[0] not in ('D16', 'D17', 'D18')] + [
     ('D25c', 'D5 - the VAT segment', 'background:rgba(52,211,153,'),
     ('D25d', 'D5 - the fee segment', '--fc:rgba(52,211,153,'),
     ('D23c', 'D4 - the group dot takes its colour by name', 'background:${gcol(g.g)}"></span>'),
+    # CAN_CMP. Two hunks, two entries, for the D14/D15 reason: the constant and
+    # the gate that reads it could be reverted independently, and either alone
+    # is broken - the constant with no reader is dead, the gate with no constant
+    # is a ReferenceError.
+    ('C1a', "HAS_CMP answers \"is a comparison SELECTED\" and was being asked "
+            "\"can this event compare AT ALL\". Those differ on a first "
+            "edition: sonora_impact has no compare_to, so D.ref.n is 0 - and 12 "
+            "candidates in D.cands that comparison_eligible admits. CAN_CMP is "
+            "the second question, asked of the payload's own candidate list",
+     'const CAN_CMP = !!(D.cands && D.cands.length);'),
+    ('C1b', "the Suivi control panel gated on CAN_CMP rather than HAS_CMP. "
+            "Measured on the built page before and after: sec-suivi carried 0 "
+            "comparison triggers against sec-projection's 2, so the only "
+            "control that could SELECT a comparison was removed because none "
+            "was selected yet. The Jour/Semaine buttons sit outside this gate "
+            "and always rendered, which is why the section looked complete",
+     '${CAN_CMP ? `<div class="svctl-p">${cmpMenu()}${modeMenu()}</div>` : \'\'}'),
+    # CMPSEL. Same one-entry-per-hunk rule: the declaration, the apply-site
+    # assignment and each render site could be reverted alone, and the failure
+    # of each is different. Six render sites are covered by three signatures
+    # because the checker groups them into three hunks; the signatures are the
+    # characteristic lines rather than one per site, which D15 warns about and
+    # X6-head already accepts for the same reason.
+    ('C2a', "HAS_CMP is a load-time const, so on a first edition it is false "
+            "forever: the Suivi rows kept rendering .sv-solo after a candidate "
+            "had been picked, fetched and merged. The data arrived and the rows "
+            "did not use it - worse than the gate, which at least told the "
+            "truth. CMPSEL is the live answer, initialised from HAS_CMP so a "
+            "configured page is pinned true and its output cannot move",
+     'let CMPSEL = HAS_CMP;'),
+    ('C2b', "set on a SUCCESSFUL APPLY, never on the click. CMPANY fails as a "
+            "predicate because it is initialised true and corrected late; a "
+            "flag set optimistically in pickCmp has the same defect elsewhere. "
+            "If the series 404s applySeries is never reached, CMPSEL stays as "
+            "it was and CMPERR renders the failure - D13's path. Measured both "
+            "ways: pick succeeds -> 0 solo rows; series 404s -> 145 solo rows, "
+            "CMPSEL false, CMPERR set",
+     'CMPSEL = true;'),
+    # Two entries, not one, and D15 is why: the daily and weekly row renderers
+    # are separate functions, so a single signature would let one be reverted
+    # in silence while the other kept the ledger green.
+    ('C2c', 'the DAILY Suivi row renderer reads the live flag',
+     "if (!CMPSEL) return `<div class=\"sv sv-solo${r.jx===D.jx?' today':''}\">"),
+    ('C2c2', 'the WEEKLY Suivi row renderer reads the live flag',
+     "if (!CMPSEL) return `<div class=\"sv sv-solo\">"),
+    ('C2e', 'the Suivi table header reads the live flag',
+     "${CMPSEL ? H(hdrRef(),'Diff',YC + ' (actuel)') : H('','',YC + ' (actuel)')}"),
 ]
 
 
@@ -1022,8 +1080,11 @@ AUTHORISED += [
            'than the state that HAS a banner, because it looks like data. '
            'Suppressed where the live-edition sentence already explains the '
            'same em-dashes: two rules correct alone are wrong where they meet, '
-           'and the note naming the CAUSE wins over the one naming the symptom',
-     "const gapShown = HAS_CMP && !CMPERR && CMPGAP && !liveNoted"),
+           'and the note naming the CAUSE wins over the one naming the symptom. '
+           'SIGNATURE UPDATED for C2a: HAS_CMP -> CMPSEL, the live flag. The '
+           'ruling is untouched; only which predicate answers "is a comparison '
+           'showing" changed, and this line was already its own hunk',
+     "const gapShown = CMPSEL && !CMPERR && CMPGAP && !liveNoted"),
     ('X6', 'RULED: NO COUNTERPART, NO DIFF. `r.a - r.b` coerced null to 0, so a '
            'row with no reference rendered "+134" in green - a number that '
            'looks like a comparison and is a restatement of one side. Third '

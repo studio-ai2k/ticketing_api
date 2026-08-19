@@ -108,7 +108,24 @@ SHOTGUN_ACCOUNTS = {
         # bordeaux_oct_2026 (565846) verified on this account - it returned
         # 7,985 tickets. bordeaux_2025/halloween_2025 are unverified but only
         # matter if their reference CSVs are ever refetched.
-        'events': ['bordeaux_oct_2026', 'bordeaux_2025', 'halloween_2025'],
+        #
+        # sonora_impact_2026 (544355) verified before the config row was
+        # written, by probe_shotgun_account.py in run 32146511963:
+        #
+        #   episode  (org 171835) cohosted=0: 0 tickets
+        #   episode  (org 171835) cohosted=1: 0 tickets
+        #   sonora   (org 207784) cohosted=0: 100 tickets on page 1
+        #                                     — event_name='SONORA x IMPACT'
+        #
+        # Both halves matter. The Sonora line confirms ownership BY NAME rather
+        # than by promoter - the note above about bordeaux_2026 exists because
+        # brand and account are independent. The episode lines confirm what a
+        # missing entry costs: DEFAULT_SHOTGUN_ACCOUNT is 'episode', and episode
+        # answers with ZERO TICKETS, not an error. An event left out of both
+        # lists is therefore indistinguishable from an event that has sold
+        # nothing, on a page that renders perfectly.
+        'events': ['bordeaux_oct_2026', 'bordeaux_2025', 'halloween_2025',
+                   'sonora_impact_2026'],
     },
 }
 

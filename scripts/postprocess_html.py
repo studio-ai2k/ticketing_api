@@ -234,6 +234,63 @@ import suivi_selector
 #     neighbouring item, because a lazy dot let the icon body span an item
 #     boundary.
 #
+# ---------------------------------------------------------------------------
+# STANDING RULE - THE SEAM TEST. Ask it of every assertion added here
+# ---------------------------------------------------------------------------
+# Since the cutover this file no longer produces the published page. It
+# produces the INTERMEDIATE that build_v2.py pass 0 consumes, and pass 0
+# replaces everything between `</nav>` and `</body>` with the mock's body built
+# from `const D`. So before adding an assertion, ask:
+#
+#   does the markup it asserts SURVIVE into the shipped page?
+#
+# That is mechanical, not a judgement. Three things survive:
+#
+#   1. everything BEFORE `</nav>` - <head>, the <style> block, the login
+#      overlay, the auth IIFE, the nav shell. (Two exceptions pass 0 replaces
+#      from its own sources: the <style> block, swapped for redesign/*.css,
+#      and `.dept-tabs-bg`, transplanted from the mock. Pass 0 still READS the
+#      `.db-overlay url()` out of the style block and raises if it is missing,
+#      so the login-background restore stays load-bearing.)
+#   2. two things pass 0 reaches back across the seam to CARRY:
+#      `prod_nav_script()` (the nav switcher JS after `</nav>`) and
+#      `transplant_footer()` (the two `.pg-footer` blocks).
+#   3. everything from `</body>` on.
+#
+# Everything else in `</nav>`..`</body>` is discarded seconds after this file
+# writes it. An assertion over that markup is TRUE of the intermediate and says
+# nothing about what ships. It cannot catch a defect, but it can and does stop
+# a build: SONORA x IMPACT, the first event with no prior edition, failed on
+# ten of them at once - .vel-head, .vel-grid, .detail-inset, chartDay{N}S2 and
+# the recolour counts - all of which the shipped page carries 0 of, in every
+# event, comparison or not.
+#
+# Those assertions are not deleted. The passes that emit them still run, and
+# the messages are still the fastest way to read what the intermediate looks
+# like. They are routed to `seam_discarded` in postprocess(): printed, never
+# fatal, and labelled so nobody mistakes one for a shipping defect.
+#
+# The measurement, so it can be redone rather than believed - `#fbbf24` was
+# the one close call, being the only asserted literal with an occurrence
+# outside the seam, and it lands dead too because its one copy is in the
+# `<style>` block that pass 0 replaces wholesale:
+#
+#     python3 -c "$(cat <<'EOF'
+#     import re
+#     from pathlib import Path
+#     h = Path('legacy/rennes.html').read_text(encoding='utf-8')
+#     h = re.sub(r'<style\b.*?</style>', lambda m: ' '*len(m.group(0)), h,
+#                flags=re.DOTALL)          # or every count reads the stylesheet
+#     i, j = h.find('</nav>') + 6, h.rfind('</body>')
+#     for t in ('class="vel-head"', 'class="pgf-item', 'data-sw-trigger'):
+#         print(t, 'outside', h[:i].count(t) + h[j:].count(t),
+#                  'inside', h[i:j].count(t))
+#     EOF
+#     )"
+#
+# legacy/ is the right referent: it is this file's own output, archived at the
+# cutover, so it shows the intermediate rather than the page pass 0 built.
+#
 # ============================================================================
 
 UPLOAD_LINK_RE = re.compile(
@@ -1901,33 +1958,50 @@ def postprocess(path):
     if problems_early:
         problems.append(problems_early)
 
+    # Facts about markup pass 0 discards. See THE SEAM TEST at the top of this
+    # file. Collected and printed, never fatal - a defect they could catch
+    # cannot reach the shipped page, and a build they fail is a build stopped
+    # for nothing. Everything routed here was classified by position, not by
+    # judgement: Deploy 2 and Deploy 3 rewrite only `</nav>`..`</body>`, and
+    # the one part of their output that survives - the two `.pg-footer` blocks
+    # pass 0 carries - is apply_footer's, which stays on `problems` below.
+    seam_discarded = []
+
     # _match_div walks raw <div>/</div> tags, so a <div inside a JS or CSS
     # string would silently mis-nest the whole rebuild. Assert it, rather than
-    # assume it - the generator is free to start emitting one.
+    # assume it - the generator is free to start emitting one. Discarded with
+    # the rebuild it guards: pass 0 splits the seam on find()/rfind() of two
+    # literal tags, so mis-nesting here cannot reach it.
+    proj_stats, d3_stats = {}, {}
     if re.search(r'''['"]<div''', html):
-        problems.append('projection: a quoted "<div" exists - div matching is unsafe')
-        proj_stats = {}
+        seam_discarded.append('projection: a quoted "<div" exists - div matching is unsafe')
     else:
         div_balance_before = html.count('<div') - html.count('</div>')
         ac_t_before = html.count('class="ac-t"')
         html, proj_problems, proj_stats = restructure_projection(html)
-        problems += proj_problems
-        problems += _assert_projection(
+        seam_discarded += proj_problems
+        seam_discarded += _assert_projection(
             html, proj_stats, div_balance_before, ac_t_before)
 
         cutoffs_before = html.count('class="dtl-cutoff"')
         html, d3_problems, d3_stats = apply_deploy3(html)
-        problems += d3_problems
-        problems += _assert_deploy3(html, d3_stats, ac_t_before, cutoffs_before)
+        seam_discarded += d3_problems
+        seam_discarded += _assert_deploy3(html, d3_stats, ac_t_before, cutoffs_before)
 
-        html, footer_problems, footers = apply_footer(html)
-        problems += footer_problems
-        d3_stats['footers'] = footers
+    # OUTSIDE the branch above, deliberately. Both of these are live: pass 0
+    # carries apply_footer's two `.pg-footer` blocks back across the seam, and
+    # suivi_selector's `.suivi.json` sidecar is read by build_v2.py:598. While
+    # the quoted-`<div` guard was fatal, skipping them here was unreachable;
+    # now that it only records a discarded fact, leaving them inside it would
+    # ship a page with no restampable footer and no sidecar for pass 0 to read.
+    html, footer_problems, footers = apply_footer(html)
+    problems += footer_problems
+    d3_stats['footers'] = footers
 
-        sidecar = path.with_suffix(path.suffix + '.suivi.json')
-        html, suivi_problems, suivi_stats = suivi_selector.apply(html, sidecar)
-        problems += suivi_problems
-        d3_stats['suivi'] = suivi_stats
+    sidecar = path.with_suffix(path.suffix + '.suivi.json')
+    html, suivi_problems, suivi_stats = suivi_selector.apply(html, sidecar)
+    problems += suivi_problems
+    d3_stats['suivi'] = suivi_stats
 
     html, auth_problems = add_shared_auth(html)
     problems += auth_problems
@@ -1984,9 +2058,42 @@ def postprocess(path):
           f"palette: {proj_stats.get('recoloured', {})}, "
           f"deploy3: {d3_stats}")
 
+    # Printed before the fatal list, and labelled with what they are. They are
+    # true statements about markup that pass 0 throws away, so they read as
+    # defects and are not - naming the seam in every line is the only thing
+    # keeping the next reader from chasing one. Non-empty is NORMAL on any
+    # event the intermediate has no comparison markup for.
+    # stderr, NOT stdout: build_v2.py:595 runs this file with
+    # stdout=subprocess.DEVNULL, so anything printed the other way is written
+    # into nothing on the only path that still builds a shipped page. A
+    # diagnostic nobody can read is not a diagnostic.
+    if seam_discarded:
+        print(f"  — {len(seam_discarded)} fact(s) about markup inside the "
+              f"`</nav>`..`</body>` seam, which build_v2 pass 0 replaces. "
+              f"Not defects; see THE SEAM TEST in this file:", file=sys.stderr)
+        for p in seam_discarded:
+            print(f"      · {p}", file=sys.stderr)
+
+    # THE REASON GOES TO STDERR, BECAUSE THE ONE CALLER THAT MATTERS DISCARDS
+    # STDOUT. build_v2.py:595 runs this file with stdout=subprocess.DEVNULL and
+    # check=True, so on stdout alone a failed page surfaces as a bare
+    # `CalledProcessError: ... returned non-zero exit status 1` with nothing
+    # saying which assertion fired.
+    #
+    # The SONORA x IMPACT failure looked legible only by accident: the workflow
+    # ALSO invokes this file directly, one line above build_v2, so `bash -e`
+    # stopped there and the ten lines were on the direct call's stdout. Any
+    # failure reached through build_v2 - the rebuild-on-conflict path, a local
+    # `build_v2.py` run, anything after that direct call is removed - would have
+    # printed the exit code and nothing else.
+    #
+    # Kept on stdout as well: the direct invocation's output is what the
+    # workflow log and a human at a terminal already read, and moving it would
+    # trade one silence for another.
     if problems:
         for p in problems:
             print(f"  ❌ {p}")
+            print(f"  ❌ {path.name}: {p}", file=sys.stderr)
         return False
     if link_count == 0:
         print("  ⚠ no upload link found - template may have changed")

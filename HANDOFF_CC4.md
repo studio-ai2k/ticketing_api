@@ -279,6 +279,27 @@ which 404s, so the browser evaluated against an empty body and node died on
 `pickMode`. **A fix that addresses every instance it found is not a fix that
 addresses every instance** — grep the file for the pattern, not the line.
 
+**A decision correct in its own scope, invalidating a claim in another.** The
+newest member, and the one with no obvious guard. §3(a) deleted `PAGE_PATHS`
+because at root the input IS the output — unarguable for the six root pages, and
+the reasoning is written out at length. It is also what broke `preview/`, which
+is one directory deeper and was the only remaining consumer of the machinery
+being removed. Nothing connected the two: no check spans "the thing being
+deleted" and "everything that depended on it", because they were reasoned about
+in different sections, by different arguments, both sound.
+
+The deleted lines' own comment had named the failure in advance — *"the only one
+that would fail at RUNTIME rather than at first paint — a fetch that 404s renders
+as 'comparaison indisponible' on every pick"* — and it was deleted along with the
+code it described, which is how the warning left with the thing it warned about.
+
+What makes this one different from the rest of the family: every other instance
+was a probe stating the wrong claim, and the repair was to fix the probe. Here
+both claims were right. The gap is that **no assertion spanned them**, and the
+only thing that would have caught it is the one that did: publishing something
+through `preview/` and looking. A directory whose contents are never exercised
+is a description, not a mechanism.
+
 **A harness produces findings indistinguishable from real ones.** The
 post-cutover-shaped tree reported `series_path(...) -> None`, which reads
 exactly like a cutover break and was `csv_database/` never being linked into the
@@ -286,3 +307,87 @@ tree. The only thing separating a harness fault from a finding is checking the
 harness *before* believing its output — the same discipline as the negative
 test, applied to the thing running the test. If a simulated environment produces
 a failure, the first suspect is the simulation.
+
+**A process check that includes its own command line cannot distinguish RUNNING
+from ASKING.** `pgrep -f check_b1_switch` matches the shell running
+`pgrep -f check_b1_switch`, so it answers "yes" whether or not the thing exists.
+It cost two false "still running" reports in one session — once on a check that
+had been dead for twelve hours, killed by a `timeout 1500` cap set from a
+measurement taken when the suite had one page fewer; once on a run that had
+already finished and gone red. Both times the report to Leo was confident and
+wrong, and the second one asserted green-in-progress over an actual failure.
+
+Match the real thing: `pgrep -x`, a pidfile, `ps -eo pid,etimes,cmd | grep
+"[c]heck_b1_switch"` with the bracket trick, or the exit status of the job
+itself. And a background wait must key on the PROCESS exiting, not on a log
+going quiet — a log that stops growing looks identical to a log whose writer
+died.
+
+Same family as the `-1` vs `0` locator and the two-quantities-one-number
+entries above: the predicate answered a question adjacent to the one asked. The
+tell is the same too — the answer was available and cheap, and I preferred the
+one already in my hand.
+
+*Second instance, same session, one command later.* Running the suite as
+`for f in verify/check_*.py; do python3 $f; done` gave **20 red**, not 17. The
+three extra were `check_login_bg`, `check_platform_cards` and
+`check_section_amber` dying on `IndexError: list index out of range` — they take
+`sys.argv[1]`/`[2]` and are driven by `assert_redesign.sh`. §0 of this file
+already says so, in the line directly under the loop. A traceback from a check
+that was never given its arguments looks exactly like a check that found
+something.
+
+**An assertion that is TRUE, on an artefact nobody ships.** SONORA x IMPACT, the
+first event added since the cutover and the first with no prior edition, failed
+its build on ten `postprocess_html.py` assertions at once — `0 .vel-head`,
+`0 .vel-grid`, no `.detail-inset` labelled `"vs …"`, no Chart config for
+`chartDay{N}S2`, `recoloured 2 … expected 8`. Every one of them was a true
+statement, and not one of them was about the published page.
+
+The obvious reading was "these assertions are not comparison-blind, add
+`HAS_CMP`". That was wrong, and the measurement that showed it is a two-line
+count: the shipped `rennes.html` carries **0** `.vel-head`, **0** `.vel-grid`,
+**0** `.detail-inset` and **0** `chartDay0S2`. Those classes exist only in
+`legacy/`. Since the cutover, `postprocess_html.py` produces the INTERMEDIATE
+that pass 0 consumes, and pass 0 replaces `</nav>`..`</body>` wholesale. The
+assertions guard markup that is discarded seconds after being written — they
+cannot catch a defect, and they can stop a build.
+
+**The test is mechanical, so apply it mechanically.** Inside the seam →
+discarded → dead; outside → survives → live. Applied to all 73 assertion sites
+rather than to the ten that happened to fire, because *the two that bit are not
+necessarily the only two* is the rule that produced this file: **50 dead, 23
+live**. The ten were the ones this event reached.
+
+Two things nearly made it a wrong answer, and both were caught by measuring
+rather than reasoning:
+
+- The first pass counted the `<style>` block as markup — it sits at bytes
+  1009–46850, *outside* the seam — and returned MIXED for fourteen tokens that
+  are purely in-seam. That is the STANDING RULE at the top of the very file
+  being audited, broken while auditing it. Blank `<style>` before counting.
+- **Position inside the seam is NOT sufficient.** `build_v2.transplant_footer`
+  reaches back into the pre-seam page and carries production's two `.pg-footer`
+  blocks across; `prod_nav_script` does the same for the nav JS. So `apply_footer`
+  and every footer/stamp/emoji assertion are LIVE despite sitting in the discarded
+  region, and deleting them by position would have removed the stampability
+  contract. The question is not "where is it" but **"does pass 0 discard it or
+  carry it"**.
+
+Closest call, recorded because it is the one a reader will want to re-derive:
+`#fbbf24` is the only asserted literal with an occurrence outside the seam, so
+`projection: … is gone from the whole document - the recolour was too broad`
+looked like it earned its place. Its one outside copy is in the `<style>` block,
+which pass 0 also replaces from disk. It lands dead too. **Zero of the 50 guard
+anything outside the seam.**
+
+The 50 are not deleted — the passes still run and the messages are still the
+fastest way to read the intermediate. They are routed to `seam_discarded`,
+printed to **stderr** and never fatal. stderr rather than stdout because
+`build_v2.py:595` runs `postprocess_html.py` with `stdout=subprocess.DEVNULL`:
+a diagnostic printed the other way is written into nothing on the path that
+builds the shipped page. Worth knowing separately — **the fatal `❌` list is
+still on stdout, so a postprocess failure under `build_v2` surfaces as a bare
+`CalledProcessError` with no reason attached.** The SONORA messages were legible
+only because the workflow *also* invokes `postprocess_html.py` directly, one
+line above `build_v2`.

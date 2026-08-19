@@ -433,6 +433,76 @@ jobs:
           merge-multiple: true
           path: .
 
+      # A NEWLY ADDED EVENT WIDENS EVERY OTHER PAGE'S COMPARISON MENU, AND THIS
+      # IS THE ONLY POINT IN THE RUN WHERE THAT CAN BE ACTED ON.
+      #
+      # SONORA x IMPACT was the first event added since the cutover. It built
+      # correctly and `check_eligibility` P4 failed on the OTHER SIX:
+      #
+      #   ok    sonora_impact.html  12 candidate(s), 4 live
+      #   FAIL  rennes.html  menu != comparison rule  absent: ['sonora_impact_2026']
+      #
+      # The menu is derived from the series files on disk, so the moment
+      # `series/sonora_impact_2026.json` exists every other page's menu is one
+      # entry short. P3 shows it plainly: six pages with 11 entries, the new one
+      # with 12.
+      #
+      # WHY NOT ORDER THE MATRIX SO THE NEW EVENT BUILDS FIRST. That is the
+      # obvious fix and it does not work: `build` is a matrix job, so EVERY
+      # EVENT RUNS ON ITS OWN RUNNER WITH ITS OWN `actions/checkout`. Sequencing
+      # them with max-parallel: 1 orders them in time and shares nothing -
+      # sonora's series is written into sonora's runner and dies with it. The
+      # six would read the COMMITTED series set either way, whatever the order.
+      # Measured, not assumed: each build job's step list carries its own
+      # Checkout, and the only channel between the jobs is the artifact upload
+      # this step's `download-artifact` above consumes.
+      #
+      # So the state the others must build against exists in exactly one place:
+      # HERE, after every artifact has been merged into one tree. `data/` holds
+      # the freshly fetched CSVs and `series/` holds every series including the
+      # new one, which is precisely what rebuild_pages.py documents as its
+      # required input.
+      #
+      # The trigger is derived from the artefact rather than from a name: an
+      # UNTRACKED series file is a series git has never seen, which is what
+      # "newly added event" means. No list to keep in step, and it costs one
+      # `git ls-files` on every other run.
+      - name: A new event widens every other page's menu - rebuild them
+        run: |
+          new=$(git ls-files --others --exclude-standard -- 'series/*.json')
+          if [ -z "$new" ]; then
+            echo "no untracked series - every page's menu is already current"
+            exit 0
+          fi
+          echo "new series: $new"
+          python - "$new" <<'PY' > /tmp/stale_pages.txt
+          import csv, sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          import pages
+          new_ids = {Path(p).stem for p in sys.argv[1].split()}
+          # The new event's OWN page already carries the wider menu - it was
+          # built in the same run that created the series. Everything else is
+          # one entry short.
+          own = set()
+          with open('event_config.csv', encoding='utf-8-sig') as f:
+              for row in csv.DictReader(f):
+                  if (row.get('event_id') or '').strip() in new_ids:
+                      name = (row.get('output_filename') or '').strip()
+                      if name:
+                          own.add(name)
+          for name in pages.page_names():
+              if name not in own and Path(name).exists():
+                  print(name)
+          PY
+          stale=$(cat /tmp/stale_pages.txt)
+          if [ -z "$stale" ]; then
+            echo "nothing to rebuild"
+            exit 0
+          fi
+          echo "rebuilding against the widened menu: $stale"
+          python scripts/rebuild_pages.py $stale
+
       - name: Commit if changed
         run: |
           git config user.name "github-actions[bot]"
