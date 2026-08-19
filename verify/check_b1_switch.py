@@ -532,16 +532,51 @@ def main():
     # when the weekly shift is zero on both sides. They could not have been
     # adjusted into correctness - the rule underneath them changed.
     #
-    # Derived independently from the four formulas, before this check was run:
+    # THEN THEY WERE 64 AND 64, AND THAT WENT STALE THE WAY PAGE_EVENT DID.
+    # 64 was derived by hand over the 66 pairs SIX pages reach. Adding a seventh
+    # event moved the pair count to 84 - twelve pairs for its own page, plus one
+    # more on each existing page because it joins their candidate menus - and the
+    # observed count went to 82. Nothing had moved: the per-page split shows the
+    # same TWO coincidence pairs, still on bordeaux_oct and geneve.
+    #
+    # So 64 was the invariant FUSED WITH A MOVING QUANTITY - "how many pairs
+    # coincide" (2, stable) plus "how many pairs exist" (grows with the config)
+    # carried as one number. That is the adjacent-metric family from
+    # HANDOFF_CC4 section 9, in a constant rather than in a probe.
+    #
+    # PREDICTION AND OBSERVATION MUST NOT SHARE A SOURCE. That is what
+    # `predicted_stamp()` got wrong - it modelled the edit, asserted against the
+    # model, and read as clean. So the prediction below is computed from
+    # `event_config` DATES ONLY, through arithmetic that touches neither the
+    # rendered pages nor the row builders they are compared against. The
+    # observation stays where it was: read out of the DOM.
     #
     #   daily   a pair differs unless the calendar drift Y equals the weekday
-    #           snap smod7(G) on every row of the pair
-    #   weekly  a pair differs unless Y is a multiple of 7
+    #           snap smod7(G)
+    #   weekly  a pair differs unless Y is ZERO
     #
-    # over all 66 reachable page x candidate pairs that gives 64 daily and 64
-    # weekly. The two that do not differ are the pairs whose drift happens to
-    # coincide with their snap. Predicted 64/64; observed below.
-    XD, XW = 64, 64
+    # THE WEEKLY RULE IS CORRECTED HERE, and the old one was wrong rather than
+    # stale. It read "unless Y is a multiple of 7", which predicts 60 of 84
+    # against an observed 82. If the offset c is 7k then (x - c)//7 == x//7 - k:
+    # the week SPANS line up and every week INDEX shifts by k, so the rows still
+    # differ. Bucket equality needs c == 0, not c = 0 mod 7. The rule confused
+    # "the weeks align" with "the week numbers are equal" - and it was invisible
+    # while the two counts happened to agree at 64.
+    #
+    # Y == 0 predicts exactly the two pairs the daily rule finds, which is what
+    # a calendar coincidence means: the mapped reference event IS our event.
+    XD = XW = 0
+    for (pg, cid) in BYMODE:
+        # The pair SET comes from what was exercised; the VERDICT on each pair
+        # comes from the config. Sharing the domain is not sharing the source.
+        ev = PAGE_EVENT.get(pg)
+        if ev is None or ev not in cfg_all or cid not in cfg_all:
+            continue
+        cur_ev, ref_ev = (cfg_all[ev]['event_date_first'],
+                          cfg_all[cid]['event_date_first'])
+        Y = (cur_ev - dp.cal_shift(ref_ev, cur_ev.year - ref_ev.year)).days
+        XD += Y != signed_mod7((cur_ev - ref_ev).days)
+        XW += Y != 0
     xd, xw, xt = diffs.get('j_minus vs exact_date', [0, 0, 0])
     if (xd, xw) != (XD, XW):
         failures.append(f'exact_date differs on {xd}/{xw}, want {XD}/{XW}')
