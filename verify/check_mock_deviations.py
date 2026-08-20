@@ -1198,7 +1198,11 @@ AUTHORISED += [
                 'above already had. X14-fut named the exact string this later '
                 'became - "the future rows still saying 2023 (référence)" - and '
                 'that is what a first edition rendered, because the ruling '
-                'reached the alignment WORD and not the CMPSEL gate around it',
+                'reached the alignment WORD and not the CMPSEL gate around it'
+                ' -- AND THAT IS THE POINT WORTH KEEPING: an entry saying what '
+                'must not happen is not an assertion that it will not. This '
+                'rationale described the shipped bug for weeks, as a '
+                'description of the code. See HANDOFF_CC4 section 9',
      "(CMPSEL ? H(hdrRef(true),'J−X',YC + ' (à venir)')"),
     ('X14-w', 'the alignment word itself, its own entry because it is the part '
               'a later reader would edit',

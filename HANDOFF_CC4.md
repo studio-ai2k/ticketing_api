@@ -308,6 +308,47 @@ harness *before* believing its output — the same discipline as the negative
 test, applied to the thing running the test. If a simulated environment produces
 a failure, the first suspect is the simulation.
 
+**A `|| <literal>` that can fire and has never been ruled on is a claim nobody
+made.** `YR = D.ref_year || 2023` put the MOCK'S OWN YEAR on a real page: sonora
+has no reference edition, `ref_year` is null, and the dashboard told a reader
+"2023 (référence)" and "2023 au même point" twice. Nothing was broken — every
+value was computed correctly and rendered cleanly around a year that had nothing
+to do with the event.
+
+`check_mock_literals` exists for exactly this and could not see it, for a reason
+worth stating precisely: **it strips `${…}` before scanning reader-facing text**,
+because an interpolation is data-driven and therefore assumed safe. A
+`|| <literal>` fallback makes it neither. `${YR} au même point` scans as
+" au même point" — no year to find.
+
+Counted rather than guessed, which is what made the rule tractable: **42** such
+fallbacks in the mock, **4** claim-bearing, **1** firing today.
+
+> A fallback is either UNREACHABLE or it is a DECISION. If it can fire, someone
+> has to have ruled on what it means; if nobody has, it is a literal answering a
+> question that was never asked.
+
+The three dormant ones are now asserted in `dashboard_payload` — `vat`,
+`cur_year`, `amode` — so the mock's branches are unreachable rather than merely
+unvisited. Same move as `read_warmup_flags()` refusing to default
+`day_is_warmup` to False. `ref_year` is the exception and is HANDLED rather than
+defaulted, because it is legitimately null on a first edition.
+
+**`vat` is the one to keep in mind, and it is not hypothetical.** A wrong word
+gets noticed; a wrong number gets read. `VAT || 0.055` is the French rate, and
+Genève already sells in CHF — an event whose rate is not 5.5% is one config row
+away, and the failure is every revenue split silently recomputed at a rate
+nobody chose, on a page that looks perfect.
+
+**And the sharpest version of this project's recurring pattern: A LEDGER ENTRY
+THAT DESCRIBES A FAILURE IT DOES NOT PREVENT.** `X14-fut` in
+`check_mock_deviations` ruled the À-venir header and wrote its own rationale:
+*"the future rows still saying '2023 (référence)' — half-fixed reads as fixed."*
+That sentence describes, exactly, the bug that then shipped — because the ruling
+reached the alignment WORD and not the `CMPSEL` gate around it. The description
+of the failure sat in the ledger the whole time, as a description of the code.
+An entry saying what must not happen is not an assertion that it will not.
+
 **A process check that includes its own command line cannot distinguish RUNNING
 from ASKING.** `pgrep -f check_b1_switch` matches the shell running
 `pgrep -f check_b1_switch`, so it answers "yes" whether or not the thing exists.
