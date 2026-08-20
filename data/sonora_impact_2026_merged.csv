@@ -790,13 +790,11 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-05-04,2026-05-04 17:23:32,2-jours,regular,,Pass 2 Jours,Shotgun,71.82,81.17,1,1
 2026-05-04,2026-05-04 17:23:32,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
 2026-05-04,2026-05-04 17:23:32,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
-2026-05-04,2026-05-04 17:23:38,2-jours,regular,,Pass 2 Jours,Shotgun,80.0,90.42,1,1
 2026-05-04,2026-05-04 17:23:46,2-jours,regular,,Pass 2 Jours,Shotgun,80.0,90.42,1,1
 2026-05-04,2026-05-04 17:23:46,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
 2026-05-04,2026-05-04 17:23:48,samedi,vip,['samedi'],Pass Acces Scene,Shotgun,70.0,79.12,1,1
 2026-05-04,2026-05-04 17:23:48,samedi,vip,['samedi'],Pass Acces Scene,Shotgun,70.0,79.12,1,1
 2026-05-04,2026-05-04 17:23:51,2-jours,regular,,Pass 2 Jours,Shotgun,80.0,90.42,1,1
-2026-05-04,2026-05-04 17:24:01,2-jours,regular,,Pass 2 Jours,Shotgun,80.0,90.42,1,1
 2026-05-04,2026-05-04 17:24:05,samedi,regular,['samedi'],Pass Samedi,Shotgun,40.0,45.21,1,1
 2026-05-04,2026-05-04 17:24:14,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
 2026-05-04,2026-05-04 17:24:40,samedi,regular,['samedi'],Pass Samedi,Shotgun,40.0,45.21,1,1
@@ -2372,7 +2370,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-07-01,2026-07-01 20:37:54,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
 2026-07-01,2026-07-01 21:05:48,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
 2026-07-02,2026-07-02 09:47:34,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
-2026-07-02,2026-07-02 12:54:24,2-jours,regular,,Pass 2 Jours,Shotgun,80.0,90.42,1,1
 2026-07-02,2026-07-02 13:38:12,samedi,regular,['samedi'],Pass Samedi,Shotgun,43.64,49.32,1,1
 2026-07-02,2026-07-02 15:16:30,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
 2026-07-02,2026-07-02 16:34:21,samedi,regular,['samedi'],Pass Samedi,Shotgun,43.64,49.32,1,1
@@ -4089,3 +4086,20 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-20,2026-08-20 15:59:18,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
 2026-08-20,2026-08-20 15:59:18,samedi,regular,['samedi'],Pass Samedi,Shotgun,43.64,49.32,1,1
 2026-08-20,2026-08-20 16:00:07,samedi,regular,['samedi'],Pass Samedi,Shotgun,43.64,49.32,1,1
+2026-08-20,2026-08-20 16:34:22,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
+2026-08-20,2026-08-20 17:24:33,2-jours,regular,,Pass 2 Jours,Shotgun,80.0,90.42,1,1
+2026-08-20,2026-08-20 17:39:49,samedi,regular,['samedi'],Pass Samedi,Shotgun,43.64,49.32,1,1
+2026-08-20,2026-08-20 18:04:08,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,40.0,45.21,1,1
+2026-08-20,2026-08-20 18:11:07,samedi,regular,['samedi'],Pass Samedi,Shotgun,43.64,49.32,1,1
+2026-08-20,2026-08-20 18:34:59,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
+2026-08-20,2026-08-20 18:51:35,2-jours,regular,,Pass 2 Jours,Shotgun,80.0,90.42,1,1
+2026-08-20,2026-08-20 19:04:34,2-jours,regular,,Pass 2 Jours,Shotgun,80.0,90.42,1,1
+2026-08-20,2026-08-20 19:14:13,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
+2026-08-20,2026-08-20 19:37:24,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
+2026-08-20,2026-08-20 19:44:25,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
+2026-08-20,2026-08-20 19:45:49,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
+2026-08-20,2026-08-20 19:56:55,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
+2026-08-20,2026-08-20 19:57:17,samedi,regular,['samedi'],Pass Samedi,Shotgun,43.64,49.32,1,1
+2026-08-20,2026-08-20 19:57:17,samedi,regular,['samedi'],Pass Samedi,Shotgun,43.64,49.32,1,1
+2026-08-20,2026-08-20 19:57:17,samedi,regular,['samedi'],Pass Samedi,Shotgun,43.64,49.32,1,1
+2026-08-20,2026-08-20 20:17:09,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
