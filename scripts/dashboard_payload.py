@@ -1084,6 +1084,45 @@ def build(event, csv_path, cutoff, config, ref_event=None, ref_csv=None,
 
     # ---- meta ------------------------------------------------------------
     D['meta'] = {'cur': _meta(cur_rows, cur_cfg), 'ref': _meta(ref_rows, ref_cfg)}
+
+    # A FALLBACK IS EITHER UNREACHABLE OR IT IS A DECISION.
+    #
+    # The mock reads these three as `D.x || <literal>`, and `||` fires on ANY
+    # falsy value - null, 0, '', false. Each of them is non-falsy here by
+    # construction today and NOTHING SAID SO, which is the same shape as
+    # `read_warmup_flags` refusing to default `day_is_warmup` to False: a
+    # default that is currently never taken is not safe, it is untested.
+    #
+    # Asserting them makes the mock's three `||` branches UNREACHABLE rather
+    # than merely unvisited - which is also why `check_mock_literals` needs no
+    # change: with nothing able to fire, there is nothing for its `${…}` strip
+    # to miss.
+    #
+    #   vat       THE ONE THAT RENDERS WRONG MONEY. `VAT || 0.055` is the
+    #             French rate. Genève already sells in CHF, so an event whose
+    #             rate is not 5.5% is not hypothetical - it is one config row
+    #             away, and the failure is every revenue split silently
+    #             recomputed at a rate nobody chose. A wrong word gets noticed;
+    #             a wrong number gets read.
+    #   cur_year  labels the current column on every page.
+    #   amode     picks which alignment the page CLAIMS it is showing.
+    #
+    # `ref_year` is deliberately NOT here: it is legitimately null on a first
+    # edition. That one is HANDLED - the page names the role instead of a year -
+    # rather than defaulted, which is the whole distinction.
+    for key, why in (('vat', 'every revenue split would be recomputed at the '
+                             'mock\'s French 5.5%, silently'),
+                     ('cur_year', 'the current column would be labelled with '
+                                  'the mock\'s own year'),
+                     ('amode', 'the page would claim j_minus alignment '
+                               'whatever it actually rendered')):
+        if not D.get(key):
+            raise SystemExit(
+                f'dashboard_payload: D[{key!r}] is {D.get(key)!r}, which is '
+                f'falsy.\n'
+                f'  The mock reads it as `D.{key} || <literal>`, so {why}.\n'
+                f'  Propagate the absence instead of letting a literal stand '
+                f'in for it (Trap #12).')
     return D
 
 

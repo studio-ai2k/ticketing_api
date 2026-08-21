@@ -428,8 +428,12 @@ AUTHORISED_CSS = [
 # banner with it. The five lines are what that costs to write down.
 # Raised in the same commit as the ledger entries, which is the rule this file
 # states.
-BUDGET_ADDED = 1193
-BUDGET_REMOVED = 205
+# 1193 -> 1195 / 205 -> 206: REF1/REF2.
+# 1195 -> 1215: MODNAV's comment. It grew by eight lines when the seam's
+# delimiters had to come OUT of it - spelling them moved the seam, because
+# body_of() locates the region with a plain find() for that literal.
+BUDGET_ADDED = 1215
+BUDGET_REMOVED = 206
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
 AUTHORISED = [
@@ -568,6 +572,27 @@ AUTHORISED = [a for a in AUTHORISED if a[0] not in ('D16', 'D17', 'D18')] + [
             "was selected yet. The Jour/Semaine buttons sit outside this gate "
             "and always rendered, which is why the section looked complete",
      '${CAN_CMP ? `<div class="svctl-p">${cmpMenu()}${modeMenu()}</div>` : \'\'}'),
+    ('MODNAV', "the module switcher's dead href=\"#\" is CORRECT in the mock "
+               "and the comment says why. Production's switcher is "
+               "MODULE_DROPDOWN in postprocess_html.py and lives in the nav, "
+               "OUTSIDE the seam; this block is a RENDERING of it and reaches "
+               "no dashboard. When the two anchors were pointed at "
+               "madameloyal.ai2k.dev the mock was deliberately left dead, and "
+               "NOTHING ENFORCES THAT DIVERGENCE - so the comment is the only "
+               "thing stopping the next reader from 'restoring parity', "
+               "changing nothing on any page, and believing they had. That is "
+               "the .sv-solo shape, which cost a cycle the same day",
+     '<!-- href="#" IS CORRECT HERE AND MUST STAY. This block is a RENDERING of'),
+    # The 2023 that was never this event's. Two entries, two hunks: one is a
+    # structural omission, the other is copy, and they fail differently.
+    ('REF2', "RULED: name the ROLE, not a year that does not exist. The em-dash "
+             "belongs in the VALUE, not the label - a dash says 'no figure "
+             "here', a header says what the column is and stays meaningful when "
+             "empty. The value beneath already renders '—' over 'pas de "
+             "comparatif', so the alternative read as nothing said three times. "
+             "No tension with the .sv-solo em-dash: different slot, different "
+             "job. Chosen from renders at 1200 and 393, not from the argument",
+     "${CMPSEL ? YR + ' au même point' : 'Référence'}"),
     # CMPSEL. Same one-entry-per-hunk rule: the declaration, the apply-site
     # assignment and each render site could be reverted alone, and the failure
     # of each is different. Six render sites are covered by three signatures
@@ -648,6 +673,30 @@ AUTHORISED_CSS += [
              "at 560 and 393 before and after: zero visual consequence",
      "  .ck-va,.ck-vb{font-size:var(--fs-micro)}",
      None),
+    # SOLO VIEW KEEPS OUR COLUMN WHERE THE HEADER SAYS IT IS. Two entries
+    # because it is two locked lines, and the ledger's unit is the line.
+    ('SOLO1', "RULED: our data stays in the RIGHT-hand column in solo view - the "
+              "column must never move. `.sv-solo{grid-template-columns:1fr}` "
+              "collapsed the row to one column while `.sv-h` kept three, so the "
+              "header's '2026 (actuel)' sat at x=658 and the figures it labels "
+              "sat at x=0. Measured on the rendered page, both widths. That rule "
+              "was written when solo was a rare degraded state; a first edition "
+              "makes it the DEFAULT view, so a reader learns one layout and then "
+              "watches it jump on picking a comparison. Dropping the override "
+              "lets the row inherit `.sv`'s own 1fr 92px 1fr, and grid-column:3 "
+              "puts our cell in the column the header names",
+     ".sv-solo{grid-template-columns:1fr}",
+     ".sv-solo .sv-r{grid-column:3}"),
+    ('SOLO2', "the alignment override goes with it - base `.sv-r{text-align:right}` "
+              "is now correct rather than something to undo - and the vacated "
+              "left column carries a muted em-dash. RULED after seeing both "
+              "rendered at 1200 and 393: 409px of blank beside a right-aligned "
+              "number reads as a fault, and the em-dash reuses the vocabulary a "
+              "no-counterpart row already carries inside a comparison rather "
+              "than inventing a mark. No font-size: the locked `--fs-large` on "
+              ".sv-n set the row height already",
+     ".sv-solo .sv-r{text-align:left}",
+     ".sv-solo::before{content:'\\2014';grid-column:1;align-self:center;color:var(--text-dim);opacity:.35}"),
     ('TS6', "the same deletion for .ck-jx, and its own entry because it is its "
             "own line and could be restored alone. Never had an AUTHORISED_CSS "
             "entry at all - it was locked-mock content that source order had "
@@ -1158,8 +1207,17 @@ AUTHORISED += [
     ('X14-fut', 'the À VENIR header too. Its own entry because it is a separate '
                 'line that could be reverted alone, leaving the lived rows '
                 'naming the alignment and the future rows still saying "2023 '
-                '(référence)" - half-fixed reads as fixed',
-     "H(hdrRef(true),'J−X',YC + ' (à venir)') +"),
+                '(référence)" - half-fixed reads as fixed. SIGNATURE UPDATED '
+                'for REF1: the line now carries the solo form its twin one line '
+                'above already had. X14-fut named the exact string this later '
+                'became - "the future rows still saying 2023 (référence)" - and '
+                'that is what a first edition rendered, because the ruling '
+                'reached the alignment WORD and not the CMPSEL gate around it'
+                ' -- AND THAT IS THE POINT WORTH KEEPING: an entry saying what '
+                'must not happen is not an assertion that it will not. This '
+                'rationale described the shipped bug for weeks, as a '
+                'description of the code. See HANDOFF_CC4 section 9',
+     "(CMPSEL ? H(hdrRef(true),'J−X',YC + ' (à venir)')"),
     ('X14-w', 'the alignment word itself, its own entry because it is the part '
               'a later reader would edit',
      "function alignWord(){"),

@@ -477,8 +477,8 @@ body {
   border-radius:1px;box-shadow:0 0 0 1px rgba(8,8,13,.85);z-index:2}
 .mb-sw-r{background:var(--ref);width:3px;height:12px;border-radius:2px}
 .mb-pct{font-family:var(--ff-body);font-size:var(--fs-micro);font-weight:600;margin-left:8px}
-.sv-solo{grid-template-columns:1fr}
-.sv-solo .sv-r{text-align:left}
+.sv-solo .sv-r{grid-column:3}
+.sv-solo::before{content:'\2014';grid-column:1;align-self:center;color:var(--text-dim);opacity:.35}
 .dk-strong .dk-k{color:var(--text);font-weight:600}
 .dk-strong .dk-v{color:var(--text)}
 .prov{margin-top:26px;padding-top:14px;border-top:1px solid var(--border)}
@@ -833,11 +833,11 @@ function dbSubmit(){
     <svg class="sw-chev" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
   </div>
   <div class="sw-menu right" role="menu">
-    <a class="sw-item disabled" role="menuitem" href="#">
+    <a class="sw-item" role="menuitem" href="https://madameloyal.ai2k.dev/dates/index.html">
       <svg class="sw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       <span class="sw-label">Événements</span>
     </a>
-    <a class="sw-item disabled" role="menuitem" href="#">
+    <a class="sw-item" role="menuitem" href="https://madameloyal.ai2k.dev/budget/budget_general.html">
       <svg class="sw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
       <span class="sw-label">Budgetflow</span>
     </a>
@@ -1017,7 +1017,7 @@ function dbSubmit(){
     <div class="card" id="logique" style="margin-bottom:12px"></div>
     <div id="proj"></div></div>
 
-  <div class="pg-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">21/08 · 14:21</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 3.5V9H15"/></svg><span class="pgf-k">Données API</span><span class="pgf-v">14:27</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v7.0</span></span></div>
+  <div class="pg-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">21/08 · 14:21</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 3.5V9H15"/></svg><span class="pgf-k">Données API</span><span class="pgf-v">14:49</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v7.0</span></span></div>
 </div><!-- /page-billetterie -->
 
 <div class="page" id="page-details">
@@ -1045,7 +1045,7 @@ function dbSubmit(){
     </div></div></div>
 
   <div class="sec" id="sec-donnees"><div class="card" id="det-data"></div></div>
-  <div class="pg-footer det-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">21/08 · 14:21</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 3.5V9H15"/></svg><span class="pgf-k">Données API</span><span class="pgf-v">14:27</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v7.0</span></span></div>
+  <div class="pg-footer det-footer"><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v1.7a1.8 1.8 0 0 0 0 3.6v1.7a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-1.7a1.8 1.8 0 0 0 0-3.6z"/><path d="M9.6 7v10" stroke-dasharray="1.8 2.2"/></svg><span class="pgf-k">Dernier billet</span><span class="pgf-v">21/08 · 14:21</span></span><span class="pgf-sep"></span><span class="pgf-item"><svg class="pgf-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 3.5V9H15"/></svg><span class="pgf-k">Données API</span><span class="pgf-v">14:49</span></span><span class="pgf-sep"></span><span class="pgf-item pgf-brand">Festiflow Dashboard<span class="pgf-ver">v7.0</span></span></div>
 </div><!-- /page-details -->
 </div><!-- /wrap -->
 
@@ -1544,7 +1544,7 @@ const soldPct = pc(A.pres_tot != null ? A.pres_tot : A.n, CAP);
               <div class="kc-s">${d.now>d.cap ? 'jauge dépassée'
                 : d.now===d.cap ? 'complet'
                 : d.vel14 ? `${Math.ceil((d.cap-d.now)/d.vel14)} j au rythme actuel` : '—'}</div></div>
-            <div class="kc"><div class="kc-k">${YR} au même point</div>
+            <div class="kc"><div class="kc-k">${CMPSEL ? YR + ' au même point' : 'Référence'}</div>
               <div class="kc-v" style="color:var(--ref);font-size:var(--fs-body)">${d.ref?nf(d.ref):'—'}</div>
               <div class="kc-s">${dy!==null?sign(dy):'pas de comparatif'}</div></div>
           </div>
@@ -2750,7 +2750,8 @@ function renderSuivi(){
      <div id="sep-past" style="display:none">${CUT('Précédent')}</div>
      ${now.map(R).join('')}
      ${fut.length ? CUT('À venir') +
-       H(hdrRef(true),'J−X',YC + ' (à venir)') +
+       (CMPSEL ? H(hdrRef(true),'J−X',YC + ' (à venir)')
+                : H('','',YC + ' (à venir)')) +
        `<button class="show-more-btn more" onclick="tog('fut')" id="b-fut">Voir les ${fut.length}
           ${isD?'jours restants':'semaines restantes'}</button>
         <div class="box" id="fut" style="display:none;max-height:340px;overflow-y:auto">
@@ -3177,6 +3178,6 @@ function ac(el){
 })();
 
 </script>
-<!-- shared-v2:8568c556748c -->
+<!-- shared-v2:c3a9124c47d6 -->
 </body>
 </html>

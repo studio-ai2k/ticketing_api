@@ -692,6 +692,26 @@ button.sw-item{background:none;border:0;width:100%;text-align:left;
     <button class="nm on" id="btn-billetterie" onclick="goPage('billetterie',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Billetterie</button>
     <button class="nm" id="btn-details" onclick="goPage('details',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Détails</button>
     <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+<!-- href="#" IS CORRECT HERE AND MUST STAY. This block is a RENDERING of
+     production's module switcher, not its source: the shipped one is
+     MODULE_DROPDOWN in scripts/postprocess_html.py, it lives in the nav
+     OUTSIDE the nav-to-body seam, and pass 0 keeps the PAGE's copy. Nothing
+     here reaches a dashboard.
+
+     THE SEAM'S DELIMITERS ARE NOT WRITTEN OUT ANYWHERE IN THIS FILE, and this
+     comment is why. The first draft spelled them, `body_of()` locates the
+     region with a plain find() for the closing nav tag, and the literal in this
+     comment MOVED THE SEAM - the spliced region swallowed the tab bar and pass 0
+     refused with ".dept-tabs-bg matched 1 time(s) in the mock and 2 in the
+     page". A comment describing a mechanism, written in the mechanism's own
+     vocabulary, joining in.
+
+     So the two anchors below are deliberately dead while production's point at
+     https://madameloyal.ai2k.dev/dates/ and /budget/. DO NOT "restore parity" -
+     editing them changes nothing on any page while looking exactly like a fix,
+     which is the .sv-solo shape and cost a cycle the day this comment was
+     written. Nothing enforces the divergence either; this comment is the only
+     thing standing between the next reader and that hour. -->
 <div class="sw-wrap" style="position:relative" aria-label="Changer de module">
   <div class="sw-trigger mod-trigger" data-sw-trigger title="Changer de module">
     <span class="mod-name">Billetterie</span>
@@ -1304,7 +1324,7 @@ const soldPct = pc(A.pres_tot != null ? A.pres_tot : A.n, CAP);
               <div class="kc-s">${d.now>d.cap ? 'jauge dépassée'
                 : d.now===d.cap ? 'complet'
                 : d.vel14 ? `${Math.ceil((d.cap-d.now)/d.vel14)} j au rythme actuel` : '—'}</div></div>
-            <div class="kc"><div class="kc-k">${YR} au même point</div>
+            <div class="kc"><div class="kc-k">${CMPSEL ? YR + ' au même point' : 'Référence'}</div>
               <div class="kc-v" style="color:var(--ref);font-size:var(--fs-body)">${d.ref?nf(d.ref):'—'}</div>
               <div class="kc-s">${dy!==null?sign(dy):'pas de comparatif'}</div></div>
           </div>
@@ -2510,7 +2530,8 @@ function renderSuivi(){
      <div id="sep-past" style="display:none">${CUT('Précédent')}</div>
      ${now.map(R).join('')}
      ${fut.length ? CUT('À venir') +
-       H(hdrRef(true),'J−X',YC + ' (à venir)') +
+       (CMPSEL ? H(hdrRef(true),'J−X',YC + ' (à venir)')
+                : H('','',YC + ' (à venir)')) +
        `<button class="show-more-btn more" onclick="tog('fut')" id="b-fut">Voir les ${fut.length}
           ${isD?'jours restants':'semaines restantes'}</button>
         <div class="box" id="fut" style="display:none;max-height:340px;overflow-y:auto">

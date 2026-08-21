@@ -308,6 +308,47 @@ harness *before* believing its output — the same discipline as the negative
 test, applied to the thing running the test. If a simulated environment produces
 a failure, the first suspect is the simulation.
 
+**A `|| <literal>` that can fire and has never been ruled on is a claim nobody
+made.** `YR = D.ref_year || 2023` put the MOCK'S OWN YEAR on a real page: sonora
+has no reference edition, `ref_year` is null, and the dashboard told a reader
+"2023 (référence)" and "2023 au même point" twice. Nothing was broken — every
+value was computed correctly and rendered cleanly around a year that had nothing
+to do with the event.
+
+`check_mock_literals` exists for exactly this and could not see it, for a reason
+worth stating precisely: **it strips `${…}` before scanning reader-facing text**,
+because an interpolation is data-driven and therefore assumed safe. A
+`|| <literal>` fallback makes it neither. `${YR} au même point` scans as
+" au même point" — no year to find.
+
+Counted rather than guessed, which is what made the rule tractable: **42** such
+fallbacks in the mock, **4** claim-bearing, **1** firing today.
+
+> A fallback is either UNREACHABLE or it is a DECISION. If it can fire, someone
+> has to have ruled on what it means; if nobody has, it is a literal answering a
+> question that was never asked.
+
+The three dormant ones are now asserted in `dashboard_payload` — `vat`,
+`cur_year`, `amode` — so the mock's branches are unreachable rather than merely
+unvisited. Same move as `read_warmup_flags()` refusing to default
+`day_is_warmup` to False. `ref_year` is the exception and is HANDLED rather than
+defaulted, because it is legitimately null on a first edition.
+
+**`vat` is the one to keep in mind, and it is not hypothetical.** A wrong word
+gets noticed; a wrong number gets read. `VAT || 0.055` is the French rate, and
+Genève already sells in CHF — an event whose rate is not 5.5% is one config row
+away, and the failure is every revenue split silently recomputed at a rate
+nobody chose, on a page that looks perfect.
+
+**And the sharpest version of this project's recurring pattern: A LEDGER ENTRY
+THAT DESCRIBES A FAILURE IT DOES NOT PREVENT.** `X14-fut` in
+`check_mock_deviations` ruled the À-venir header and wrote its own rationale:
+*"the future rows still saying '2023 (référence)' — half-fixed reads as fixed."*
+That sentence describes, exactly, the bug that then shipped — because the ruling
+reached the alignment WORD and not the `CMPSEL` gate around it. The description
+of the failure sat in the ledger the whole time, as a description of the code.
+An entry saying what must not happen is not an assertion that it will not.
+
 **A process check that includes its own command line cannot distinguish RUNNING
 from ASKING.** `pgrep -f check_b1_switch` matches the shell running
 `pgrep -f check_b1_switch`, so it answers "yes" whether or not the thing exists.
@@ -317,11 +358,121 @@ measurement taken when the suite had one page fewer; once on a run that had
 already finished and gone red. Both times the report to Leo was confident and
 wrong, and the second one asserted green-in-progress over an actual failure.
 
-Match the real thing: `pgrep -x`, a pidfile, `ps -eo pid,etimes,cmd | grep
-"[c]heck_b1_switch"` with the bracket trick, or the exit status of the job
-itself. And a background wait must key on the PROCESS exiting, not on a log
+Match the real thing: `pgrep -x`, a pidfile, or the exit status of the job
+itself. The bracket trick (`grep "[c]heck_b1_switch"`) is not enough either — it
+failed here the moment the name appeared in the command line for an unrelated
+reason, because a commit message being passed to `git commit` happened to
+contain it. And a background wait must key on the PROCESS exiting, not on a log
 going quiet — a log that stops growing looks identical to a log whose writer
 died.
+
+**AND THE SAME PATTERN IN `pkill` DOES NOT MISREPORT, IT KILLS YOU.**
+`pkill -f "http.server 8732"` matches the shell running that command, so it
+terminates its own caller: exit 144, and every line after it in the block never
+runs. That is the more expensive half, because what usually sits after a `pkill`
+is the cleanup.
+
+Four instances in one session, all the same shape:
+  - two file edits silently not applied, and reported as applied
+  - `_before_rennes.html`, 351 KB of scratch, shipped to main because the `rm`
+    that would have removed it sat after the `pkill`
+  - two more scratch files left untracked minutes after writing the commit
+    message about the first one
+
+None of it was caught by the suite, and that is the second half of the lesson:
+every page assertion enumerates from `event_config`, so a stray file the config
+does not know about is invisible to all of them. Green meant "every configured
+page is correct", never "the repository is clean".
+
+Kill by PID, or use a pattern that cannot match the caller. Put cleanup BEFORE
+anything that can terminate the shell, or in a `trap`, and never at the end of a
+chain whose earlier commands can fail.
+
+**A COMMENT WRITTEN IN THE MECHANISM'S OWN VOCABULARY JOINS IN.** Second
+instance this session, and the first one should have been enough.
+
+- The workflow's restamp step got a comment explaining why it no longer names
+  the staging path — and `check_v2_footer` clause 5 greps that step's body as
+  TEXT, so the comment satisfied the check that existed to notice the change.
+- A comment added to the mock explaining where the seam is spelled the seam's
+  delimiters. `body_of()` locates the region with a plain `find()` for the
+  closing nav tag, so the literal inside the comment MOVED THE SEAM: the spliced
+  region swallowed the tab bar and pass 0 refused with `.dept-tabs-bg matched
+  1 time(s) in the mock and 2 in the page`.
+
+Both were prose about a mechanism, placed inside the mechanism's own input, in
+the exact characters it matches on. **If a check or a parser reads a file as
+text, every word you add to that file is input** — including the words
+explaining what it does. Describe the delimiter, do not spell it; or put the
+prose somewhere the parser does not read.
+
+**A CONFIDENT BRIEF FROM THE SEAT THAT KNOWS BEST IS STILL A PREMISE.** The
+module-switcher task arrived with four numbered constraints, carefully reasoned.
+Three of its premises were wrong, and the instructions built on them would each
+have done damage:
+
+- *"it is a mock edit, so it goes through the ledger"* — it is not. The shipped
+  switcher is `MODULE_DROPDOWN` in `postprocess_html.py`, in the nav, OUTSIDE the
+  seam. Editing the mock changes nothing on any page. **This is the `.sv-solo`
+  shape, and it came from the seat that named the `.sv-solo` shape** — the same
+  doctrine that file states in its own words, "the mock is a RENDERING of the
+  real thing, never a source", was written by the people who then wrote the
+  brief.
+- *"two items, BOTH disabled … remove `disabled` from both"* — five items, two
+  anchors, three spans. Two of those spans are modules that do not exist.
+  Following it literally would have lit them up.
+- *"`check_archive_provenance` will catch it"* — no such file. See below.
+
+None of this was carelessness; the brief was more careful than most. **The
+lesson is that care does not convert a premise into a measurement.** Every one
+of the three took under a minute to check — `grep` for the string, count the
+items, `ls verify/` — and each was checkable BEFORE any edit. The instruction to
+"confirm the second label against the markup rather than taking ours" was in the
+brief, and was right, and stopped one line short of the premises around it.
+
+Check the artefact the instruction names before doing what it says, including
+when — especially when — the instruction is detailed enough to sound measured.
+
+**THREE SHAPES OF ONE THING: BLINDING YOURSELF, ONE STEP AT A TIME.**
+
+| | what it does |
+|---|---|
+| `pgrep -f <name>` | matches your own query — answers "yes" whether or not the thing exists |
+| `pkill -f <name>` | kills your own caller — exit 144, and the cleanup after it never runs |
+| `2>/dev/null` | silences your own error — the step "succeeds" and you carry on |
+
+The third cost an edit that had already been made: `git stash pop` into an
+unresolved merge, its refusal sent to `/dev/null`, and the next command reported
+the edit missing with no reason attached. Nothing was lost — the stash was still
+there — but for one step the tree said something untrue and there was no
+evidence of why.
+
+They are the same defect wearing three hats: **a command whose failure mode is
+to look like success.** Before writing one, ask what it prints when it is wrong.
+If the answer is "the same thing, or nothing", it needs the exit code checked or
+the pattern narrowed.
+
+---
+
+### Two safety nets that are documented and do not exist
+
+**`check_archive_provenance` is not a file.** It has been named twice in briefs
+as the thing that would catch a `legacy/` page changing. Nothing in `verify/`
+reads `legacy/` at all. The archive's hashes are recorded in `legacy/README.md`
+and verified only BY HAND, by pasting the command written there — which is a
+provenance record, not an assertion.
+
+So the archive is documented but **unasserted**: a rebuild that touched
+`legacy/*.html` would ship, and the suite would be green. `rebuild_pages.py` now
+refuses `legacy/` explicitly (that is a real guard), and the workflow's rebase
+handler refuses it too — but nothing checks the FILES. Worth knowing before
+relying on the sentence "the check will catch it", which has now been written
+twice about a check nobody wrote.
+
+**And green never meant the repo is clean** — see the entry above. Every page
+assertion enumerates from `event_config`, so a file the config does not know
+about is invisible to all of them. `_before_rennes.html` shipped to main through
+exactly that gap.
 
 Same family as the `-1` vs `0` locator and the two-quantities-one-number
 entries above: the predicate answered a question adjacent to the one asked. The
