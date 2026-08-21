@@ -26,6 +26,30 @@ about to stop looking at them.
 drive a browser; `check_float_clamp` rebuilds every page. Run it before
 believing any statement in this file, **including this one.**
 
+### NAME WHAT YOU EXCLUDED, IN THE SAME BREATH AS "GREEN". EVERY TIME.
+
+`check_b1_switch` takes ~30 minutes, so it is tempting to drop it from the loop
+while iterating. That is fine. Reporting the result as **"suite green"** is not.
+
+It happened here: the check last ran at `9bdb3e8`, and then FIVE changes landed
+on markup it exercises — the `.sv-solo` layout, the À-venir header, the Présence
+card, the payload assertions, the module switcher. Every intermediate report
+said "suite green (excl b1_switch)" in a parenthesis and "green" in the prose.
+Both were true of the thirty checks that ran and silent about the one that did
+not. **It cost nothing, and that is luck rather than evidence** — the check went
+green when it finally ran, and had it not, five changes would have been sitting
+on main.
+
+This is §0's own rule turned on the seat that wrote it: green means THE LOOP.
+A subset is a subset however carefully it was chosen.
+
+> **"30 of 31, `check_b1_switch` not run"** is a true sentence and takes no
+> longer to write than "green". Write that one.
+
+And before a merge, the exclusion list must be empty or justified out loud: a
+docs-only change need not re-run the browser checks, but saying so is the point,
+not skipping it silently.
+
 Three things worth knowing before you do:
 
 - `bash verify/assert_redesign.sh` takes **no argument**. It resolves where pass
@@ -58,6 +82,43 @@ Run them first. Not because they are expected to fail, but because a handoff
 that says "green" is a claim about a tree you have not seen.
 
 Read `CUTOVER.md` and `HANDOFF_CC3.md` §6 before touching the cutover.
+
+### MERGE ON A CADENCE, NOT AT A FINISH LINE
+
+**Merge whenever the suite is green and nothing is half-applied.** Not when the
+work feels complete, not when the open list is short.
+
+FOUR TIMES work has sat unmerged long enough for Leo to notice it missing — the
+cutover itself, the SONORA page, the module links, and the scratch-file removal.
+Every time the reason was the same and sounded responsible: one more thing to
+verify first. Every time the cost was real and one-sided — **the branch is not a
+place work exists, it is a place work is invisible.** Pages deploys from `main`;
+until the merge, Leo is looking at the previous state and being told about this
+one.
+
+The open list has not emptied in two weeks and is not going to. It currently
+holds option 2, `preview/`, the untested partial-write rollback, ~700 lines of
+dead transformation, the nav divergence and the archive's unasserted provenance.
+None of them blocks a deploy and none of them ever will; they are the permanent
+backlog of a live system. Waiting for it to clear is waiting for something that
+does not happen.
+
+The bar is two conditions, both checkable in a minute:
+
+1. the suite is green, with any exclusion NAMED (see the loop above), and
+2. nothing is half-applied — no edit landed without its rebuild, no shared asset
+   changed without the pages that stamp against it.
+
+If both hold, merge. A follow-up is cheap; an invisible fortnight is not.
+
+### AND CHECK THE PR'S DRAFT STATE BEFORE STARTING A MERGE
+
+Twice now a merge has failed at the last step with
+`405 Pull Request is still a draft`, because these are opened as drafts by
+convention and nobody marked them ready. It is not a problem — one call fixes
+it — but it is discovered at exactly the moment everything else is finished,
+which is the worst time to find anything. Mark it ready when you open it, or
+check before you start.
 
 ---
 
