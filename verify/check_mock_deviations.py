@@ -429,7 +429,10 @@ AUTHORISED_CSS = [
 # Raised in the same commit as the ledger entries, which is the rule this file
 # states.
 # 1193 -> 1195 / 205 -> 206: REF1/REF2.
-BUDGET_ADDED = 1195
+# 1195 -> 1215: MODNAV's comment. It grew by eight lines when the seam's
+# delimiters had to come OUT of it - spelling them moved the seam, because
+# body_of() locates the region with a plain find() for that literal.
+BUDGET_ADDED = 1215
 BUDGET_REMOVED = 206
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
@@ -569,6 +572,17 @@ AUTHORISED = [a for a in AUTHORISED if a[0] not in ('D16', 'D17', 'D18')] + [
             "was selected yet. The Jour/Semaine buttons sit outside this gate "
             "and always rendered, which is why the section looked complete",
      '${CAN_CMP ? `<div class="svctl-p">${cmpMenu()}${modeMenu()}</div>` : \'\'}'),
+    ('MODNAV', "the module switcher's dead href=\"#\" is CORRECT in the mock "
+               "and the comment says why. Production's switcher is "
+               "MODULE_DROPDOWN in postprocess_html.py and lives in the nav, "
+               "OUTSIDE the seam; this block is a RENDERING of it and reaches "
+               "no dashboard. When the two anchors were pointed at "
+               "madameloyal.ai2k.dev the mock was deliberately left dead, and "
+               "NOTHING ENFORCES THAT DIVERGENCE - so the comment is the only "
+               "thing stopping the next reader from 'restoring parity', "
+               "changing nothing on any page, and believing they had. That is "
+               "the .sv-solo shape, which cost a cycle the same day",
+     '<!-- href="#" IS CORRECT HERE AND MUST STAY. This block is a RENDERING of'),
     # The 2023 that was never this event's. Two entries, two hunks: one is a
     # structural omission, the other is copy, and they fail differently.
     ('REF2', "RULED: name the ROLE, not a year that does not exist. The em-dash "
