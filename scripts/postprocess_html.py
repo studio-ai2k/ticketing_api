@@ -646,11 +646,11 @@ MODULE_DROPDOWN = """<div class="sw-wrap" style="position:relative" aria-label="
     <svg class="sw-chev" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
   </div>
   <div class="sw-menu right" role="menu">
-    <a class="sw-item disabled" role="menuitem" href="#">
+    <a class="sw-item" role="menuitem" href="https://madameloyal.ai2k.dev/dates/index.html">
       <svg class="sw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       <span class="sw-label">Événements</span>
     </a>
-    <a class="sw-item disabled" role="menuitem" href="#">
+    <a class="sw-item" role="menuitem" href="https://madameloyal.ai2k.dev/budget/budget_general.html">
       <svg class="sw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
       <span class="sw-label">Budgetflow</span>
     </a>
