@@ -8813,3 +8813,5 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-21,2026-08-21 23:07:05,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
 2026-08-21,2026-08-21 23:12:20,vendredi,vip,['vendredi'],Pass Acces Scene,Shotgun,120.0,135.63,1,1
 2026-08-21,2026-08-21 23:54:10,2-jours,regular,,Pass 2 Jours,Shotgun,95.0,107.37,1,1
+2026-08-22,2026-08-22 07:29:14,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-08-22,2026-08-22 08:19:12,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1

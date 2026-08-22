@@ -13216,3 +13216,11 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-22,2026-08-22 01:51:03,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
 2026-08-22,2026-08-22 04:07:27,dimanche,regular,['dimanche'],Pass Dimanche,Shotgun,45.0,50.86,1,1
 2026-08-22,2026-08-22 04:19:54,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-22,2026-08-22 04:25:32,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-22,2026-08-22 04:43:42,samedi,regular,['samedi'],Pass Samedi,DICE,48.97,52.5,1,1
+2026-08-22,2026-08-22 05:23:22,2-jours,regular,,Pass 2 Jours,Shotgun,90.0,101.72,1,1
+2026-08-22,2026-08-22 06:19:01,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-22,2026-08-22 06:21:39,dimanche,regular,['dimanche'],Pass Dimanche,Shotgun,45.0,50.86,1,1
+2026-08-22,2026-08-22 07:46:53,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-22,2026-08-22 07:57:54,samedi,regular,['samedi'],Pass Samedi,Shotgun,52.27,59.08,1,1
+2026-08-22,2026-08-22 07:58:19,samedi,vip,['samedi'],VIP Yellow Stage - Tickets Acces Scene + Backstage,Shotgun,85.0,96.07,1,1
