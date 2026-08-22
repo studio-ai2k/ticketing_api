@@ -118,6 +118,40 @@ The bar is two conditions, both checkable in a minute:
 
 If both hold, merge. A follow-up is cheap; an invisible fortnight is not.
 
+### RESOLVING A MERGE: `scripts/merge_pages.py`, NOT A REBUILD BY REFLEX
+
+Merging `origin/main` conflicts in every generated page, because both sides
+regenerated them. The rule is unchanged and right: **a generated page is never
+text-merged.** What was wrong was what came next — taking a side and then
+rebuilding all seven, every time.
+
+**That rebuild was unnecessary every time and produced junk every time.** The
+footer carries `Données API · HH:MM` from the build clock, so a rebuild moves it
+whether or not anything else changed. Twice it left five staged files whose
+entire diff was footer timestamps and the build stamp, and twice they were
+discarded BY HAND afterwards. Hand-cleanup after every merge is the shape where
+one day the junk is committed instead — which is exactly how
+`_before_rennes.html` reached `main`.
+
+The question the rebuild was answering already has a check.
+`check_build_stamp.py` compares each page's stamp against the hash of
+`V2_SHARED_ASSETS`, so:
+
+| stamp | meaning | action |
+|---|---|---|
+| matches | the incoming pages are already correct | **do not rebuild** |
+| differs | a shared asset moved on this branch | rebuild — the clock moving is incidental to a change that had to happen |
+
+```bash
+python3 scripts/merge_pages.py          # resolve + decide + re-freeze
+python3 scripts/merge_pages.py --check  # report only, exit 1 if a rebuild is due
+```
+
+Both directions measured: on a current tree it declines and exits 0; with one
+line appended to `dashboard_payload.py` it reports all seven stale and exits 1.
+It re-freezes the finished events either way, because a rebuild converts
+`Données figées · DD/MM` into a live sync time silently.
+
 ### AND CHECK THE PR'S DRAFT STATE BEFORE STARTING A MERGE
 
 Twice now a merge has failed at the last step with
