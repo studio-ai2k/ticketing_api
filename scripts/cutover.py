@@ -69,6 +69,30 @@ from pages import page_names                       # noqa: E402
 
 BANNER_ID = 'cutover-archive-banner'
 
+# THE ARCHIVE'S PROVENANCE STRIP, DEFINED ONCE.
+#
+# legacy/README.md records each page's sha256 as it shipped BEFORE the banner
+# was inserted, so verifying it means removing the banner byte-for-byte. The
+# span is exact and not guessable from a description: the review seat took THREE
+# attempts to reproduce the hashes before deriving it from the file, which is
+# what put the pasteable command in the README.
+#
+# Everything from `<div id="cutover-archive-banner"` through the first `</div>`
+# after it - one line, no newlines inside - PLUS the next 3 bytes, `\n` and two
+# spaces. Nothing else is touched.
+#
+# It lives here rather than in the check because the check, the README's pasted
+# snippet and this module must all strip the SAME bytes. Two copies of an exact
+# span drift, and only one of them is right - with no way to tell which from
+# either side.
+BANNER_STRIP_RE = re.compile(rb'<div id="' + BANNER_ID.encode() + rb'".*?</div>\n  ',
+                             re.S)
+
+
+def strip_banner(data):
+    """The archived page as it shipped: banner removed, nothing else changed."""
+    return BANNER_STRIP_RE.sub(b'', data, count=1)
+
 
 def rel(p):
     try:
@@ -531,7 +555,7 @@ def plan_writes(names, v2_snap, built, hashes, bgs):
              'import hashlib, re, sys',
              'for p in sys.argv[1:]:',
              "    d = open(p, 'rb').read()",
-             '    d = re.sub(rb\'<div id="' + BANNER_ID + '".*?</div>\\n  \', '
+             '    d = re.sub(rb\'' + BANNER_STRIP_RE.pattern.decode() + '\', '
              "b'', d, count=1, flags=re.S)",
              "    print(hashlib.sha256(d).hexdigest(), p.split('/')[-1])",
              'EOF', '```', '',

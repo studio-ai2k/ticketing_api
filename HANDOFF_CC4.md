@@ -12,8 +12,15 @@ for f in verify/check_*.py; do
   timeout 600 python3 "$f" >/dev/null 2>&1 || echo "RED  $n"
 done
 bash verify/assert_redesign.sh >/dev/null 2>&1 || echo "RED  assert_redesign.sh"
-python3 scripts/cutover.py     >/dev/null 2>&1 || echo "RED  cutover dry run"
 ```
+
+**The `cutover.py` dry run is NO LONGER PART OF THIS LOOP, and putting it back
+would make the loop permanently red.** It was here while the cutover was
+pending. Post-cutover `v2/` does not exist, so the dry run refuses with
+`cutover: v2/ is missing …` and exits 1 — which is the tool declining to perform
+its own irreversible step a second time, i.e. correct. `check_cutover_write.py`
+asserts that refusal and IS in the loop above, so the property is still covered;
+what is gone is a line whose failure meant success.
 
 **This is first because it is the reason `check_v2_behaviour.py` sat red for two
 sessions on a tree three handoffs in a row called green.** It was red from the
