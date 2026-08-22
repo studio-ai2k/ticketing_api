@@ -151,6 +151,61 @@ MANUAL_DICE_CSVS = {
     'geneve_2026': 'csv_database/geneve_2026_dice_manual/geneve_2026_dice_manual.csv',
 }
 
+
+def manual_dice_retired(manual_path, dice_mio_id):
+    """(path_to_use, retired_row_count) for one event's DICE source.
+
+    The handover decision, lifted out of main() so it can be EXERCISED. Both
+    this and `dice_handover_problem` below guard a path that has never run in
+    production: `geneve_2026` is the only entry in MANUAL_DICE_CSVS and its
+    `dice_mio_id` is empty, so `manual_path and dice_mio_id` has never both been
+    true. A guard nobody has ever seen fire is a guard nobody has tested.
+
+    Returns the manual path unchanged when there is no API id (today's case),
+    or (None, n) when the API supersedes it - None because the file must not
+    also be counted, n so the replacement can be held to its size.
+    """
+    if not (manual_path and dice_mio_id):
+        return manual_path, None
+    try:
+        with open(manual_path, newline='', encoding='utf-8-sig') as f:
+            return None, sum(1 for _ in csv.DictReader(f))
+    except OSError:
+        # Sized-unknown is NOT the same as zero: returning 0 here would make
+        # any API result pass the shrink check below, which is the failure this
+        # whole mechanism exists to prevent.
+        return None, -1
+
+
+def dice_handover_problem(n_api, retired, allow_shrink, event, dice_mio_id):
+    """The refusal, as a value. None when publishing is safe.
+
+    Refuses a DICE side SMALLER than the export it replaced. A valid token on
+    the wrong account returns HTTP 200 and an empty set, which is
+    indistinguishable from "no sales" - and Genève is 2,912 tickets and ~186k
+    EUR, more than its Shotgun side.
+    """
+    if retired is None or allow_shrink:
+        return None
+    if retired == -1:
+        return (f"REFUSING TO PUBLISH: the manual DICE export for {event} was "
+                f"retired in favour of dice_mio_id {dice_mio_id}, but its size "
+                f"could not be read, so the API result cannot be held to it. "
+                f"Fix the file or drop {event} from MANUAL_DICE_CSVS.")
+    if n_api < retired:
+        return (f"REFUSING TO PUBLISH: the manual DICE export for {event} was "
+                f"retired in favour of dice_mio_id {dice_mio_id}, but the API "
+                f"returned {n_api} ticket(s) against {retired} in the file it "
+                f"replaced.\n\n"
+                f"A valid token on the wrong account returns HTTP 200 and an "
+                f"empty set, so this looks identical to 'no sales'. Either the "
+                f"token cannot reach this event yet - in which case remove "
+                f"dice_mio_id from event_config.csv until it can - or the drop "
+                f"is real, in which case re-run with --allow-dice-shrink.\n\n"
+                f"This guard retires itself: once the API is authoritative, "
+                f"drop {event} from MANUAL_DICE_CSVS and it stops firing.")
+    return None
+
 # Tickets are read through their orders, not through Event.tickets.
 #
 # Ticket.claimedAt is the only date on a ticket, and it records when the fan
@@ -1299,29 +1354,19 @@ def main(argv=None):
     # event has a dice_mio_id the API wins and the file is left alone, so the
     # two can never both be counted.
     manual_dice_path = MANUAL_DICE_CSVS.get(args.event)
-    retired_manual_rows = None
-    if manual_dice_path and event_config['dice_mio_id']:
+    # ONE DEFINITION, in manual_dice_retired() above - the branch it takes has
+    # never run in production, so it is written where a check can call it.
+    manual_dice_path, retired_manual_rows = manual_dice_retired(
+        manual_dice_path, event_config['dice_mio_id'])
+    if retired_manual_rows is not None:
         log(f"\n📄 Manual DICE export for {args.event} superseded by "
             f"dice_mio_id {event_config['dice_mio_id']} - ignoring "
-            f"{manual_dice_path}")
-        # The handover is the dangerous moment. Adding a dice_mio_id retires a
-        # committed export in favour of an API call, and if that token cannot
-        # reach the event the API returns HTTP 200 with an empty set - valid
-        # token, wrong account, indistinguishable from "no sales". Genève is
-        # 2,912 tickets and ~186k EUR, more than its Shotgun side, and M1 would
-        # not catch it: the CSV changing is exactly what M1 publishes.
-        #
-        # So count what is being retired and hold the replacement to it below.
-        # A non-zero check is not enough - partial access returning three
-        # tickets would pass it while losing 2,909.
-        try:
-            with open(manual_dice_path, newline='', encoding='utf-8-sig') as f:
-                retired_manual_rows = sum(1 for _ in csv.DictReader(f))
+            f"{MANUAL_DICE_CSVS.get(args.event)}")
+        if retired_manual_rows == -1:
+            log("   ⚠ could not read the retired export to size it")
+        else:
             log(f"   ⚠ {retired_manual_rows} manual row(s) retired - the API "
                 f"fetch must return at least as many")
-        except OSError as exc:
-            log(f"   ⚠ could not read the retired export to size it: {exc}")
-        manual_dice_path = None
     log(f"Manual DICE: {manual_dice_path or '(none)'}")
 
     # ---- incremental resume state -------------------------------------
@@ -1425,23 +1470,11 @@ def main(argv=None):
     # The other half of the handover guard. Refuse to publish a DICE side
     # smaller than the export it just replaced.
     if retired_manual_rows is not None and not args.skip_dice:
-        if len(dice_tickets) < retired_manual_rows and not args.allow_dice_shrink:
-            raise SystemExit(
-                f"REFUSING TO PUBLISH: the manual DICE export for {args.event} "
-                f"was retired in favour of dice_mio_id "
-                f"{event_config['dice_mio_id']}, but the API returned "
-                f"{len(dice_tickets)} ticket(s) against {retired_manual_rows} "
-                f"in the file it replaced.\n"
-                f"\n"
-                f"A valid token on the wrong account returns HTTP 200 and an "
-                f"empty set, so this looks identical to 'no sales'. Either the "
-                f"token cannot reach this event yet - in which case remove "
-                f"dice_mio_id from event_config.csv until it can - or the drop "
-                f"is real, in which case re-run with --allow-dice-shrink.\n"
-                f"\n"
-                f"This guard retires itself: once the API is authoritative, "
-                f"drop {args.event} from MANUAL_DICE_CSVS and it stops firing."
-            )
+        problem = dice_handover_problem(
+            len(dice_tickets), retired_manual_rows, args.allow_dice_shrink,
+            args.event, event_config['dice_mio_id'])
+        if problem:
+            raise SystemExit(problem)
         log(f"\n✅ DICE handover: {len(dice_tickets)} API row(s) against "
             f"{retired_manual_rows} retired manual row(s)")
 
