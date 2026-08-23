@@ -29,6 +29,24 @@ ALREADY KNOWN LOCALLY, BEFORE ANY TOKEN
 `data/epk_2026_merged.csv` carries a product named **'Pass Festival + Croisiere'**
 - 74 tickets of 13,481. So the croisière is at least partly sold THROUGH epk_2026
 and already counted on epk.html. Whether that is all of it is what this asks.
+
+WHAT THE RUNS RETURNED (2026-08-23)
+------------------------------------
+DICE, `viewer.events` -> EventConnection, 200 requested and **85 returned**, so
+the whole catalogue and not a page cap. Ids run 91459 (2022) to 600413 (Rennes,
+Nov 2026). **No event matches croisi/cruise/bateau/boat.** EPK is one event,
+573271 'MADAME LOYAL x ELEKTRIC PARK : XXL EDITION', not two. Crazy Carnaval is
+591517 'Madame Loyal Paris : Crazy Carnaval Edition', which agrees with the
+fiche's mio URL. Genève and every Sonora event are ABSENT from this list, which
+is the documented Collaborators/second-org split - so "not here" means "not under
+this token", never "does not exist".
+
+Shotgun could not be enumerated at all; see `shotgun_events` below.
+
+The 74 combo tickets are **all Shotgun**, under epk_2026's own 535882, still
+selling (last order 2026-08-23), 57.26-98.09 EUR. `resolve_attendance` maps them
+onto festival days - 49 dimanche, 25 2-jours - so they already count toward
+epk.html's Sunday présence.
 """
 
 import base64
