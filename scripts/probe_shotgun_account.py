@@ -59,6 +59,18 @@ def probe(event_id, account, token, organizer_id, cohosted=False):
 def main():
     events = sys.argv[1:] or DEFAULT_EVENTS
 
+    # `--croisiere` runs the DISCOVERY probe instead. It is routed through here
+    # rather than given its own workflow because `workflow_dispatch` only
+    # dispatches workflows that exist on the DEFAULT BRANCH - a new .yml on a
+    # feature branch cannot be triggered at all. probe-shotgun-account.yml
+    # already passes its `events` input straight through and checks out the
+    # dispatched ref, so this reaches a branch-only script with the account
+    # tokens attached. probe_dice_event.py carries the same passthrough for the
+    # DICE token, which lives on a different workflow.
+    if events and events[0] == '--croisiere':
+        import probe_croisiere
+        return probe_croisiere.main()
+
     tokens = {}
     for account, env_name, _ in ACCOUNTS:
         value = os.environ.get(env_name, '').strip()

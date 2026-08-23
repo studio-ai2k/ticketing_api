@@ -104,6 +104,14 @@ def probe(token, numeric_id):
 
 
 def main():
+    # See the note in probe_shotgun_account.main(): `--croisiere` reaches the
+    # discovery probe through a workflow that already exists on the default
+    # branch. This one carries DICE_TOKEN; the Shotgun one carries the accounts.
+    if sys.argv[1:2] == ['--croisiere']:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import probe_croisiere
+        return probe_croisiere.main()
+
     token = os.environ.get('DICE_TOKEN', '').strip()
     if not token:
         raise SystemExit('DICE_TOKEN is not set')
