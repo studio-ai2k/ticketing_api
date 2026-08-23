@@ -717,6 +717,33 @@ DETAILS_BUTTON_RE = re.compile(
 )
 
 
+def selected_option_label(select_html):
+    """The full `event_name` of the page's own event. None if nothing is selected.
+
+    THE TRIGGER STOPS DERIVING ITS NAME. It used to show `run.py`'s
+    `event_short`, which is `event_name` put through `raw_name.split(' 20')[0]`,
+    a fixed case-sensitive prefix list and an 18-character cap. On the Festiflow
+    names that produced **"Madame Loyal"** for Paris XXL, Genève AND Rennes -
+    three pages whose city vanished into a shared brand - and identical "SB"
+    initials for the two Bordeaux events. Budgetflow renders the same switcher
+    with the same names and does not truncate; measured in Chromium at 393px the
+    longest name ("Madame Loyal x Sonora Bordeaux 2026", 35 chars) ends at 334px
+    with 59px to spare, so there was never anything to shorten.
+
+    IT IS READ FROM THE SELECTED `<option>`, NOT FROM event_config.csv. run.py
+    already writes `label = ev['event_name']` verbatim into every option
+    (run.py:2094), so the trigger and the menu row below it cannot disagree -
+    they are the same string, not two reads of one source that must be kept in
+    step. A config lookup here would have been a second place that decides what
+    an event is called, which is the hazard behind PAGE_EVENT and the hardcoded
+    page->event map.
+    """
+    for m in OPTION_RE.finditer(select_html):
+        if m.group('selected'):
+            return m.group('label').strip()
+    return None
+
+
 def build_session_menu(select_html, active_sub):
     """Turn run.py's <option> list into .sw-item entries. Returns (html, count)."""
     items = []
@@ -763,10 +790,22 @@ def align_nav_shell(html):
     # 5-6. Swap the <select> switcher for the dropdown, carrying the per-event
     # avatar, name, status dot and sub-label across.
     menu_count = [0]
+    name_problems = []
 
     def swap(m):
         menu_html, n = build_session_menu(m.group(0), m.group('sub').strip())
         menu_count[0] = n
+        trigger_name = selected_option_label(m.group(0))
+        if trigger_name is None:
+            # NOT a silent fallback to m.group('name'). run.py emits a selected
+            # option for every page, including its own except-branch, so an
+            # unselected switcher means the markup changed shape - and the
+            # quiet recovery would be to resume showing the derived short name,
+            # which is the behaviour this replaces. Say so instead.
+            name_problems.append(
+                'the session <select> has no selected <option>, so the trigger '
+                'name could not be read from it')
+            trigger_name = m.group('name')
         dot_var = m.group('dot')
         # switcher.css hardcodes the dot to --green, but this template colours
         # it by sale status (--text-dim on closed events). Keep the real colour.
@@ -777,7 +816,7 @@ def align_nav_shell(html):
             '      <div class="sw-trigger" data-sw-trigger>\n'
             f'        {m.group("avatar")}\n'
             '        <div>\n'
-            f'          <div class="nav-sw-name">{m.group("name")}{dot}</div>\n'
+            f'          <div class="nav-sw-name">{trigger_name}{dot}</div>\n'
             f'          <div class="nav-sw-sub">{m.group("sub")}</div>\n'
             '        </div>\n'
             '        <svg class="sw-chev" width="10" height="10" viewBox="0 0 24 24" fill="none" '
@@ -791,6 +830,7 @@ def align_nav_shell(html):
         )
 
     html, sw_count = NAV_SW_BLOCK_RE.subn(swap, html, count=1)
+    problems.extend(f'nav shell: {p}' for p in name_problems)
 
     # 7-8. The right-hand group (module dropdown + account avatar) goes after
     # "Détails" so it is the last child of .nav-top and its margin-left:auto
