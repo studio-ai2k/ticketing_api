@@ -276,12 +276,23 @@ def event_identity(cfg, ref_cfg, ref_label):
     return [
         ('événement les 5\u20136 septembre ${YC}', f'événement {span} ${{YC}}'),
         ('Elektric Park ${YC}', f'{base} ${{YC}}'),
-        # THE REFERENCE LABEL STAYS SPLIT, and that is not an omission. The
-        # template is `{stem} ${YR}`, so the stem must not carry a year of its
-        # own - and `ref_label` is an ARCHIVE row's name ("Rennes 2025",
-        # "Elektric Park 2023"), which does. Verbatim here would render
-        # "Rennes 2025 2025". Only the seven 2026 rows took the year-free fiche
-        # names; the archive keeps its dated ones, so the two rules are right.
+        # THE REFERENCE LABEL STAYS SPLIT. DO NOT UNIFY IT WITH THE LINE ABOVE.
+        #
+        # `event_name` has six reader-facing renderings and this is the ONLY one
+        # that still derives: the <title>, the login modal, the switcher menu,
+        # D.name and the hero above all take it verbatim. One derived consumer
+        # among five verbatim ones looks exactly like a missed edit. It is not.
+        #
+        # The template is `{stem} ${YR}`, so the stem must not carry a year of
+        # its own - and `ref_label` is an ARCHIVE row's name ("Rennes 2025",
+        # "Elektric Park 2023"), which does. Verbatim here renders
+        # "Rennes 2025 2025" on every page that has a reference. Only the seven
+        # 2026 rows took the year-free fiche names; the archive keeps its dated
+        # ones, and no rename is planned for it.
+        #
+        # So the rule is not "one column, one rule". It is: a rendering that
+        # SUPPLIES its own year splits; a rendering that does not, does not.
+        # Two rules, because there are two shapes of input.
         ('Elektric Park ${YR}', f'{(ref_label or base).split(" 20")[0]} ${{YR}}'),
         ("'comparaison à jour de semaine identique · vs Elektric Park 2023'",
          f"'comparaison à jour de semaine identique · vs {ref_label or '—'}'"),
