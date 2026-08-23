@@ -4664,3 +4664,4 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-22,2026-08-22 21:49:47,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
 2026-08-22,2026-08-22 21:49:47,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
 2026-08-22,2026-08-22 22:15:17,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-08-23,2026-08-23 07:59:44,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
