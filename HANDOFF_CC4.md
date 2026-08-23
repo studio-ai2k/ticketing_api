@@ -490,6 +490,29 @@ Kill by PID, or use a pattern that cannot match the caller. Put cleanup BEFORE
 anything that can terminate the shell, or in a `trap`, and never at the end of a
 chain whose earlier commands can fail.
 
+**A DECISION THAT CANNOT BE CALLED CANNOT BE TESTED, AND WILL BE EXERCISED FOR
+THE FIRST TIME IN PRODUCTION.** The DICE handover guard in `fetch_csv.py` was
+ruled, written, carefully reasoned — and had never run. `geneve_2026` is the only
+entry in `MANUAL_DICE_CSVS` and its `dice_mio_id` is empty, so the branch needed
+both and never had them.
+
+It sat unexercised for a structural reason, not a lazy one: **both decisions were
+inline in `main()`**, so there was nothing to call. Testing it would have meant
+running a real fetch against a real token with a deliberately wrong account. That
+is not a test anyone writes, so nobody did.
+
+Extracted to `manual_dice_retired()` and `dice_handover_problem()` — same logic,
+same behaviour, now callable — and ten assertions fit in a check that runs in
+milliseconds. If a decision matters enough to guard, it matters enough to be a
+function.
+
+**And its error handling nearly defeated it.** An unreadable retired export
+sizing to `0` would make EVERY api result pass the shrink test, including an
+empty one — the exact failure the guard exists to prevent. It returns `-1`, and
+`-1` refuses. Same family as `nf(null)` printing `0` and the Diff computing
+against absence: **an error state coercing to a legal value the surrounding
+logic then treats as real.** Three instances now, in three different files.
+
 **A COMMENT WRITTEN IN THE MECHANISM'S OWN VOCABULARY JOINS IN.** Second
 instance this session, and the first one should have been enough.
 
