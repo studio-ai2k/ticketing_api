@@ -1,5 +1,21 @@
 # Handoff to CC4
 
+> **SUPERSEDED IN PART — READ `HANDOFF_CC5.md` FIRST.**
+>
+> **§0 below says "The cutover has NOT happened." It has.** Main is
+> post-cutover: `v2/` does not exist, the root pages ARE the pass-0 build,
+> `legacy/` holds the retired ones, and `check_cutover_write.py` asserts the
+> tool's refusal to run a second time. **§1, §2 and §3 are historical** — they
+> describe a migration that has since landed, and §2's "THIS BLOCKS CUTOVER" no
+> longer blocks anything.
+>
+> The loop below, §4 onward, and **especially §9** are current and still the
+> reference. `HANDOFF_CC5.md` carries the parked state, the ruled-and-unwritten
+> queue, and four additions to §9.
+>
+> This banner exists because a handoff that states a false premise confidently
+> is the failure mode §9 is mostly about, and this file had become one.
+
 ## "GREEN" MEANS THIS LOOP. It does not mean a list someone typed.
 
 ```bash
