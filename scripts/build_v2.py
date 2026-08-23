@@ -263,10 +263,25 @@ def event_identity(cfg, ref_cfg, ref_label):
     ref_cap = f"{(ref_cfg or {}).get('total_capacity', 0):,}".replace(',', '\u202f') or '—'
     name = cfg.get('event_name', '').strip()
     brand = (cfg.get('brand') or name).strip()
-    base = name.split(' 20')[0].strip() or name
+    # VERBATIM. This was `name.split(' 20')[0]` - the same naive split
+    # run.py:2056 uses for the nav trigger, so one column had two reader-facing
+    # renderings under two different rules. On the Festiflow names that split
+    # does nothing (none of them contain " 20"), which is worse than doing
+    # something: "Madame Loyal Genève : 16 & 17 Octobre" would have reached the
+    # Détails hero whole and then had ${YC} appended, naming October twice. The
+    # trigger now reads event_name verbatim too, via
+    # postprocess_html.selected_option_label, so menu, trigger and hero are the
+    # ONE string. Leaving this on the old rule would be the half-fixed shape.
+    base = name
     return [
         ('événement les 5\u20136 septembre ${YC}', f'événement {span} ${{YC}}'),
         ('Elektric Park ${YC}', f'{base} ${{YC}}'),
+        # THE REFERENCE LABEL STAYS SPLIT, and that is not an omission. The
+        # template is `{stem} ${YR}`, so the stem must not carry a year of its
+        # own - and `ref_label` is an ARCHIVE row's name ("Rennes 2025",
+        # "Elektric Park 2023"), which does. Verbatim here would render
+        # "Rennes 2025 2025". Only the seven 2026 rows took the year-free fiche
+        # names; the archive keeps its dated ones, so the two rules are right.
         ('Elektric Park ${YR}', f'{(ref_label or base).split(" 20")[0]} ${{YR}}'),
         ("'comparaison à jour de semaine identique · vs Elektric Park 2023'",
          f"'comparaison à jour de semaine identique · vs {ref_label or '—'}'"),

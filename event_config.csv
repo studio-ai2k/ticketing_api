@@ -1,10 +1,10 @@
 event_id,event_name,brand,venue,city,currency,on_sale_date,poster_url,dice_mio_id,dice_public_id,dice_url,shotgun_event_id,shotgun_url,day_number,day_name,day_date,day_capacity,day_is_warmup,compare_to,comparison_mode,merge_into,status,output_filename,login_password,login_bg_image,notes
-paris_xxl_2026,Paris XXL 2026,Madame Loyal,Paris Nord Villepinte,Paris,EUR,,,526535,7652986,https://dice.fm/partner/tickets/event/ww588n-madame-loyal-paris-xxl-13-14-mars-2026-13th-mar-paris-nord-villepinte-villepinte-tickets,494642,https://shotgun.live/en/events/madame-loyal-paris-xxl-2026,1,Vendredi,2026-03-13,21500,,paris_xxl_2025,,,active,parisxxl.html,festipass,,
+paris_xxl_2026,Madame Loyal Paris XXL,Madame Loyal,Paris Nord Villepinte,Paris,EUR,,,526535,7652986,https://dice.fm/partner/tickets/event/ww588n-madame-loyal-paris-xxl-13-14-mars-2026-13th-mar-paris-nord-villepinte-villepinte-tickets,494642,https://shotgun.live/en/events/madame-loyal-paris-xxl-2026,1,Vendredi,2026-03-13,21500,,paris_xxl_2025,,,active,parisxxl.html,festipass,,
 paris_xxl_2026,,,,,,,,,,,,,2,Samedi,2026-03-14,21500,,,,,active,,,,
-bordeaux_2026,Bordeaux Juin 2026,ML x Sonora,Parc Expo Bordeaux,Bordeaux,EUR,,,540197,7978503,https://dice.fm/partner/tickets/event/av3vr2-madame-loyal-x-sonora-bordeaux-12-13-juin-2026-11th-jun-parc-des-expositions-de-bordeaux-bordeaux-tickets,505434,https://shotgun.live/en/festivals/madame-loyal-x-sonora,1,Jeudi,2026-06-11,8500,1,bordeaux_2025,,,active,bordeaux.html,festipass,upload.JPG,Warm-up - first year
+bordeaux_2026,Madame Loyal x Sonora Bordeaux,ML x Sonora,Parc Expo Bordeaux,Bordeaux,EUR,,,540197,7978503,https://dice.fm/partner/tickets/event/av3vr2-madame-loyal-x-sonora-bordeaux-12-13-juin-2026-11th-jun-parc-des-expositions-de-bordeaux-bordeaux-tickets,505434,https://shotgun.live/en/festivals/madame-loyal-x-sonora,1,Jeudi,2026-06-11,8500,1,bordeaux_2025,,,active,bordeaux.html,festipass,upload.JPG,Warm-up - first year
 bordeaux_2026,,,,,,,,,,,,,2,Vendredi,2026-06-12,18000,,,,,active,,,,
 bordeaux_2026,,,,,,,,,,,,,3,Samedi,2026-06-13,18000,,,,,active,,,,
-epk_2026,Elektric Park 2026,Madame Loyal,Île des Impressionnistes,Chatou,EUR,,,573271,8807596,https://dice.fm/partner/tickets/event/oepro5-madame-loyal-x-elektric-park-xxl-edition-5th-sep-ile-des-impressionnistes-paris-tickets,535882,https://shotgun.live/en/festivals/madame-loyal-x-elektric-park,1,Samedi,2026-09-05,10000,,epk_2023,j_minus,,active,epk.html,festipass,upload.JPG,First edition - partnered with EPK. Co-hosted: needs include_cohosted_events=1
+epk_2026,Madame Loyal x Elektric Park,Madame Loyal,Île des Impressionnistes,Chatou,EUR,,,573271,8807596,https://dice.fm/partner/tickets/event/oepro5-madame-loyal-x-elektric-park-xxl-edition-5th-sep-ile-des-impressionnistes-paris-tickets,535882,https://shotgun.live/en/festivals/madame-loyal-x-elektric-park,1,Samedi,2026-09-05,10000,,epk_2023,j_minus,,active,epk.html,festipass,upload.JPG,First edition - partnered with EPK. Co-hosted: needs include_cohosted_events=1
 epk_2026,,,,,,,,,,,,,2,Dimanche,2026-09-06,10000,,,,,active,,,,
 epk_2023,Elektric Park 2023,Elektric Park,Île de Chatou,Chatou,EUR,,,,,,313304,,1,Vendredi,2023-09-01,17500,,,,,archive,,,,
 epk_2023,,,,,,,,,,,,,2,Samedi,2023-09-02,17500,,,,,archive,,,,
@@ -46,11 +46,11 @@ halloween_2025,,,,,,,,,,,,,2,Samedi,2025-11-01,18000,,,,,archive,,,,
 geneve_2025,Genève 2025,Madame Loyal,Palexpo,Geneve,CHF,,,,,,455482,https://shotgun.live/festivals/madame-loyal-geneve-18-octobre,1,Samedi,2025-10-18,10000,,,,,archive,,,,
 rennes_2025,Rennes 2025,Madame Loyal,Parc Expo Rennes,Rennes,EUR,,,462095,,,444613,https://shotgun.live/festivals/madame-loyal-rennes-7-8-novembre,1,Vendredi,2025-11-07,12500,,,,,archive,,,,
 rennes_2025,,,,,,,,,,,,,2,Samedi,2025-11-08,12500,,,,,archive,,,,
-bordeaux_oct_2026,Bordeaux Octobre 2026,Sonora,Parc Expo Bordeaux,Bordeaux,EUR,,,,,,565846,https://shotgun.live/en/events/sonora-bordeaux,1,Vendredi,2026-10-16,18000,,halloween_2025,j_minus,,active,bordeaux_oct.html,festipass,upload.JPG,
+bordeaux_oct_2026,SONORA BORDEAUX OCTOBRE,Sonora,Parc Expo Bordeaux,Bordeaux,EUR,,,,,,565846,https://shotgun.live/en/events/sonora-bordeaux,1,Vendredi,2026-10-16,18000,,halloween_2025,j_minus,,active,bordeaux_oct.html,festipass,upload.JPG,
 bordeaux_oct_2026,,,,,,,,,,,,,2,Samedi,2026-10-17,18000,,,,,active,,,,
-geneve_2026,Genève 2026,Madame Loyal,Palexpo,Geneve,CHF,,,,,,546274,https://shotgun.live/festivals/madame-loyal-geneve-16-17-octobre,1,Vendredi,2026-10-16,10000,,geneve_2025,j_minus,,active,geneve.html,festipass,upload.JPG,
+geneve_2026,Madame Loyal Genève,Madame Loyal,Palexpo,Geneve,CHF,,,,,,546274,https://shotgun.live/festivals/madame-loyal-geneve-16-17-octobre,1,Vendredi,2026-10-16,10000,,geneve_2025,j_minus,,active,geneve.html,festipass,upload.JPG,
 geneve_2026,,,,,,,,,,,,,2,Samedi,2026-10-17,10000,,,,,active,,,,
-rennes_2026,Rennes 2026,Madame Loyal,Parc Expo Rennes,Rennes,EUR,,,600413,,,557151,https://shotgun.live/festivals/madame-loyal-rennes-6-7-novembre,1,Vendredi,2026-11-06,10000,,rennes_2025,j_minus,,active,rennes.html,festipass,upload.JPG,
+rennes_2026,Madame Loyal Rennes Novembre,Madame Loyal,Parc Expo Rennes,Rennes,EUR,,,600413,,,557151,https://shotgun.live/festivals/madame-loyal-rennes-6-7-novembre,1,Vendredi,2026-11-06,10000,,rennes_2025,j_minus,,active,rennes.html,festipass,upload.JPG,
 rennes_2026,,,,,,,,,,,,,2,Samedi,2026-11-07,10000,,,,,active,,,,
 sonora_impact_2026,SONORA x IMPACT,Sonora,,,EUR,,,,,,544355,https://shotgun.live/events/sonora-x-impact,1,Vendredi,2026-09-25,10000,,,,,active,sonora_impact.html,festipass,,Sonora org 207784 - verified by probe_shotgun_account.py run 32146511963. venue/city not supplied
 sonora_impact_2026,,,,,,,,,,,,,2,Samedi,2026-09-26,10000,,,,,active,,,,
