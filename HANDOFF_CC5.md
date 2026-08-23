@@ -112,26 +112,42 @@ This is the four-kinds-of-empty-cell lesson applied **before** the fact rather
 than after it, which is the first time on this project an absence has been given
 a name at the moment it was created.
 
-### 1.3 The `notes` line on `bordeaux_2026`
+### ~~1.3 The `notes` line~~ and ~~1.4 the brand~~ — LANDED, one commit
 
-`fetch_csv.py:90` already carries the comment *"bordeaux_2026 (505434) lives on
-Episode despite the ML x Sonora branding … Do not 'correct' it back by brand."*
-Probed and confirmed. Once the brand becomes `Sonora` (1.4), **nothing on the
-config row hints that the event fetches on Episode** and that comment becomes the
-only guard.
+Kept here because the *reasoning* is the point, not the diff.
 
-A wrong account returns **zero tickets, not an error**, on a page that renders
-perfectly. That is Genève's failure mode exactly. Add the line, and note what it
-is: **a fact the file cannot otherwise express.**
+`bordeaux_2026` now reads `brand=Sonora` per the fiche, and its `notes` gained
+the Episode fact. **One change, not two**: the brand change is what makes the
+note necessary rather than nice. `fetch_csv.py:90` already carried the comment
+*"lives on Episode despite the ML x Sonora branding … Do not 'correct' it back by
+brand"* — and once the row says `Sonora`, that comment is the ONLY thing left
+saying so. A wrong account returns **zero tickets, not an error**, on a page that
+renders perfectly. Genève's failure mode exactly.
 
-### 1.4 The two brand changes — RULED IN THE FIRST BRIEF, NEVER WRITTEN
+The existing note `Warm-up - first year` was **appended to, not replaced** — an
+assertion caught it, which is why the assertion was there.
 
-Not in the names-only cut, and never re-ruled after it, so flagging rather than
-assuming: the fiche's MARQUE column says `bordeaux_2026` is **`Sonora`**; the
-config still says `ML x Sonora`. `bordeaux_oct_2026` was **already** `Sonora`, so
-only one row actually moves. **Nothing about routing changes — the account does
-not move.** Confirm with Leo before writing; it is one field but it is the field
-1.3 exists to compensate for.
+`bordeaux_oct_2026` was already `Sonora`. **Confirmed, not touched.**
+
+**The ruling's basis, verified mechanically rather than taken on trust:**
+
+| claim | how it was checked | result |
+|---|---|---|
+| nothing in the fetch path reads `brand` | grep for `['brand']` / `.get('brand'` across the tree | only `run.py:216` (load) and `run.py:2169` (template var). **`fetch_csv.py`: zero reads** — its "brand" mentions are all comments |
+| routing is by event id | `inspect.getsource(resolve_shotgun_account)` | keys on `if event_id in cfg['events']`; the string `brand` does not appear in the function |
+| the page does not change | rebuilt `bordeaux.html` and diffed against the pre-change file | **0 lines** — byte-identical |
+
+That last row has a cause worth knowing: **`{{BRAND}}` (byte 54095) and
+`{{EDITION_BADGE}}` (54876) are both INSIDE the seam** (40369..64051), so pass 0
+discards them. Neither field reaches a shipped page.
+
+**And `notes` reaches nothing at all.** It is read once, at `run.py:2035`, into
+`edition_badge` — which both branches of the `if has_comparison` immediately
+overwrite. The comment above it says *"Count how many events with same brand
+exist in config history"*; no such count exists in the code beneath it. So a
+`notes` value cannot change a page even if the badge shipped, and the badge does
+not ship either. `run.py` is do-not-modify, so this is recorded rather than
+fixed — but do not believe the comment.
 
 ### 1.5 Madame Loyal x Crazy Carnaval — a new event
 
