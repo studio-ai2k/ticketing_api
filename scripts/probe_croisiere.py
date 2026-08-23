@@ -31,6 +31,7 @@ ALREADY KNOWN LOCALLY, BEFORE ANY TOKEN
 and already counted on epk.html. Whether that is all of it is what this asks.
 """
 
+import base64
 import collections
 import os
 import sys
@@ -51,15 +52,23 @@ ACCOUNTS = [
 # and is the account's real name.
 NEEDLES = ('croisi', 'cruise', 'bateau', 'boat')
 
-MAX_PAGES = 8
+MAX_PAGES = 60
 
 
 def shotgun_events(account, token, organizer_id):
     """Distinct (event_id, event_name) the endpoint returns with NO event filter.
 
-    The tickets endpoint takes `event_id` as a FILTER. Omitting it is not a
-    documented listing mode, so this reports whatever comes back - including an
-    error - rather than assuming it enumerates.
+    THIS DOES NOT ENUMERATE, AND THE FIRST RUN PROVED IT. Dropping `event_id`
+    does not turn `/tickets` into an event list - it returns the organizer's
+    TICKETS, ordered by ticket_updated_at (see fetch_shotgun_pages). Eight pages
+    at 100/page returned 800 tickets and ONE distinct event name per account,
+    because 800 tickets is not enough to leave the first event.
+
+    "1 distinct event" was a page cap, not a finding, and reporting it as one
+    would have been the exact silent-truncation shape fetch_shotgun_pages
+    raises on: a smaller, entirely plausible number with nothing marking it
+    short. So the caller is told how far it got and whether it finished, and an
+    unfinished read is never evidence that something is absent.
     """
     params = {
         'token': token,
@@ -70,6 +79,7 @@ def shotgun_events(account, token, organizer_id):
     seen = collections.Counter()
     ids = {}
     pages = 0
+    exhausted = False
     while url and pages < MAX_PAGES:
         try:
             payload = http_json(url)
@@ -87,11 +97,19 @@ def shotgun_events(account, token, organizer_id):
         pages += 1
         nxt = (payload.get('pagination') or {}).get('next') if isinstance(payload, dict) else None
         if not nxt:
+            exhausted = True
             break
         url = f'{SHOTGUN_API}?{urllib.parse.urlencode(params)}&' + \
               urllib.parse.urlencode({'after': nxt})
-    return [(n, ids.get(n, '?'), c) for n, c in seen.most_common()], \
-           f'{pages} page(s) read'
+    else:
+        exhausted = False
+    tot = sum(seen.values())
+    note = (f'{pages} page(s), {tot} ticket(s), '
+            + ('reached the end of the feed'
+               if exhausted else
+               f'STOPPED AT THE {MAX_PAGES}-PAGE CAP - the feed continues, so '
+               'this list is PARTIAL and an absence here proves nothing'))
+    return [(n, ids.get(n, '?'), c) for n, c in seen.most_common()], note
 
 
 VIEWER_FIELDS = """
@@ -112,6 +130,67 @@ def dice_viewer_fields(token):
         return None, f'ERROR: {str(exc)[:200]}'
     t = (data or {}).get('__type') or {}
     return [f['name'] for f in (t.get('fields') or [])], 'ok'
+
+
+# `viewer.events` EXISTS - the first run of this probe printed it, and the note
+# that used to be here said the opposite. The shape is not guessed: the first
+# DICE probe died on `Cannot query field "date" on type "Event"`, so the
+# connection type is introspected and the selection built from what it reports.
+EVENTS_TYPE = """
+query EventsType {
+  __type(name: "Viewer") {
+    fields { name type { name kind ofType { name kind ofType { name } } } }
+  }
+}
+"""
+
+CONN_FIELDS = """
+query ConnFields($name: String!) {
+  __type(name: $name) { fields { name } }
+}
+"""
+
+EVENTS_LIST = """
+query ListEvents($n: Int!) {
+  viewer { events(first: $n) { edges { node { id name } } } }
+}
+"""
+
+
+def dice_events(token, want=200):
+    """Names of the events this token can see. Returns (rows, note)."""
+    from fetch_csv import dice_graphql
+    try:
+        data = dice_graphql(token, EVENTS_TYPE, {})
+    except Exception as exc:
+        return None, f'ERROR introspecting Viewer: {str(exc)[:200]}'
+    fields = {f['name']: f for f in ((data.get('__type') or {}).get('fields') or [])}
+    if 'events' not in fields:
+        return None, 'Viewer has no `events` field on this schema'
+
+    def unwrap(t):
+        while t and not t.get('name'):
+            t = t.get('ofType')
+        return (t or {}).get('name')
+    conn = unwrap(fields['events'].get('type'))
+    note = f'Viewer.events -> {conn}'
+    try:
+        cf = dice_graphql(token, CONN_FIELDS, {'name': conn}) if conn else {}
+        note += ' {' + ', '.join(
+            f['name'] for f in ((cf.get('__type') or {}).get('fields') or [])) + '}'
+    except Exception as exc:
+        note += f' (field list unavailable: {str(exc)[:80]})'
+
+    try:
+        data = dice_graphql(token, EVENTS_LIST, {'n': want})
+    except Exception as exc:
+        return None, f'{note}; ERROR listing: {str(exc)[:200]}'
+    edges = (((data.get('viewer') or {}).get('events') or {}).get('edges')) or []
+    rows = []
+    for e in edges:
+        n = (e or {}).get('node') or {}
+        rows.append((n.get('name') or '?', n.get('id') or '?'))
+    return rows, f'{note}; {len(rows)} event(s) returned'
 
 
 def main():
@@ -160,8 +239,16 @@ def main():
             print(f'  {note}')
         else:
             print(f'  Viewer fields: {", ".join(fields)}')
-            print('  (no events connection here means DICE cannot be enumerated '
-                  'by this token and needs an id, same as every other DICE probe)')
+        rows, note = dice_events(token)
+        print(f'  {note}')
+        if rows:
+            for name, eid in rows:
+                mark = '  <== MATCH' if any(x in name.lower() for x in NEEDLES) else ''
+                try:
+                    num = base64.b64decode(eid).decode().split(':')[-1]
+                except Exception:
+                    num = '?'
+                print(f'      id={num:9} {name!r}{mark}')
 
     print('\nDone. Report these numbers; do not infer a ruling from them.')
     return 0
