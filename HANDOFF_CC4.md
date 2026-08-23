@@ -12,8 +12,15 @@ for f in verify/check_*.py; do
   timeout 600 python3 "$f" >/dev/null 2>&1 || echo "RED  $n"
 done
 bash verify/assert_redesign.sh >/dev/null 2>&1 || echo "RED  assert_redesign.sh"
-python3 scripts/cutover.py     >/dev/null 2>&1 || echo "RED  cutover dry run"
 ```
+
+**The `cutover.py` dry run is NO LONGER PART OF THIS LOOP, and putting it back
+would make the loop permanently red.** It was here while the cutover was
+pending. Post-cutover `v2/` does not exist, so the dry run refuses with
+`cutover: v2/ is missing …` and exits 1 — which is the tool declining to perform
+its own irreversible step a second time, i.e. correct. `check_cutover_write.py`
+asserts that refusal and IS in the loop above, so the property is still covered;
+what is gone is a line whose failure meant success.
 
 **This is first because it is the reason `check_v2_behaviour.py` sat red for two
 sessions on a tree three handoffs in a row called green.** It was red from the
@@ -110,6 +117,40 @@ The bar is two conditions, both checkable in a minute:
    changed without the pages that stamp against it.
 
 If both hold, merge. A follow-up is cheap; an invisible fortnight is not.
+
+### RESOLVING A MERGE: `scripts/merge_pages.py`, NOT A REBUILD BY REFLEX
+
+Merging `origin/main` conflicts in every generated page, because both sides
+regenerated them. The rule is unchanged and right: **a generated page is never
+text-merged.** What was wrong was what came next — taking a side and then
+rebuilding all seven, every time.
+
+**That rebuild was unnecessary every time and produced junk every time.** The
+footer carries `Données API · HH:MM` from the build clock, so a rebuild moves it
+whether or not anything else changed. Twice it left five staged files whose
+entire diff was footer timestamps and the build stamp, and twice they were
+discarded BY HAND afterwards. Hand-cleanup after every merge is the shape where
+one day the junk is committed instead — which is exactly how
+`_before_rennes.html` reached `main`.
+
+The question the rebuild was answering already has a check.
+`check_build_stamp.py` compares each page's stamp against the hash of
+`V2_SHARED_ASSETS`, so:
+
+| stamp | meaning | action |
+|---|---|---|
+| matches | the incoming pages are already correct | **do not rebuild** |
+| differs | a shared asset moved on this branch | rebuild — the clock moving is incidental to a change that had to happen |
+
+```bash
+python3 scripts/merge_pages.py          # resolve + decide + re-freeze
+python3 scripts/merge_pages.py --check  # report only, exit 1 if a rebuild is due
+```
+
+Both directions measured: on a current tree it declines and exits 0; with one
+line appended to `dashboard_payload.py` it reports all seven stale and exits 1.
+It re-freezes the finished events either way, because a rebuild converts
+`Données figées · DD/MM` into a live sync time silently.
 
 ### AND CHECK THE PR'S DRAFT STATE BEFORE STARTING A MERGE
 
@@ -448,6 +489,29 @@ page is correct", never "the repository is clean".
 Kill by PID, or use a pattern that cannot match the caller. Put cleanup BEFORE
 anything that can terminate the shell, or in a `trap`, and never at the end of a
 chain whose earlier commands can fail.
+
+**A DECISION THAT CANNOT BE CALLED CANNOT BE TESTED, AND WILL BE EXERCISED FOR
+THE FIRST TIME IN PRODUCTION.** The DICE handover guard in `fetch_csv.py` was
+ruled, written, carefully reasoned — and had never run. `geneve_2026` is the only
+entry in `MANUAL_DICE_CSVS` and its `dice_mio_id` is empty, so the branch needed
+both and never had them.
+
+It sat unexercised for a structural reason, not a lazy one: **both decisions were
+inline in `main()`**, so there was nothing to call. Testing it would have meant
+running a real fetch against a real token with a deliberately wrong account. That
+is not a test anyone writes, so nobody did.
+
+Extracted to `manual_dice_retired()` and `dice_handover_problem()` — same logic,
+same behaviour, now callable — and ten assertions fit in a check that runs in
+milliseconds. If a decision matters enough to guard, it matters enough to be a
+function.
+
+**And its error handling nearly defeated it.** An unreadable retired export
+sizing to `0` would make EVERY api result pass the shrink test, including an
+empty one — the exact failure the guard exists to prevent. It returns `-1`, and
+`-1` refuses. Same family as `nf(null)` printing `0` and the Diff computing
+against absence: **an error state coercing to a legal value the surrounding
+logic then treats as real.** Three instances now, in three different files.
 
 **A COMMENT WRITTEN IN THE MECHANISM'S OWN VOCABULARY JOINS IN.** Second
 instance this session, and the first one should have been enough.

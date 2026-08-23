@@ -568,6 +568,22 @@ jobs:
           # pair whose campaign lengths differ most - run on a pair where
           # they nearly match, the same test passes while showing nothing.
           python verify/check_anchor_modes.py
+          # THE ARCHIVE IS FROZEN, AND UNTIL NOW NOTHING SAID SO IN CI.
+          # legacy/*.html carry a sha256 table in legacy/README.md; the check
+          # reads that table as the record and strips the banner through
+          # cutover.strip_banner, so the check, the README's pasted snippet and
+          # cutover.py cannot drift apart.
+          #
+          # THE PAIRING THAT MAKES THIS SAFE: a LEGITIMATE re-archive - a second
+          # cutover, archiving a page that did not exist at the first - moves
+          # both the files and the table, IN THE SAME COMMIT. That is the rule.
+          # Hashes and pages travel together or this check is right to complain,
+          # and it complains in both directions: a page missing from the table
+          # and a table row with no page each fail.
+          #
+          # Without it the record was documented and unasserted, which is the
+          # category this project has now named twice.
+          python verify/check_archive_provenance.py
           # THE THREE BROWSER CHECKS ARE NOT HERE, AND MUST NOT BE PUT BACK
           # WITHOUT A BROWSER. check_section_bars, check_section_heads and
           # check_float_clamp each drive playwright and each hardcodes
