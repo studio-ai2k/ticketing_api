@@ -4212,3 +4212,4 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-23,2026-08-23 21:24:23,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
 2026-08-23,2026-08-23 22:35:49,samedi,regular,['samedi'],Pass Samedi,Shotgun,43.64,49.32,1,1
 2026-08-24,2026-08-24 00:16:22,2-jours,vip,,Pass Acces Scene,Shotgun,120.0,135.63,1,1
+2026-08-24,2026-08-24 02:03:44,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,40.0,45.21,1,1
