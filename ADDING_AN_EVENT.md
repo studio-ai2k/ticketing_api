@@ -116,7 +116,11 @@ add a grace period or an existence check; build the page.
 ## 6. Afterwards
 
 Run the full suite enumerated from `ls verify/`, not a remembered list — see
-the loop at the top of `HANDOFF_CC4.md`. Four checks take a page argument and
-run inside `assert_redesign.sh`: `check_stampable`, `check_login_bg`,
-`check_platform_cards`, `check_section_amber`. Running them bare produces an
+the loop at the top of `HANDOFF_CC4.md`. **One** check takes a page argument and
+runs inside `assert_redesign.sh`: `check_stampable`. Running it bare produces an
 `IndexError` that looks exactly like a finding and is not.
+
+This used to name four. The other three — `check_login_bg`,
+`check_platform_cards`, `check_section_amber` — were deleted as checks that ran
+nowhere; see `verify/P4_KEEP_DROP.md`. They were skipped because they were
+broken, not because they were wired, and listing them here said the opposite.

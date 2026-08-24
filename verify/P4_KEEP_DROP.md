@@ -302,7 +302,11 @@ bars — *"the shipped section bars are the mock's, byte for byte"*, not "has si
 tabs". Generalising that to the body is the real replacement for the markup half,
 and it would run on bash and python alone. It is not in this change.
 
-## §5.7's negative test — still open, and unaffected
+## §5.7's negative test — ~~still open~~ CLOSED, and this section was stale
+
+*(Written when the gap was open. Left standing with the correction under it,
+because a section describing a missing net after the net is built is the same
+failure this document is about.)*
 
 Dropping `check_login_bg.py` neither creates nor closes the gap. All six pages
 carry `upload.JPG`, so the data is uniform and neither `check_login_bg` nor
@@ -310,3 +314,54 @@ carry `upload.JPG`, so the data is uniform and neither `check_login_bg` nor
 is a real config change — point one row at a different filename, assert the page
 follows it, revert — and it is its own item, not a side effect of this one.
 Uniform data is exactly what made the paris_xxl login background invisible.
+
+**`verify/check_login_bg_wiring.py` IS that test, and it runs in the loop.** It
+points `paris_xxl_2026`'s `login_bg_image` at `paris_login.jpg` — the empty row
+deliberately, where a page ignoring the config is indistinguishable from one
+reading it — rebuilds, asserts the page followed, restores the original bytes in
+a `finally`, and **sha256-compares afterwards, because "I restored it" and "it is
+byte-identical" are different claims.**
+
+So the paragraph above describes a gap that no longer exists.
+
+---
+
+## RULED: the three unwired check files are deleted
+
+`verify/check_login_bg.py`, `verify/check_platform_cards.py`,
+`verify/check_section_amber.py`. Leo's ruling, recorded here because this is the
+document that dropped their call sites — :130–132 for two, :307 for
+`check_login_bg` — and left the files behind.
+
+**A check file that runs nowhere is the vacuous-check shape at file level, and
+its presence is what made the handoff line believable.** `legacy/` is wrong for
+these specifically: it preserves a thing whose only effect is to look like
+coverage. The other three files in the same commit went to `legacy/` precisely
+because that reasoning does *not* apply to them.
+
+Measured before deleting: none of the three is invoked by any `.sh`, `.py`,
+`.yml` or `.js` in the tree. `assert_redesign.sh` names
+`check_page_anchor.py` (:100–101), `static_region.py` (:111) and
+`check_stampable.py` (:143), and nothing else.
+
+**Three live citations had to move with them**, which a grep for invocations does
+not surface:
+
+| site | was | now |
+|---|---|---|
+| `build_v2.py:412` | *"`check_login_bg` is what asserts the page agrees with the config … the single place that claim is made"* | names `check_login_bg_wiring`, which is stronger and was already the real answer |
+| `build_v2.py:377` | present tense about a live file | past tense, pointing at the wiring check |
+| `check_v2_identity.py:64` | cites `check_login_bg.py:61` for a rule | cites CUTOVER §6.3 alone |
+
+`build_v2.py` is in `V2_SHARED_ASSETS`, so those two comment edits restamp and
+rebuild all seven pages. **That is a real cost of this deletion and it was not
+predicted** — the deletions themselves are outside both asset tuples, but their
+consequences were not.
+
+**The loop's `SKIP` list loses all three**, in `HANDOFF_CC4.md` §0 and
+`HANDOFF_CC5.md` §0. It becomes `SKIP='check_stampable'`, and the sentence above
+it — *"the four skipped take a page argument and run inside
+`assert_redesign.sh`"* — becomes true for the first time.
+
+**The loop still runs 32 checks, and that is a coincidence.** 36 − 4 skipped = 32
+before; 33 − 1 skipped = 32 after. The number is unchanged and the set is not.

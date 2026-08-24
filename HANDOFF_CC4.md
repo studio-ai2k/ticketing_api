@@ -20,8 +20,8 @@
 
 ```bash
 # Every check that EXISTS, enumerated from disk. ~12 minutes. Silence is green.
-# The four skipped take a page argument and run inside assert_redesign.sh.
-SKIP='check_login_bg check_platform_cards check_section_amber check_stampable'
+# The one skipped takes a page argument and runs inside assert_redesign.sh.
+SKIP='check_stampable'
 for f in verify/check_*.py; do
   n=$(basename "$f" .py)
   case " $SKIP " in *" $n "*) continue;; esac

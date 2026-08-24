@@ -34,7 +34,7 @@ At the time of writing, `origin/main` is **`07ff8d9`**.
 ### The loop. Run it before believing anything here, including this line.
 
 ```bash
-SKIP='check_login_bg check_platform_cards check_section_amber check_stampable'
+SKIP='check_stampable'
 for f in verify/check_*.py; do
   n=$(basename "$f" .py)
   case " $SKIP " in *" $n "*) continue;; esac
@@ -43,9 +43,17 @@ done
 bash verify/assert_redesign.sh >/dev/null 2>&1 || echo "RED  assert_redesign.sh"
 ```
 
-**32 checks run.** The four skipped take a page argument and run *inside*
-`assert_redesign.sh`; running them bare produces an `IndexError` that looks
-exactly like a finding and is not.
+**32 checks run.** The one skipped takes a page argument and runs *inside*
+`assert_redesign.sh`; running it bare produces an `IndexError` that looks exactly
+like a finding and is not.
+
+> **The 32 is a coincidence, and the set changed underneath it.** It was
+> 36 files − 4 skipped; it is now 33 − 1, after `check_login_bg`,
+> `check_platform_cards` and `check_section_amber` were deleted as checks that
+> ran nowhere (`verify/P4_KEEP_DROP.md`). An unchanged number is not an
+> unchanged set. The sentence above it — "the skipped take a page argument" —
+> is true for the first time; the other three were skipped because they were
+> broken, not because they were wired.
 
 `check_b1_switch` is the slow one — **350s** at last run, well inside the
 timeout, but it is documented at ~30 minutes and a `timeout` that fires reads as

@@ -61,8 +61,10 @@ MOCK_IDENTITY = ['Elektric Park', 'Île des Impressionnistes', 'Île de Chatou',
 #
 # So the check is not "these strings are absent". It is "the asset paths suit
 # the directory the page is in", and which half applies is resolved from
-# `pages.pass0_dir()` at call time - the same rule as check_login_bg.py:61 and
-# CUTOVER §6.3, rather than a flag-day edit on the morning.
+# `pages.pass0_dir()` at call time - the same rule as CUTOVER §6.3, rather than a
+# flag-day edit on the morning. (This cited check_login_bg.py:61 as the other
+# instance of the rule; that file has since been deleted as a check that ran
+# nowhere, so the citation would dangle.)
 BAD_PATHS = [r'src="LOGO_ROND_JAUNE\.png"', r"url\('upload\.JPG'\)",
              r'href="upload\.html']
 # The one page allowed to say "Elektric Park": epk's own.
