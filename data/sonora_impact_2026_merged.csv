@@ -1602,7 +1602,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-05-15,2026-05-15 19:50:15,vendredi,invitation,['vendredi'],Offre De Groupe,Shotgun,0.0,0.0,1,0
 2026-05-15,2026-05-15 19:50:15,vendredi,invitation,['vendredi'],Offre De Groupe,Shotgun,0.0,0.0,1,0
 2026-05-15,2026-05-15 21:06:22,vendredi,vip,['vendredi'],Pass Acces Scene,Shotgun,70.0,79.12,1,1
-2026-05-15,2026-05-15 23:28:11,2-jours,vip,,Pass Acces Scene,Shotgun,120.0,135.63,1,1
 2026-05-16,2026-05-16 08:02:56,vendredi,vip,['vendredi'],Pass Acces Scene,Shotgun,70.0,79.12,1,1
 2026-05-16,2026-05-16 08:24:25,vendredi,vip,['vendredi'],Pass Acces Scene,Shotgun,70.0,79.12,1,1
 2026-05-16,2026-05-16 10:10:49,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
@@ -4204,3 +4203,12 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-23,2026-08-23 20:17:49,samedi,invitation,['samedi'],Offre De Groupe,Shotgun,0.0,0.0,1,0
 2026-08-23,2026-08-23 20:17:49,samedi,invitation,['samedi'],Offre De Groupe,Shotgun,0.0,0.0,1,0
 2026-08-23,2026-08-23 20:17:49,samedi,invitation,['samedi'],Offre De Groupe,Shotgun,0.0,0.0,1,0
+2026-08-23,2026-08-23 20:37:05,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,40.0,45.21,1,1
+2026-08-23,2026-08-23 20:37:13,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,40.0,45.21,1,1
+2026-08-23,2026-08-23 20:37:13,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,40.0,45.21,1,1
+2026-08-23,2026-08-23 20:39:02,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,48.0,48.5,1,1
+2026-08-23,2026-08-23 20:41:00,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
+2026-08-23,2026-08-23 21:14:48,samedi,vip,['samedi'],Pass Acces Scene,Shotgun,70.0,79.12,1,1
+2026-08-23,2026-08-23 21:24:23,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
+2026-08-23,2026-08-23 22:35:49,samedi,regular,['samedi'],Pass Samedi,Shotgun,43.64,49.32,1,1
+2026-08-24,2026-08-24 00:16:22,2-jours,vip,,Pass Acces Scene,Shotgun,120.0,135.63,1,1
