@@ -1,6 +1,12 @@
 # Platform field inventory — Shotgun vs DICE
 
-For the Campagne page. Inventory only; nothing here has been built or fetched.
+For the Campagne page, which is **PARKED** — see `HANDOFF_CC5.md` §2.3 for
+the ruling and where it may go. Inventory only; nothing here has been built.
+
+This document is not stale and is not orphaned: it is the evidence Campagne
+would resume from, and it moves with the concept if the concept moves. Its
+probe results are measurements of the live platforms and stay true whether or
+not the page is ever built.
 
 ## How each claim below is evidenced
 
@@ -188,7 +194,7 @@ Three exact hits on three allocations. **Phase boundaries are computable
 without any new field** — cut the per-ticket-type sales sequence at the
 cumulative allocation.
 
-Two cautions, both real:
+Three cautions, all real:
 
 1. **Ladders are per ticket type, and they do not run in step.** VENDREDI
    handed over cleanly at 17:55:00. SAMEDI's PHASE 2 opened at 17:03 while
@@ -202,6 +208,12 @@ Two cautions, both real:
    `viewer.orders`, which would be good news, but it is inference: **the check
    is to reconcile `viewer.orders.totalCount` against the same event's
    returns.**
+3. **THE LAST TIER NEVER CLOSES.** A routine expecting every phase to have an
+   end will either wait forever or invent one. Every PHASE 2 window in the
+   table above ends in an ellipsis, and that is the data rather than a
+   formatting choice. *(Lifted from
+   `redesign/DD4_DD5_DIAGNOSIS_309c118.md:44`, retired in the same commit once
+   this was the only sentence in it that existed nowhere else in the tree.)*
 
 Also worth recording: for a tiered ticket type, `faceValue`, `price` and
 `totalTicketAllocationQty` on the **type** are all `0`. The real numbers live on

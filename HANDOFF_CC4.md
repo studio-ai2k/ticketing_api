@@ -597,6 +597,18 @@ the pattern narrowed.
 
 ### Two safety nets that are documented and do not exist
 
+> **DATED NOTE, 2026-08-24 — the first of the two has since been built. §9 below
+> is NOT edited.** `verify/check_archive_provenance.py` exists, runs in the
+> enumerated loop and in CI (`daily-dashboards.yml:586`), and passes on all six
+> archived pages, reading their hashes from `legacy/README.md` rather than
+> restating them.
+>
+> The entry stays exactly as written because its value is being untouched — this
+> is the trap file. But an entry describing a missing safety net, left standing
+> after the net is built, is the same failure as an entry describing a failure it
+> does not prevent, **which is what this very section is about.** Hence the note
+> rather than silence, and the note rather than a rewrite.
+
 **`check_archive_provenance` is not a file.** It has been named twice in briefs
 as the thing that would catch a `legacy/` page changing. Nothing in `verify/`
 reads `legacy/` at all. The archive's hashes are recorded in `legacy/README.md`
@@ -683,3 +695,60 @@ still on stdout, so a postprocess failure under `build_v2` surfaces as a bare
 `CalledProcessError` with no reason attached.** The SONORA messages were legible
 only because the workflow *also* invokes `postprocess_html.py` directly, one
 line above `build_v2`.
+
+---
+
+### A NUMBER THAT IS TRUE ABOUT SET A, RESTATED ABOUT SET B
+
+`AUDIT_SCOPE.md` opened with *"Sixteen checks run on every change."* Sixteen is a
+real figure and it counts something else: `CUTOVER.md:674` enumerates sixteen
+**page checks that resolve through `scripts/pages.py`**, by name. What actually
+runs on every change is **five** — `check_build_stamp`, `check_eligibility`,
+`check_anchor_modes`, `check_archive_provenance`, `check_data_freshness` — and
+**not** `assert_redesign.sh`, which the daily workflow mentions in a comment and
+never invokes.
+
+Nothing was miscounted. The count was correct and was carried to a different
+question.
+
+Its siblings on this project are the same shape: 38 check *files* versus 35 that
+*run*; `check_login_bg_wiring` reporting a false defect against a config
+`run.main()` never reads; `projItems` returning `0` for both an empty menu and a
+missing locator. And the newest one, from the same commit that fixed this:
+`probe_shotgun_fields.py` carried `baseline = 44` and printed *"beyond the 44 in
+`shotgun_schema.json`"* — a number transcribed from a file the script named and
+never opened.
+
+**The tell is that the number reproduces and the sentence is still wrong.**
+Re-deriving the figure confirms it forever. Ask what set the number counts, not
+whether it is right.
+
+The same trap has a benign-looking twin worth naming here: the enumerated loop
+ran **32 checks before and 32 after** three check files were deleted — 36 − 4
+skipped, then 33 − 1. An unchanged number is not an unchanged set.
+
+### AN AUDIT METHOD, FOLLOWED LITERALLY, DELETES THE DATA
+
+The housekeeping brief specified: grep each basename across `.py .yml .sh .html
+.json` plus the workflow; nothing reads it, measured, means DEAD.
+
+Run exactly that and **every `series/*.json` and every `data/*_merged.csv` comes
+back DEAD.** They are reached by constructed paths and globs —
+`build_series.py:78–84` builds `data/{id}_merged.csv`, then
+`csv_database/{id}/{id}_merged.csv`, then globs `*_merged.csv`;
+`build_dashboard.py:270` builds `csv_database/<compare_to>/`. The method was
+written to protect the repo from a wrong deletion and, applied as written,
+proposes the worst one available.
+
+A second pass for constructed paths and globs is what makes the first pass mean
+anything. **And the same gap swallows files reached by a HUMAN rather than by
+code** — `merge_pages.py`, `rebuild_all.sh`, `probe_croisiere.py` — which no
+amount of grepping recovers.
+
+There is a third class the method misses, found by running it: **files reached by
+CITATION.** Deleting `check_login_bg.py` was clean by invocation — nothing called
+it — and left three live comments naming it, one of which asserted an invariant
+that would then hold nowhere (`build_v2.py:412`). One of those comments is in a
+`V2_SHARED_ASSETS` file, so correcting it restamped and rebuilt all seven pages.
+**A deletion that is invisible to the suite can still be visible to the reader,
+and the reader is who the comment was for.**
