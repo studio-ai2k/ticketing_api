@@ -6196,7 +6196,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-07-27,2026-07-27 09:02:02,2-jours,regular,,Pass 2 Jours,Shotgun,95.0,107.37,1,1
 2026-07-27,2026-07-27 09:48:44,2-jours,regular,,Pass 2 Jours,Shotgun,95.0,107.37,1,1
 2026-07-27,2026-07-27 09:51:22,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,55.5,1,1
-2026-07-27,2026-07-27 10:12:35,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-07-27,2026-07-27 10:53:43,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-07-27,2026-07-27 11:10:56,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-07-27,2026-07-27 12:12:55,2-jours,regular,,Pass 2 Jours,Shotgun,95.0,107.37,1,1
@@ -7146,8 +7145,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-03,2026-08-03 17:40:00,2-jours,regular,,Pass 2 Jours,Shotgun,95.0,107.37,1,1
 2026-08-03,2026-08-03 17:41:51,2-jours,regular,,Pass 2 Jours,Shotgun,95.0,107.37,1,1
 2026-08-03,2026-08-03 17:46:31,2-jours,vip,"['vendredi', 'samedi']",Pass Acces Scene,Shotgun,220.0,248.66,1,1
-2026-08-03,2026-08-03 17:58:11,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
-2026-08-03,2026-08-03 17:58:11,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-08-03,2026-08-03 18:01:06,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-08-03,2026-08-03 18:01:06,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-08-03,2026-08-03 18:01:18,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
@@ -9055,3 +9052,26 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-25,2026-08-25 16:22:51,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
 2026-08-25,2026-08-25 16:22:51,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
 2026-08-25,2026-08-25 16:25:40,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,60.0,67.82,1,1
+2026-08-25,2026-08-25 16:34:08,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
+2026-08-25,2026-08-25 17:23:12,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
+2026-08-25,2026-08-25 17:44:49,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
+2026-08-25,2026-08-25 17:48:22,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
+2026-08-25,2026-08-25 17:51:38,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,60.0,67.82,1,1
+2026-08-25,2026-08-25 17:53:28,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,60.0,67.82,1,1
+2026-08-25,2026-08-25 17:53:28,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,60.0,67.82,1,1
+2026-08-25,2026-08-25 17:55:41,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,60.0,67.82,1,1
+2026-08-25,2026-08-25 18:06:01,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-08-25,2026-08-25 18:06:01,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-08-25,2026-08-25 18:09:07,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-08-25,2026-08-25 18:27:05,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
+2026-08-25,2026-08-25 18:33:46,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
+2026-08-25,2026-08-25 19:03:14,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-08-25,2026-08-25 19:09:03,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,60.0,67.82,1,1
+2026-08-25,2026-08-25 19:09:03,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,60.0,67.82,1,1
+2026-08-25,2026-08-25 19:14:01,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
+2026-08-25,2026-08-25 19:14:01,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
+2026-08-25,2026-08-25 19:14:01,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
+2026-08-25,2026-08-25 19:17:08,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-08-25,2026-08-25 19:17:08,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-08-25,2026-08-25 19:59:59,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,60.0,67.82,1,1
+2026-08-25,2026-08-25 19:59:59,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,60.0,67.82,1,1
