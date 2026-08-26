@@ -2690,7 +2690,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-07-21,2026-07-21 05:51:49,2-jours,regular,,Pass 2 Jours,DICE,99.45,104.5,1,1
 2026-07-21,2026-07-21 07:17:36,samedi,regular,['samedi'],Pass Samedi,DICE,51.39,55.0,1,1
 2026-07-21,2026-07-21 10:09:29,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,95.0,107.37,1,1
-2026-07-21,2026-07-21 10:31:31,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,95.0,107.37,1,1
 2026-07-21,2026-07-21 10:58:49,samedi,regular,['samedi'],Pass Samedi,DICE,51.39,55.0,1,1
 2026-07-21,2026-07-21 10:58:49,samedi,regular,['samedi'],Pass Samedi,DICE,51.39,55.0,1,1
 2026-07-21,2026-07-21 11:05:47,samedi,regular,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
@@ -4944,3 +4943,14 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-25,2026-08-25 21:33:05,samedi,regular,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
 2026-08-25,2026-08-25 23:11:30,samedi,regular,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
 2026-08-25,2026-08-25 23:28:17,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,95.0,107.37,1,1
+2026-08-26,2026-08-26 05:14:41,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,95.0,107.37,1,1
+2026-08-26,2026-08-26 05:15:52,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,95.0,107.37,1,1
+2026-08-26,2026-08-26 06:41:45,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-08-26,2026-08-26 06:50:50,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,95.0,107.37,1,1
+2026-08-26,2026-08-26 06:52:46,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-08-26,2026-08-26 06:55:34,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,95.0,107.37,1,1
+2026-08-26,2026-08-26 07:12:38,samedi,regular,['samedi'],Pass Samedi,DICE,51.39,55.0,1,1
+2026-08-26,2026-08-26 07:13:35,samedi,regular,['samedi'],Pass Samedi,DICE,51.39,55.0,1,1
+2026-08-26,2026-08-26 07:34:08,samedi,regular,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-08-26,2026-08-26 08:10:19,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-08-26,2026-08-26 08:10:19,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
