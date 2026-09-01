@@ -20,21 +20,22 @@ This file does not repeat it; it adds to it.
 Confirm with `git ls-remote origin main`, never a local ref — a stale local
 `main` at `273457f` is an unrelated root that deletes the whole `verify/` suite.
 
-At the time of writing, `origin/main` is **`07ff8d9`**.
+At the time of writing, `origin/main` is **`4a385fe`**.
 
 - Seven active pages, built by `scripts/build_v2.py` and post-processed by
   `scripts/postprocess_html.py`, deployed from `main` by Pages.
 - `V2_SHARED_ASSETS` has **11 entries**. Touching any one forces a full
   seven-page rebuild; `check_build_stamp.py` is what notices.
-- `verify/` holds **36 `check_*.py`** plus `assert_redesign.sh`.
-- `event_config.csv` is **CRLF, no BOM**, 8452 bytes, 56 lines. Edit at byte
+- `verify/` holds **33 `check_*.py`** plus `assert_redesign.sh`. It held 36
+  until three that ran nowhere were deleted — `verify/P4_KEEP_DROP.md`.
+- `event_config.csv` is **CRLF, no BOM**, 8685 bytes, 56 lines. Edit at byte
   level. A `csv.DictWriter` round-trip once added a BOM and broke
   `run.load_event_config` with `KeyError: 'event_id'`.
 
 ### The loop. Run it before believing anything here, including this line.
 
 ```bash
-SKIP='check_login_bg check_platform_cards check_section_amber check_stampable'
+SKIP='check_stampable'
 for f in verify/check_*.py; do
   n=$(basename "$f" .py)
   case " $SKIP " in *" $n "*) continue;; esac
@@ -43,9 +44,17 @@ done
 bash verify/assert_redesign.sh >/dev/null 2>&1 || echo "RED  assert_redesign.sh"
 ```
 
-**32 checks run.** The four skipped take a page argument and run *inside*
-`assert_redesign.sh`; running them bare produces an `IndexError` that looks
-exactly like a finding and is not.
+**32 checks run.** The one skipped takes a page argument and runs *inside*
+`assert_redesign.sh`; running it bare produces an `IndexError` that looks exactly
+like a finding and is not.
+
+> **The 32 is a coincidence, and the set changed underneath it.** It was
+> 36 files − 4 skipped; it is now 33 − 1, after `check_login_bg`,
+> `check_platform_cards` and `check_section_amber` were deleted as checks that
+> ran nowhere (`verify/P4_KEEP_DROP.md`). An unchanged number is not an
+> unchanged set. The sentence above it — "the skipped take a page argument" —
+> is true for the first time; the other three were skipped because they were
+> broken, not because they were wired.
 
 `check_b1_switch` is the slow one — **350s** at last run, well inside the
 timeout, but it is documented at ~30 minutes and a `timeout` that fires reads as
@@ -259,7 +268,37 @@ The fiche lists it as an event; the ticketing feed says it is a ticket type.
 Both are right about their own domain. `scripts/probe_croisiere.py` re-runs the
 whole thing.
 
-### 2.3 Carried forward from `HANDOFF_CC4.md` §8
+### 2.3 Campagne — PARKED, not dead. Likely moving to the Festiflow seat
+
+**Leo's ruling.** This is the one section Campagne has, and the documents that
+used to describe it as a live concept now point here instead of restating it.
+
+**What exists:** `redesign/mock/campagne_mock.html` (83 669 B) and
+`docs/PLATFORM_FIELD_INVENTORY.md`, an inventory of Shotgun-vs-DICE fields
+gathered for it. **Both stay.** A mock is the artefact a parked thing gets — it
+is what makes the concept resumable, and deleting it would turn "parked" into
+"dead" without anyone deciding that.
+
+**What was ruled out, and is not being revisited:** `HANDOFF.md:3488` removed
+`page-campagne` from v2 — *"Campagne is intel-gathering, not a feature"*. It was
+a visible card whose unclosed `</div>` had put it at the foot of the Détails
+page; fixing the div would have left a correctly-scoped page nothing navigates
+to, which is dead markup with a long life expectancy.
+
+**`build_v2.py:448–449` strips the mock's filename out of every build, and that
+stays.** It is the mechanism that keeps a parked concept out of a shipped page,
+and it is correct:
+
+```python
+out = re.sub(r'\s*Voir\s*<code[^>]*>campagne_mock\.html</code>\s*\.?', '', out)
+out = out.replace('campagne_mock.html', '')
+```
+
+**Where it may go:** likely the **Festiflow seat**, not this one. If it moves,
+the inventory moves with it — that document exists for Campagne and for nothing
+else. Do not build against it here without a fresh ruling.
+
+### 2.4 Carried forward from `HANDOFF_CC4.md` §8
 
 - **O12** — Shotgun has no pagination-completeness assertion. Blocked on a
   measurement of real refund churn, not on a decision. **Do not pick a tolerance
@@ -366,7 +405,7 @@ assumed did not fit.
 
 The follow-on instruction was *"three renderings, one rule"*, and it was wrong.
 `event_name` has six reader-facing renderings; five now take it verbatim and
-**one still splits on `" 20"`** — the reference label at `build_v2.py:285`.
+**one still splits on `" 20"`** — the reference label at `build_v2.py:296`.
 
 That one must. Its template is `{stem} ${YR}`, and `ref_label` is an **archive**
 row's name — `Rennes 2025`, `Elektric Park 2023` — which already carries a year.

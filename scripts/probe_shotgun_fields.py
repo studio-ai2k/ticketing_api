@@ -38,6 +38,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from fetch_csv import (SHOTGUN_API, extract_shotgun_tickets,  # noqa: E402
                        resolve_shotgun_account)
 
+SCHEMA_DUMP = Path(__file__).resolve().parent.parent / 'shotgun_schema.json'
+
+
+def schema_baseline():
+    """How many keys the dump ACTUALLY records, read from the dump.
+
+    This was `baseline = 44` - a number transcribed from a file the script named
+    in its own output and never opened. It reproduces from the dump today, which
+    is exactly what makes that shape dangerous: re-deriving the figure confirms
+    it forever while nothing ties it to the file. The moment someone re-dumps a
+    ticket with a new field, the constant and the sentence quoting it are both
+    wrong and both still plausible.
+
+    Reading it here also answers the audit's open question about the two schema
+    dumps - whether anything reads them. Now something does.
+    """
+    with SCHEMA_DUMP.open(encoding='utf-8') as f:
+        return len(json.load(f)['first_ticket'])
+
 # Fields we must never print a value for, even by accident.
 PERSONAL = {k for k in (
     'contact_email', 'contact_first_name', 'contact_last_name', 'contact_phone',
@@ -142,16 +161,17 @@ def probe_fields(events):
     print(f'\n  tickets inspected      {seen}')
     print(f'  UNION of keys          {len(union)}')
     print(f'  INTERSECTION           {len(intersection or set())}')
-    baseline = 44
+    baseline = schema_baseline()
     extra = len(union) - baseline
     if extra > 0:
-        print(f'\n  *** {extra} key(s) BEYOND the 44 in shotgun_schema.json:')
-        print(f'      44 is NOT the ceiling.')
+        print(f'\n  *** {extra} key(s) BEYOND the {baseline} in '
+              f'{SCHEMA_DUMP.name}:')
+        print(f'      {baseline} is NOT the ceiling.')
     elif len(union) == baseline:
-        print(f'\n  no key beyond the sampled 44 across {seen} tickets and '
-              f'{len(per_event)} events.')
-        print(f'      Evidence that 44 is the shape - not proof, since every '
-              f'event here may be structurally alike.')
+        print(f'\n  no key beyond the sampled {baseline} across {seen} tickets '
+              f'and {len(per_event)} events.')
+        print(f'      Evidence that {baseline} is the shape - not proof, since '
+              f'every event here may be structurally alike.')
     if intersection and union - intersection:
         print(f'\n  keys NOT present on every event: {sorted(union - intersection)}')
 

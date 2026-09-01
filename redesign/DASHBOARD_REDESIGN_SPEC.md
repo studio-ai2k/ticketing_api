@@ -607,7 +607,10 @@ uncovered.
 
 ## 9. WHAT WE ARE NOT ASKING FOR
 
-- **Not the Campagne page.** Separate concept, `mock/campagne_mock.html`.
+- **Not the Campagne page.** **PARKED** — ruled out of v2 as intel-gathering rather than a feature (`HANDOFF.md:3488`), and likely
+  moving to the Festiflow seat. The mock stays at `mock/campagne_mock.html`
+  because a mock is the artefact a parked thing gets. One section owns
+  this: `HANDOFF_CC5.md` §2.3. Do not re-describe it here.
 - **Not a run.py rewrite.** §2 is a question about mechanism, not licence.
 - **Not the DD4 fix itself** — that is its own change, and the redesign should
   consume it rather than duplicate it.

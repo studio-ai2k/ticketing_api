@@ -374,8 +374,10 @@ PAGE_PATHS = []
 # INVISIBLE TODAY, WHICH IS THE WHOLE PROBLEM. All six configured values are
 # `upload.JPG` (five explicit, paris_xxl blank -> default), so a v2 page pointing
 # at the sheet's constant is indistinguishable from one honouring its config.
-# `check_login_bg` matches by `path.name` and would report "ok" while reading a
-# value pass 0 could no longer vary. Trap #14: nothing has a fingerprint.
+# `check_login_bg` matched by `path.name` and would have reported "ok" while
+# reading a value pass 0 could no longer vary. Trap #14: nothing has a
+# fingerprint. (That file is gone; `check_login_bg_wiring` is the assertion now,
+# and it is a negative test rather than a comparison - see `style_transforms`.)
 #
 # WHY A NAMED TRANSFORM RATHER THAN AN EXCEPTION IN check_pages.
 # `check_mock_deviations.check_pages` asserts the inlined <style> equals the file
@@ -409,8 +411,13 @@ def login_bg_of(page):
     Read from the artefact rather than from event_config on purpose. Production
     has already applied the config value and its own default; re-deriving it
     here would be a second implementation of the same rule, free to disagree.
-    `check_login_bg` is what asserts the page agrees with the config, and it
-    stays the single place that claim is made.
+    `check_login_bg_wiring` is what asserts the page agrees with the config, and
+    it stays the single place that claim is made. (It used to say
+    `check_login_bg`, which was already the weaker of the two before that file
+    was deleted: it compared one page against one config row, where the wiring
+    check changes a real row, rebuilds, asserts the page FOLLOWED, and restores.
+    Uniform data - all seven rows resolve to `upload.JPG` - is what made the
+    comparison vacuous.)
     """
     m = postprocess_html.OVERLAY_BG_RE.search(page)
     if not m:

@@ -9,6 +9,15 @@ The headline, stated first because it is the finding rather than the preamble:
 > **Two of the four links in the chain have an external reference. The other two
 > have none, and one of them carries 80% of a figure that is on every page.**
 
+> **FLAGGED FOR LEO, NOT REWRITTEN — this document UNDERSTATES its own
+> coverage.** It calls link B *"partial — DICE only"*. Since it was written,
+> `verify/check_shotgun_fee_table.py` has pinned the Shotgun side to the
+> 2026-08-12 back-office export — and pins the fee SCHEDULE rather than a total,
+> deliberately, because `epk_2026` is live and any hardcoded total *"stops being
+> true before anyone reads it"*. Whether that makes link B whole is a scope
+> judgement, and this is Leo's scope document, so the headline is left as he
+> wrote it.
+
 An audit that came back "everything checks out" would be worse than no audit,
 because most of this chain cannot be checked from outside and saying otherwise
 converts an unknown into an assurance.
@@ -17,7 +26,18 @@ converts an unknown into an assurance.
 
 ## 0. What is already covered, and what that is worth
 
-Sixteen checks run on every change. They have caught real defects — a live
+Five checks run on every change — `check_build_stamp`, `check_eligibility`,
+`check_anchor_modes`, `check_archive_provenance`, `check_data_freshness`, and
+**not** `assert_redesign.sh`, which the daily workflow mentions in a comment and
+never invokes. Thirty-two run when someone runs the loop by hand.
+
+> This said *"Sixteen checks run on every change."* Sixteen is real and counts
+> something else: `CUTOVER.md:674` enumerates sixteen **page checks that resolve
+> through `scripts/pages.py`**, by name. Nothing was miscounted — a correct
+> figure was carried to a different question, which is why re-deriving it
+> confirms it forever. Do not delete the sixteen; the list it came from is live.
+
+Those five, and the loop behind them, have caught real defects — a live
 edition's future rendering `0` instead of an em-dash, four of ten menus off a
 393px screen, a section bar that never reached the page, eleven readouts on a
 finished edition. That is not in question and is not re-litigated here.

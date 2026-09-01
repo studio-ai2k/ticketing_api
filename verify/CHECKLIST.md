@@ -4,7 +4,7 @@
 every build. Everything below needs extra tooling, so it is manual — run it
 after the change described, not on every build.
 
-    bash verify/assert_redesign.sh            # always, all six dashboards
+    bash verify/assert_redesign.sh            # always, all seven dashboards
                                               # NO ARGUMENT: it resolves where pass 0
                                               # publishes (CUTOVER §6.3). `.` meant
                                               # production, which it no longer asserts.
@@ -454,7 +454,13 @@ reads and appear to do nothing.
 
 ## After changing the login overlay or the template's `<style>`
 
-The background is checked by `assert_redesign.sh` via `check_login_bg.py`, and
+The background is asserted by `verify/check_login_bg_wiring.py`, which changes a
+real config row, rebuilds, and checks the page followed. `assert_redesign.sh`
+does **not** check it — the gate asserts two other login properties inline
+(`db-modal-sub` and `.pill`, :124–128) and calls no login file at all. This
+paragraph used to say the gate ran `check_login_bg.py`; it never did, and that
+file has since been deleted (`verify/P4_KEEP_DROP.md`).
+
 `postprocess_html.py` fails the build on any undeclared `{{PLACEHOLDER}}` in
 the template's `<style>`. But the file itself has to be served to be proven:
 
