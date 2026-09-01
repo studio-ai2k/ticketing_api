@@ -3904,7 +3904,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-18,2026-08-18 12:49:07,vendredi,invitation,['vendredi'],Offre De Groupe,Shotgun,0.0,0.0,1,0
 2026-08-18,2026-08-18 12:49:07,vendredi,invitation,['vendredi'],Offre De Groupe,Shotgun,0.0,0.0,1,0
 2026-08-18,2026-08-18 12:49:07,vendredi,invitation,['vendredi'],Offre De Groupe,Shotgun,0.0,0.0,1,0
-2026-08-18,2026-08-18 13:06:57,2-jours,regular,,Pass 2 Jours,Shotgun,80.0,90.42,1,1
 2026-08-18,2026-08-18 15:38:00,samedi,regular,['samedi'],Pass Samedi,Shotgun,43.64,49.32,1,1
 2026-08-18,2026-08-18 16:04:03,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
 2026-08-18,2026-08-18 18:14:59,vendredi,vip,['vendredi'],Pass Acces Scene,Shotgun,70.0,79.12,1,1
@@ -4456,3 +4455,4 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-09-01,2026-09-01 08:00:08,2-jours,regular,,Pass 2 Jours,Shotgun,80.0,90.42,1,1
 2026-09-01,2026-09-01 08:00:09,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,43.64,49.32,1,1
 2026-09-01,2026-09-01 08:00:24,2-jours,regular,,Pass 2 Jours,Shotgun,80.0,90.42,1,1
+2026-09-01,2026-09-01 11:13:36,2-jours,regular,,Pass 2 Jours,Shotgun,80.0,90.42,1,1
