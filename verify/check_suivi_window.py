@@ -126,6 +126,64 @@ def payload_window(html):
     return past[-VISIBLE:], []
 
 
+def reference_hole_problems(html):
+    """No settled row may lack a reference while a LATER row has one.
+
+    THE SHAPE THIS CATCHES: A HOLE AT A BOUNDARY, WITH DATA ON BOTH SIDES.
+
+    epk shipped with the newest non-`fut` daily row carrying `db: None` and
+    `b: None` while every row after it carried a 2023 date and value. The live
+    page drew the amber "Aujourd'hui" row with a figure on the right, an em dash
+    on the left and an em dash in the delta - one blank cell in the middle of a
+    contiguous reference column.
+
+    The cause was two mappings on different scales. `filter_tickets_to_same_point`
+    cuts the reference at equal DAYS-BEFORE-EVENT and is raw; `align.ref_date`
+    pairs the rows and, under `j_minus`, SNAPS TO THE SAME WEEKDAY. `daily_rows`
+    bounded a snapped `m` with the raw cut, so the newest paired row fell outside
+    it by exactly the snap - one day, on an event whose two editions start on
+    different weekdays.
+
+    WHY THIS ASSERTION AND NOT AN EQUALITY
+    ---------------------------------------
+    The three claims this file already makes - rows not all zero, anchor not
+    drifted past the event, buttons counting their own grain - are all true of a
+    table with a hole in it, and were green on the shipped page throughout. A
+    check that only asks whether the window is populated cannot see a single
+    missing cell inside it.
+
+    Stated as monotonicity rather than as "the newest settled row has a
+    reference", because that stronger form is FALSE in a legitimate case: a
+    reference edition whose own data stops early leaves a genuine tail of
+    null-reference rows, and `daily_rows`' `ref_last` guard exists to produce
+    exactly that. A hole is a null with a non-null after it. A tail is not.
+
+    `fut` rows are exempt on the left of the comparison but count on the right:
+    the event-day row is `fut` and legitimately null under the weekday snap
+    (epk's `jx: 0` pairs with the reference's own `jx: -1`), and that is a parked
+    alignment question, not this defect.
+    """
+    m = PAYLOAD_RE.search(html)
+    if not m:
+        return []
+    try:
+        D = json.loads(m.group(1))
+    except ValueError:
+        return []
+    daily = D.get('daily') or []
+    out = []
+    for i, r in enumerate(daily):
+        if r.get('fut') or r.get('b') is not None:
+            continue
+        later = [x for x in daily[i + 1:] if x.get('b') is not None]
+        if later:
+            out.append(
+                f"settled row J-{r.get('jx')} ({r.get('da')}) has NO reference "
+                f"while J-{later[0].get('jx')} ({later[0].get('da')}) has one "
+                f"- a hole at the boundary, not a tail")
+    return out
+
+
 def grain_problems(html):
     """AA3 at the payload: the weekly grain aggregates the daily one, exactly.
 
@@ -199,6 +257,7 @@ def main(argv):
         if not rows and PAYLOAD_RE.search(html):
             window, probs = payload_window(html)
             probs += grain_problems(html)
+            probs += reference_hole_problems(html)
             if window is None:
                 for x in probs:
                     failures.append(f'{name}: {x}')

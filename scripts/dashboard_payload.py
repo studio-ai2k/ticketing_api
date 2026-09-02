@@ -484,6 +484,30 @@ def daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first, align, ref_cut,
     they DO carry the reference's, which is the whole point of the block: what
     the comparison edition did over the stretch we have not lived yet.
     """
+    # THE PAST-SIDE BOUND IS ON THE PAIRING'S SCALE, NOT THE CUT'S.
+    #
+    # `ref_cut` is the newest order_date SURVIVING `filter_tickets_to_same_point`,
+    # which cuts at equal days-before-event and is RAW - the comment at the call
+    # site says so, and calls the asymmetry with the row pairing an existing
+    # convention rather than an oversight. `m` here is `align.ref_date(day)`,
+    # which for `j_minus` SNAPS TO THE SAME WEEKDAY. So `m <= ref_cut` compared
+    # a snapped date against a raw bound, and the newest paired row fell outside
+    # it by exactly the snap.
+    #
+    # Measured on epk at J-3: the cut lands on 2023-08-29 (Tuesday, raw J-3)
+    # while the row wants 2023-08-30 (Wednesday, the snapped counterpart of our
+    # Wednesday cutoff). 1 124 reference tickets exist on that day. The row
+    # rendered an em dash on the left and in the delta with a figure on the
+    # right - a hole at the boundary with data on both sides of it.
+    #
+    # The bound becomes the reference day PAIRED WITH OUR NEWEST DAY, which is
+    # the same quantity `m` is built from, so the two are comparable. It is not
+    # a change to the alignment: `align` is untouched and every mode keeps the
+    # mapping it had. Rows before the boundary map strictly earlier and already
+    # passed; `fut` rows still bound on `ref_ev`. Only the boundary row moves.
+    ref_bound = (align.ref_date(cutoff)
+                 if align is not None and cutoff is not None else ref_cut)
+
     rows, ca, cb, rca, rcb = [], 0, 0, 0.0, 0.0
     day = first
     # `max` because a FINISHED event's cutoff is past its own event date - the
@@ -500,7 +524,7 @@ def daily_rows(cur_n, cur_rev, ref_n, ref_rev, cutoff, first, align, ref_cut,
         # same-point left to preserve, so the bound becomes the reference's own
         # event - otherwise the future rows are blank on both sides and the
         # block says nothing.
-        limit = ref_ev if fut else ref_cut
+        limit = ref_ev if fut else ref_bound
         has_ref = m is not None and limit is not None and m <= limit
         # AND NOT PAST THE REFERENCE'S OWN LAST DAY OF DATA. For a FINISHED
         # edition `ref_last` is at or after its event, so this is inert - which
