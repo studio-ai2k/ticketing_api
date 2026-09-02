@@ -432,7 +432,14 @@ AUTHORISED_CSS = [
 # 1195 -> 1215: MODNAV's comment. It grew by eight lines when the seam's
 # delimiters had to come OUT of it - spelling them moved the seam, because
 # body_of() locates the region with a plain find() for that literal.
-BUDGET_ADDED = 1215
+# 1215 -> 1227: D147, the Suivi boundary row. `cutJx` was the last day the
+# reference edition SOLD on at or before our J-x; it becomes `cutAt`, the
+# reference J-x PAIRED with our cutoff. Twelve lines and no removals, because
+# the two lines it replaces are inside a hunk that was already authorised - the
+# budget is the only thing that saw it, which is what the budget is for.
+# Leo authorised this one in the relay that ruled the fix lands before the
+# event rather than after it.
+BUDGET_ADDED = 1227
 BUDGET_REMOVED = 206
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
