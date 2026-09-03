@@ -63,6 +63,42 @@ so. **Name every exclusion in the same breath as "green". Every time.**
 
 Last full run before parking: **32 of 32 green, plus `assert_redesign.sh`.**
 
+### THREE KNOWN REDS. NAME THEM INDIVIDUALLY, EVERY TIME.
+
+Two clear themselves. **One does not**, and the difference is the point: a red
+with no self-resolution and no owner is how a suite stops meaning anything.
+
+| check | what | clears |
+|---|---|---|
+| `check_v2_behaviour` | epk's two projection scenarios converge at short range | itself, when `OVER` fires on 5 September and the projection stops rendering |
+| `check_data_freshness` | SONORA x IMPACT is cancelled and its data has stopped | when its `status` is settled — see §2.2 |
+| **`check_b1_switch`** | **see below — does NOT clear itself** | **the build seat, after 6 September** |
+
+#### `check_b1_switch` — a deliberate red, ruled by Leo
+
+**What is broken:** switching the comparison candidate. The client recomputes
+the reference column in `applySeries`, and its `cutJx` is bound to **our own raw
+J−x** under `j_minus` (`redesign/mock/dashboard_v3.39.html:2088` — `anchorOf`
+sets `cutAt` three different ways, one per mode, and only `exact_date`'s is the
+paired reference J−x). The server now uses the snapped bound. They disagree in
+**both** directions: 13 pairings where the client shows nothing and the server
+has a value, 15 where the client shows a value the server suppresses.
+
+**What is NOT broken: the default view.** `applySeries` runs **0 times** on a
+plain load — measured on both trees, with the function wrapped before any page
+script ran. Every reader's landing state is drawn from the baked `D.daily`,
+which is correct. The pre-fix page returns `— —` through the identical probe,
+so the fix is what the reader sees.
+
+**What it needs: two changes, not one.** `cutJx = A.refJx(D.jx)` in all three
+modes, **and** a past-side `ref_last` equivalent the client does not have — the
+server applies `ref_last` to every row and the client only guards the future
+side. Attempting the first alone was measured and made it worse.
+
+**Owner: the build seat, after 6 September.** Not before: the file has three
+modes that deliberately differ, and it has already cost two reading errors under
+time pressure.
+
 ---
 
 ## 1. RULED AND UNWRITTEN — the queue
