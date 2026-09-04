@@ -5335,3 +5335,14 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-09-04,2026-09-04 17:56:52,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
 2026-09-04,2026-09-04 17:56:52,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
 2026-09-04,2026-09-04 18:16:01,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
+2026-09-04,2026-09-04 18:52:49,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
+2026-09-04,2026-09-04 18:53:18,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
+2026-09-04,2026-09-04 18:53:18,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
+2026-09-04,2026-09-04 19:20:51,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
+2026-09-04,2026-09-04 19:30:48,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-09-04,2026-09-04 19:30:48,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-09-04,2026-09-04 19:35:15,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
+2026-09-04,2026-09-04 20:22:19,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
+2026-09-04,2026-09-04 20:25:53,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
+2026-09-04,2026-09-04 21:08:01,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-09-04,2026-09-04 21:42:14,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
