@@ -2599,7 +2599,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-06-06,2026-06-06 20:17:00,single_day,regular,,Weekend | Billet Standard,DICE,89.40606000000001,94.76,1,1
 2026-06-06,2026-06-06 20:58:21,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,53.64,60.62,1,1
 2026-06-06,2026-06-06 20:58:21,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,53.64,60.62,1,1
-2026-06-06,2026-06-06 20:58:21,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,53.64,60.62,1,1
 2026-06-06,2026-06-06 21:38:00,vendredi,regular,['vendredi'],Vendredi | Billet Standard,DICE,55.392885,58.71,1,1
 2026-06-06,2026-06-06 21:38:00,vendredi,regular,['vendredi'],Vendredi | Billet Standard,DICE,55.392885,58.71,1,1
 2026-06-07,2026-06-07 07:56:51,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,45.0,50.86,1,1
@@ -5955,3 +5954,14 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-09-13,2026-09-13 21:37:49,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
 2026-09-13,2026-09-13 22:37:06,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
 2026-09-14,2026-09-14 01:29:48,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
+2026-09-14,2026-09-14 05:24:03,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
+2026-09-14,2026-09-14 05:44:00,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
+2026-09-14,2026-09-14 06:47:32,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-09-14,2026-09-14 07:14:17,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
+2026-09-14,2026-09-14 07:30:57,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-09-14,2026-09-14 08:20:37,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
+2026-09-14,2026-09-14 09:02:37,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-09-14,2026-09-14 09:13:56,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-09-14,2026-09-14 09:17:32,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-09-14,2026-09-14 09:20:22,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-09-14,2026-09-14 09:21:04,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
