@@ -13483,3 +13483,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-09-15,2026-09-15 21:33:53,2-jours,vip,"['vendredi', 'samedi']",Pass Acces Scene,Shotgun,220.0,248.66,1,1
 2026-09-15,2026-09-15 21:38:32,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
 2026-09-15,2026-09-15 22:21:16,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,60.0,67.82,1,1
+2026-09-15,2026-09-15 23:04:21,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
+2026-09-15,2026-09-15 23:30:54,2-jours,vip,"['vendredi', 'samedi']",Pass Acces Scene,Shotgun,220.0,248.66,1,1
+2026-09-16,2026-09-16 00:32:58,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
