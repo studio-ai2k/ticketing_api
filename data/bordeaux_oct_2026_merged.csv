@@ -967,7 +967,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-07-02,2026-07-02 17:02:15,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-07-02,2026-07-02 17:02:15,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-07-02,2026-07-02 17:02:16,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
-2026-07-02,2026-07-02 17:02:16,samedi,regular,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
 2026-07-02,2026-07-02 17:02:16,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-07-02,2026-07-02 17:02:16,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-07-02,2026-07-02 17:02:16,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
@@ -3508,7 +3507,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-07-02,2026-07-02 19:58:50,2-jours,vip,"['vendredi', 'samedi']",Pass Acces Scene,Shotgun,220.0,248.66,1,1
 2026-07-02,2026-07-02 19:59:02,vendredi,vip,['vendredi'],Pass Acces Scene,Shotgun,120.0,135.63,1,1
 2026-07-02,2026-07-02 19:59:02,vendredi,vip,['vendredi'],Pass Acces Scene,Shotgun,120.0,135.63,1,1
-2026-07-02,2026-07-02 19:59:50,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-07-02,2026-07-02 20:00:36,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-07-02,2026-07-02 20:00:46,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
 2026-07-02,2026-07-02 20:00:46,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
@@ -4573,7 +4571,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-07-06,2026-07-06 11:54:24,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
 2026-07-06,2026-07-06 12:01:52,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-07-06,2026-07-06 12:06:34,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
-2026-07-06,2026-07-06 12:12:26,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
 2026-07-06,2026-07-06 12:15:15,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
 2026-07-06,2026-07-06 12:15:15,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
 2026-07-06,2026-07-06 12:53:16,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
@@ -4654,7 +4651,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-07-07,2026-07-07 16:36:44,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-07-07,2026-07-07 16:36:44,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-07-07,2026-07-07 16:43:49,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
-2026-07-07,2026-07-07 16:43:58,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-07-07,2026-07-07 17:17:20,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
 2026-07-07,2026-07-07 17:41:52,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-07-07,2026-07-07 18:15:01,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
@@ -4796,7 +4792,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-07-09,2026-07-09 13:18:59,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
 2026-07-09,2026-07-09 13:23:44,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
 2026-07-09,2026-07-09 13:23:44,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
-2026-07-09,2026-07-09 13:24:49,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
 2026-07-09,2026-07-09 13:27:22,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-07-09,2026-07-09 13:30:51,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
 2026-07-09,2026-07-09 13:30:51,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
@@ -5424,7 +5419,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-07-16,2026-07-16 12:20:17,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,55.0,55.5,1,1
 2026-07-16,2026-07-16 12:34:15,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-07-16,2026-07-16 12:58:56,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
-2026-07-16,2026-07-16 13:00:53,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-07-16,2026-07-16 15:27:07,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-07-16,2026-07-16 15:28:17,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-07-16,2026-07-16 15:55:48,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
@@ -5666,7 +5660,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-07-22,2026-07-22 19:13:22,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-07-22,2026-07-22 20:03:34,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
 2026-07-22,2026-07-22 20:23:33,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
-2026-07-22,2026-07-22 21:06:45,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-07-22,2026-07-22 21:29:17,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-07-22,2026-07-22 21:31:30,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-07-23,2026-07-23 01:36:12,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
@@ -6376,7 +6369,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-07-31,2026-07-31 21:37:34,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
 2026-07-31,2026-07-31 21:38:02,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
 2026-07-31,2026-07-31 21:38:03,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
-2026-07-31,2026-07-31 21:38:30,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
 2026-07-31,2026-07-31 21:41:43,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-07-31,2026-07-31 21:45:31,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-07-31,2026-07-31 22:02:54,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
@@ -6944,7 +6936,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-05,2026-08-05 08:19:52,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-08-05,2026-08-05 08:26:48,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-08-05,2026-08-05 08:59:42,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
-2026-08-05,2026-08-05 09:11:48,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-08-05,2026-08-05 09:12:24,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
 2026-08-05,2026-08-05 09:24:23,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-08-05,2026-08-05 09:25:20,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
@@ -7995,8 +7986,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-17,2026-08-17 21:01:35,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-08-17,2026-08-17 21:01:41,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-08-17,2026-08-17 21:04:46,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
-2026-08-17,2026-08-17 21:46:18,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
-2026-08-17,2026-08-17 21:46:18,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
 2026-08-17,2026-08-17 22:42:24,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-08-17,2026-08-17 23:02:35,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
 2026-08-17,2026-08-17 23:02:35,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
@@ -8031,7 +8020,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-18,2026-08-18 12:55:16,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
 2026-08-18,2026-08-18 13:21:00,vendredi,early_entry,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,50.0,56.51,1,1
 2026-08-18,2026-08-18 13:22:06,vendredi,early_entry,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,50.0,56.51,1,1
-2026-08-18,2026-08-18 13:55:11,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
 2026-08-18,2026-08-18 13:59:09,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
 2026-08-18,2026-08-18 14:02:31,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-08-18,2026-08-18 14:05:00,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,95.0,107.37,1,1
@@ -8501,8 +8489,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-24,2026-08-24 19:54:27,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
 2026-08-24,2026-08-24 20:05:24,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
 2026-08-24,2026-08-24 20:07:18,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
-2026-08-24,2026-08-24 20:58:16,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
-2026-08-24,2026-08-24 20:58:16,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
 2026-08-24,2026-08-24 21:16:43,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
 2026-08-24,2026-08-24 21:22:54,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
 2026-08-24,2026-08-24 21:22:54,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
@@ -8864,7 +8850,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-28,2026-08-28 13:01:13,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
 2026-08-28,2026-08-28 13:10:00,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
 2026-08-28,2026-08-28 13:34:09,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
-2026-08-28,2026-08-28 13:43:05,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
 2026-08-28,2026-08-28 14:14:48,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
 2026-08-28,2026-08-28 14:22:51,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
 2026-08-28,2026-08-28 14:25:18,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
@@ -10117,7 +10102,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-09-02,2026-09-02 20:55:02,vendredi,early_entry,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
 2026-09-02,2026-09-02 20:55:02,vendredi,early_entry,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
 2026-09-02,2026-09-02 20:58:35,vendredi,vip,['vendredi'],Pass Acces Scene,Shotgun,120.0,135.63,1,1
-2026-09-02,2026-09-02 21:04:06,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
 2026-09-02,2026-09-02 21:07:08,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
 2026-09-02,2026-09-02 21:07:48,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
 2026-09-02,2026-09-02 21:09:15,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
@@ -11926,7 +11910,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-09-09,2026-09-09 09:01:41,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-09-09,2026-09-09 09:13:02,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
 2026-09-09,2026-09-09 09:18:13,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
-2026-09-09,2026-09-09 09:26:52,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
 2026-09-09,2026-09-09 09:35:21,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
 2026-09-09,2026-09-09 09:53:26,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
 2026-09-09,2026-09-09 10:01:55,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
@@ -12937,8 +12920,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-09-13,2026-09-13 17:47:20,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-09-13,2026-09-13 17:49:48,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
 2026-09-13,2026-09-13 17:51:24,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
-2026-09-13,2026-09-13 18:30:23,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
-2026-09-13,2026-09-13 18:30:23,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
 2026-09-13,2026-09-13 18:30:23,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
 2026-09-13,2026-09-13 18:36:22,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
 2026-09-13,2026-09-13 18:37:10,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
@@ -14161,7 +14142,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-09-20,2026-09-20 18:54:11,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
 2026-09-20,2026-09-20 18:56:01,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
 2026-09-20,2026-09-20 19:01:30,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
-2026-09-20,2026-09-20 19:10:56,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
 2026-09-20,2026-09-20 19:13:38,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
 2026-09-20,2026-09-20 19:13:38,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
 2026-09-20,2026-09-20 19:15:34,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
@@ -14222,3 +14202,93 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-09-21,2026-09-21 08:11:57,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
 2026-09-21,2026-09-21 08:49:57,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
 2026-09-21,2026-09-21 09:00:34,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
+2026-09-21,2026-09-21 09:51:14,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 09:59:54,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 10:20:24,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 10:20:24,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 10:27:44,samedi,regular,['samedi'],T-Shirt - Réservé Aux Détendeurs D'Un Billet. A Retirer Sur Place 16 & 17 Octobre.,Shotgun,35.0,39.56,1,1
+2026-09-21,2026-09-21 10:41:06,samedi,regular,['samedi'],T-Shirt - Réservé Aux Détendeurs D'Un Billet. A Retirer Sur Place 16 & 17 Octobre.,Shotgun,35.0,39.56,1,1
+2026-09-21,2026-09-21 10:41:09,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 10:43:30,samedi,regular,['samedi'],T-Shirt - Réservé Aux Détendeurs D'Un Billet. A Retirer Sur Place 16 & 17 Octobre.,Shotgun,35.0,39.56,1,1
+2026-09-21,2026-09-21 10:53:57,samedi,regular,['samedi'],T-Shirt - Réservé Aux Détendeurs D'Un Billet. A Retirer Sur Place 16 & 17 Octobre.,Shotgun,35.0,39.56,1,1
+2026-09-21,2026-09-21 10:59:29,samedi,regular,['samedi'],T-Shirt - Réservé Aux Détendeurs D'Un Billet. A Retirer Sur Place 16 & 17 Octobre.,Shotgun,35.0,39.56,1,1
+2026-09-21,2026-09-21 10:59:41,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 11:10:23,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 11:10:23,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 11:14:06,samedi,regular,['samedi'],T-Shirt - Réservé Aux Détendeurs D'Un Billet. A Retirer Sur Place 16 & 17 Octobre.,Shotgun,35.0,39.56,1,1
+2026-09-21,2026-09-21 11:16:05,samedi,regular,['samedi'],T-Shirt - Réservé Aux Détendeurs D'Un Billet. A Retirer Sur Place 16 & 17 Octobre.,Shotgun,35.0,39.56,1,1
+2026-09-21,2026-09-21 11:26:44,vendredi,early_entry,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 11:33:36,samedi,regular,['samedi'],T-Shirt - Réservé Aux Détendeurs D'Un Billet. A Retirer Sur Place 16 & 17 Octobre.,Shotgun,35.0,39.56,1,1
+2026-09-21,2026-09-21 11:35:31,samedi,regular,['samedi'],T-Shirt - Réservé Aux Détendeurs D'Un Billet. A Retirer Sur Place 16 & 17 Octobre.,Shotgun,35.0,39.56,1,1
+2026-09-21,2026-09-21 11:37:18,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
+2026-09-21,2026-09-21 11:37:50,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 11:38:40,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 11:40:59,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 11:46:43,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 11:46:48,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 11:50:33,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
+2026-09-21,2026-09-21 11:55:00,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 11:55:00,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 11:55:01,samedi,regular,['samedi'],T-Shirt - Réservé Aux Détendeurs D'Un Billet. A Retirer Sur Place 16 & 17 Octobre.,Shotgun,35.0,39.56,1,1
+2026-09-21,2026-09-21 11:58:37,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 12:01:35,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 12:03:13,samedi,regular,['samedi'],T-Shirt - Réservé Aux Détendeurs D'Un Billet. A Retirer Sur Place 16 & 17 Octobre.,Shotgun,35.0,39.56,1,1
+2026-09-21,2026-09-21 12:03:43,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 12:04:19,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 12:07:20,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 12:13:12,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 12:13:12,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 12:16:31,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 12:21:29,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 12:23:19,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,55.0,55.5,1,1
+2026-09-21,2026-09-21 12:31:00,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,55.0,55.5,1,1
+2026-09-21,2026-09-21 12:33:25,samedi,regular,['samedi'],T-Shirt - Réservé Aux Détendeurs D'Un Billet. A Retirer Sur Place 16 & 17 Octobre.,Shotgun,35.0,39.56,1,1
+2026-09-21,2026-09-21 12:58:53,samedi,regular,['samedi'],T-Shirt - Réservé Aux Détendeurs D'Un Billet. A Retirer Sur Place 16 & 17 Octobre.,Shotgun,35.0,39.56,1,1
+2026-09-21,2026-09-21 13:03:46,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 13:04:43,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 13:13:07,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 13:14:43,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 13:16:54,samedi,regular,['samedi'],T-Shirt - Réservé Aux Détendeurs D'Un Billet. A Retirer Sur Place 16 & 17 Octobre.,Shotgun,35.0,39.56,1,1
+2026-09-21,2026-09-21 13:18:24,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 13:18:34,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 13:20:29,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 13:20:49,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 13:28:48,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 13:34:16,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 13:56:10,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 13:58:18,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 14:10:52,samedi,regular,['samedi'],T-Shirt - Réservé Aux Détendeurs D'Un Billet. A Retirer Sur Place 16 & 17 Octobre.,Shotgun,35.0,39.56,1,1
+2026-09-21,2026-09-21 14:15:03,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
+2026-09-21,2026-09-21 14:15:49,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 14:19:11,vendredi,early_entry,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 14:22:20,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 14:22:58,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
+2026-09-21,2026-09-21 14:26:38,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 14:39:42,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 14:39:42,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 15:04:06,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
+2026-09-21,2026-09-21 15:04:30,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 15:22:13,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 15:26:20,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 15:33:29,vendredi,early_entry,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 15:42:11,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 15:59:31,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
+2026-09-21,2026-09-21 16:02:39,samedi,regular,['samedi'],T-Shirt - Réservé Aux Détendeurs D'Un Billet. A Retirer Sur Place 16 & 17 Octobre.,Shotgun,35.0,39.56,1,1
+2026-09-21,2026-09-21 16:21:19,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 16:24:55,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 16:24:55,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 16:25:43,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
+2026-09-21,2026-09-21 16:27:03,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 16:33:35,samedi,regular,['samedi'],T-Shirt - Réservé Aux Détendeurs D'Un Billet. A Retirer Sur Place 16 & 17 Octobre.,Shotgun,35.0,39.56,1,1
+2026-09-21,2026-09-21 16:54:25,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 16:54:25,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 16:55:23,2-jours,regular,,Pass 2 Jours - Derniers Tickets,Shotgun,105.45,119.19,1,1
+2026-09-21,2026-09-21 16:57:00,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 17:00:42,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 17:04:02,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 17:15:33,vendredi,early_entry,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 17:16:09,vendredi,early_entry,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 17:20:12,vendredi,early_entry,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 17:22:33,vendredi,regular,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,60.0,67.82,1,1
+2026-09-21,2026-09-21 17:23:02,vendredi,early_entry,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 17:23:05,vendredi,early_entry,['vendredi'],Pass Vendredi - Derniers Tickets,Shotgun,54.09,61.14,1,1
