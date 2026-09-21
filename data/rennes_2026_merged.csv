@@ -4433,8 +4433,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-16,2026-08-16 17:59:54,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,95.0,107.37,1,1
 2026-08-16,2026-08-16 18:02:02,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
 2026-08-16,2026-08-16 18:02:02,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
-2026-08-16,2026-08-16 18:03:05,samedi,regular,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
-2026-08-16,2026-08-16 18:03:05,samedi,regular,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
 2026-08-16,2026-08-16 18:56:51,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
 2026-08-16,2026-08-16 18:56:51,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
 2026-08-16,2026-08-16 19:29:00,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
@@ -7276,3 +7274,16 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-09-20,2026-09-20 21:16:56,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-09-20,2026-09-20 21:16:56,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-09-20,2026-09-20 21:25:27,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 04:00:48,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 04:58:11,vendredi,regular,['vendredi'],Pass Vendredi,DICE,51.39,55.0,1,1
+2026-09-21,2026-09-21 06:00:34,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 06:57:24,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 07:03:29,2-jours,regular,,Pass 2 Jours,DICE,99.45,104.5,1,1
+2026-09-21,2026-09-21 07:04:37,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 07:44:14,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 08:12:19,samedi,regular,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-09-21,2026-09-21 08:12:19,samedi,regular,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-09-21,2026-09-21 08:43:47,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 08:58:14,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 09:06:02,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-09-21,2026-09-21 09:06:02,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
