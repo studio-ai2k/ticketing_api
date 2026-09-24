@@ -259,6 +259,107 @@ exclue`** with an empty bar — reachable in one tap and indistinguishable from
 
 ## 2. OPEN — waiting on an input nobody has yet
 
+### 2.0 THE GRACE WINDOW — a threshold ruling, and it is blocking three things
+
+**Measured 2026-09-24. Reported, not applied — the fix is a decision about what
+the check asserts.**
+
+`check_data_freshness` demands the newest ticket be under **24 hours** old for
+every event `live_events()` returns, and that set keeps an event until
+`max(day_date) + GRACE_DAYS`, with `GRACE_DAYS = 30`. So **every event goes red
+for up to thirty days after it happens**, and two are red today: `epk_2026`
+(finished 6 September) and `sonora_impact_2026` (cancelled, §2.2).
+
+**THE OBVIOUS EXPLANATION IS WRONG, AND IT WAS CHECKED RATHER THAN ASSUMED.**
+
+The tempting story is that post-event rows never arrive — refunds only *remove*
+rows, so the grace can never be satisfied by the thing it was written for. Both
+halves of that are false:
+
+- **Post-event orders are real.** `paris_xxl_2026` took **48 paid orders after
+  its last event day**: 41 on day+1, then nothing for fifteen days, then 7 on
+  **day+16**. Real prices, both platforms, `is_paid = 1`.
+- **Refunds removing rows does not stop `max(order_datetime)` advancing.** On
+  `sonora_impact_2026`, while rows were being deleted daily, the newest order
+  went 09-01 → 09-05 → 09-08 → 09-15. Both happen at once.
+
+**THE REAL SHAPE: NOT UNSATISFIABLE, UNMEETABLE.** Post-event flow is sparse and
+bursty rather than daily, so a **24-hour** threshold cannot be held across a
+**30-day** window. Even paris_xxl — the one case where the grace was doing its
+job — would have been red for the fourteen days between its two bursts.
+
+    event              last event day   last order   days after
+    paris_xxl_2026     2026-03-14       2026-03-30       +16
+    bordeaux_2026      2026-06-13       2026-06-13         0
+    epk_2026           2026-09-06       2026-09-06         0
+
+That points at a **per-event or post-event threshold**, NOT at realigning the
+check to the fetch window - which was the first proposal and would have been the
+right-shaped fix reached by the wrong route, since the fetch window is the thing
+that is too long.
+
+**IT BLOCKS `check_v2_footer` TOO, AND THAT IS THE SAME CONSTANT.** `epk.html`
+carries `Données API · 18:07` - a live sync clock over frozen data. Stamping it
+`--frozen` by hand **does not hold**: the Restamp step takes the `--checked`
+branch whenever `matrix.event.fetch == 'true'`, and epk is fetched until
+**2026-10-07**. So a manual freeze is overwritten at the next quiet run, within
+four hours. The two rules disagree about one word:
+
+    check_v2_footer   "finished" = the event date has passed   -> 2026-09-06
+    the workflow      "frozen"   = past the fetch grace        -> 2026-10-07
+
+`GRACE_DAYS` is one constant serving two purposes, and `check_data_freshness`
+imports it as a third. **Do not collapse them** (that is how the next reader
+inherits a constant meaning three things) - but the fetch and the freshness check
+should end up keying on the same notion of "over", whatever the ruling is.
+
+**AND IT IS COSTING A FETCH.** `epk_2026` is still fetched for **297 seconds a
+run**, 5 of the 20 derived billed minutes, for an event whose last order was its
+own event day. Free - this repo is public, see below - and pointless.
+
+**Blocked on Leo, and it interacts with §2.2**: settle the threshold and SONORA's
+red changes shape.
+
+### 2.0a A CORRECTION, RECORDED SO IT DOES NOT TRAVEL
+
+`sonora_impact_2026`'s merged CSV collapsed from **4 452 to 1 708 rows on 16
+September**. The first reading was that DICE had dropped out of the merge. **It
+had not: sonora has only ever carried Shotgun rows**, before and after. The drop
+is 2 744 Shotgun refunds on a cancelled event, in a single day.
+
+Recorded because a hypothesis that travels one message further than its evidence
+is how a wrong premise gets inherited - which is exactly what happened to the
+Actions-cost brief below.
+
+### 2.0b ACTIONS MINUTES ARE FREE HERE. Nothing is worth cutting for money.
+
+`studio-ai2k/ticketing_api` is **public** (`"private": false`), on standard
+`ubuntu-latest` runners, so its Actions minutes are free and unmetered. Three
+confirmations: the billing API returns `"total_ms": 0` for all ten jobs of a
+run; the runners are standard, not larger; and **the workflow says so in its own
+fifth line** - *"Actions minutes are free here because the repo is public, so
+cadence is not a cost question - it is about churn and queue exposure."*
+
+The org's exhausted allowance is Festiflow-V1's: $12.00 at $0.006/min is exactly
+2 000 minutes. This repo's 2 512 minutes are gross and fully discounted.
+
+**So cadence is a CHURN question** - branch re-conflicts and a red badge every
+four hours - and Leo decides it on that basis, not on a bill.
+
+Derived per-job figures for one run (run 261), kept because they are useful
+anyway. `total_ms` is 0, so these are `ceil(minutes)` over job timings -
+**derivation, not measurement**:
+
+    epk_2026            297s -> 5 min      bordeaux_2026         9s -> 1 min
+    bordeaux_oct_2026   214s -> 4 min      paris_xxl_2026        6s -> 1 min
+    rennes_2026          94s -> 2 min      list/commit/alert    47s -> 3 min
+    sonora_impact_2026   73s -> 2 min
+    geneve_2026          66s -> 2 min      TOTAL  13.4 min -> 20 billed (33% round-up)
+
+**`setup-python` is worth nothing to remove**: it starts and completes in the
+same second in all eight jobs - already cached, not the 20-40s it was assumed to
+be. Measured before it could become a lever.
+
 ### 2.1 `poster_url` — the avatar shows the wrong brand
 
 `poster_url` is **empty on all seven active rows**, so `run.py:2081` falls back to
