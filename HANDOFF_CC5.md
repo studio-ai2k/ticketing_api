@@ -259,6 +259,28 @@ exclue`** with an empty bar — reachable in one tap and indistinguishable from
 
 ## 2. OPEN — waiting on an input nobody has yet
 
+### 2.00 READ THIS BEFORE 2.0: A RED NOBODY READS STOPPED BEING A SIGNAL
+
+**On 2026-09-24 `main` had seven reds. Five of them were one broken page, and
+they had been there for ten days.**
+
+`sonora_impact.html` threw `TypeError: Cannot read properties of null (reading
+'tot')` from 14 September and **half-rendered**: Revenus and Vélocité drew with
+real numbers, then it threw and Présence, Billets, Suivi and Projections never
+appeared - tabs still showing. `check_cand_groups`, `check_finished_edition`,
+`check_proj_total`, `check_section_heads` and `check_v2_behaviour` all went red
+about it, correctly, and **nobody looked**, because `check_data_freshness` was
+already red for SONORA and the loop's output had become a shape people skimmed.
+
+**That changes what the ruling in 2.0 is FOR.** It is not tidiness and it is not
+about a badge. **Until SONORA is settled, every new red on `main` is invisible**,
+and the next one will not announce itself either. §0 warns about this in the
+abstract - *"a red with no self-resolution and no owner is how a suite stops
+meaning anything"*. This is that warning arriving as an incident.
+
+It was found by running the loop on a branch that touches **one `.md` file** -
+the run there was every reason to skip.
+
 ### 2.0 THE GRACE WINDOW — a threshold ruling, and it is blocking three things
 
 **Measured 2026-09-24. Reported, not applied — the fix is a decision about what
@@ -479,9 +501,33 @@ precedent, and now also how the nav trigger gets its name.
 
 ## 4. Added to `HANDOFF_CC4.md` §9
 
-Five this session. The first two are about references that have moved and cannot
+Six this session. The first two are about references that have moved and cannot
 say so; the next two are about fixes; the last is about a check that was green
 while the thing it watches was broken.
+
+### A GUARD THAT CHECKS ONE OF THE TWO THINGS THE NEXT LINE READS
+
+**Three instances in one pass, in three different files.** Not three bugs — one
+shape, and it is worth recognising rather than fixing three times:
+
+| where | guarded | read |
+|---|---|---|
+| `dashboard_payload.daily_rows` | `ref_last` (upper) | `m` at both ends |
+| `applySeries` (the mock) | `lastJr` (upper) | `jr` at both ends |
+| the projection `S(i)` (the mock) | `p.s1` | `i ? p.s2 : p.s1` |
+
+Each was correct until the thing that made the unguarded half unreachable moved.
+The first two were held up by a BOUND doing the guard's job by arithmetic; the
+third by `s1` and `s2` having always been populated together. **None of them was
+wrong when written, and all three shipped wrong numbers or a broken page the
+moment an assumption shifted.** Same family as `jr >= 0` and the weekly `w >= 0`.
+
+**The test to apply: read the line the guard protects, list every field it
+dereferences, and check that the guard names all of them.** `:1737` of
+`dashboard_v3.39.html` is the model in-repo —
+`days.map(p => ({p, sc: PSCEN ? p.s2 : p.s1})).filter(x => x.sc)` — it filters on
+whatever it is about to use, and it sits fourteen lines from the one that did
+not.
 
 ### AN AGREEMENT CHECK WENT GREEN THROUGH A DEFECT IN BOTH IMPLEMENTATIONS
 
