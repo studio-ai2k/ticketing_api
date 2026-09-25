@@ -1624,7 +1624,27 @@ let PSCEN = 0;
             <div class="kc-s">${(p.now/p.cap*100).toFixed(0)}% de la jauge</div></div>
           <div class="kc"><div class="kc-k">Jauge</div><div class="kc-v">${nf(p.cap)}</div>
             <div class="kc-s">capacité de la journée</div></div></div></div>`;
-      if (!p.s1) return `<div class="card" style="margin-bottom:12px">
+      /* BOTH SCENARIOS, NOT JUST THE FIRST. `S(i)` fourteen lines below reads
+         `i ? p.s2 : p.s1` and is called as `S(0)S(1)`, so this has to hold for
+         both or the second call dereferences null. It checked `s1` alone, and
+         on 2026-09-14 sonora_impact reached `s1` set with `s2` null: the page
+         threw `Cannot read properties of null (reading 'tot')` partway through
+         `render()` and half-rendered for TEN DAYS - Revenus and Vélocité drew,
+         Présence, Billets, Suivi and Projections never appeared, with their
+         tabs still showing. Five checks went red about it and sat unread.
+
+         `:1737` in this same file already does it correctly:
+             days.map(p => ({p, sc: PSCEN ? p.s2 : p.s1})).filter(x => x.sc)
+         - it filters on whatever it is about to use. THAT is the one to copy,
+         not this line. Two guards over the same pair of fields, fourteen lines
+         apart, one defensive and one not.
+
+         The empty state below says a day has no counterpart in the reference,
+         which is NOT what a missing second scenario means. That inaccuracy is
+         accepted deliberately and ruled: it is confined to one panel that today
+         renders nothing at all, against four tabs bought back. The wording is
+         its own change and its own ledger entry. */
+      if (!p.s1 || !p.s2) return `<div class="card" style="margin-bottom:12px">
         <div class="eyebrow" style="color:${col};margin-bottom:13px">${CAP(p.day)}</div>
         <div class="empty"><div class="empty-t">Pas de journée correspondante</div>
           <div class="empty-s">${C.label} n’a que ${C.refdays.length} journée${C.refdays.length>1?'s':''}

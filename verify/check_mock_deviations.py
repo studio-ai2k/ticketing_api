@@ -457,8 +457,8 @@ AUTHORISED_CSS = [
 # could not count them - 53 on bordeaux_2025, 47 on rennes_2025, 10 on
 # halloween_2025. B2-absence's signature moves with it; that entry authorised
 # `lastJr` BESIDE the bound, and the bound is what left.
-BUDGET_ADDED = 1329
-BUDGET_REMOVED = 209
+BUDGET_ADDED = 1350
+BUDGET_REMOVED = 210
 
 # (id, ruling, signature that must appear on the WORKING side of its hunk)
 AUTHORISED = [
@@ -882,6 +882,22 @@ AUTHORISED += [
      # they were the first time. The two bounds now sit together in `inData`,
      # which is why the ternary's head changed shape rather than its meaning.
      'const ok = r.fut ? inData'),
+    ('D153', 'THE PROJECTION GUARD CHECKS BOTH SCENARIOS. `S(i)` reads '
+             '`i ? p.s2 : p.s1` and is called as `S(0)S(1)`, so a guard on `s1` '
+             'alone lets the second call dereference null. On 2026-09-14 '
+             'sonora_impact reached `s1` set with `s2` null and the page threw '
+             'partway through `render()`, half-rendering for TEN DAYS: Revenus '
+             'and Velocite drew, Presence, Billets, Suivi and Projections never '
+             'appeared, with their tabs still showing. Five checks went red '
+             'about it and sat unread behind the SONORA freshness failure. '
+             'THE MODEL IS `:1737` IN THIS SAME FILE, which filters on whatever '
+             'it is about to use - two guards over the same pair of fields, '
+             'fourteen lines apart, one defensive and one not. The empty state '
+             'this now falls into says a day has no counterpart in the '
+             'reference, which is not what a missing second scenario means; '
+             'that inaccuracy is RULED and deliberate, confined to one panel '
+             'that rendered nothing at all, and the wording is its own change',
+     'if (!p.s1 || !p.s2) return'),
     ('D152', 'THE REFERENCE IS BOUNDED AT ITS FIRST DAY WITH DATA, not only at '
              'its last. `lastJr` had no counterpart, and nothing ever walked a '
              'day below the reference\'s first: the row set was bounded by OUR '
