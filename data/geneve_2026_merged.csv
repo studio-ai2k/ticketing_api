@@ -4652,8 +4652,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-25,2026-08-25 07:50:34,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
 2026-08-25,2026-08-25 09:47:30,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
 2026-08-25,2026-08-25 12:04:38,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
-2026-08-25,2026-08-25 16:09:33,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
-2026-08-25,2026-08-25 16:09:33,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
 2026-08-25,2026-08-25 16:32:13,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
 2026-08-25,2026-08-25 16:39:20,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
 2026-08-25,2026-08-25 17:42:23,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
@@ -7025,3 +7023,10 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-09-26,2026-09-26 22:01:58,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
 2026-09-26,2026-09-26 22:06:19,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
 2026-09-26,2026-09-26 22:25:04,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-09-26,2026-09-26 23:10:59,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-09-26,2026-09-26 23:10:59,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-09-26,2026-09-26 23:11:12,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
+2026-09-27,2026-09-27 00:15:30,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
+2026-09-27,2026-09-27 00:15:30,2-jours,regular,,Pass 2 Jours,Shotgun,100.0,113.03,1,1
+2026-09-27,2026-09-27 00:44:05,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-09-27,2026-09-27 00:44:05,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
