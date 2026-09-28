@@ -8592,7 +8592,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-27,2026-08-27 12:50:16,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
 2026-08-27,2026-08-27 13:52:07,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
 2026-08-27,2026-08-27 14:05:07,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,60.0,67.82,1,1
-2026-08-27,2026-08-27 14:26:14,vendredi,vip,['vendredi'],Pass Acces Scene,Shotgun,120.0,135.63,1,1
 2026-08-27,2026-08-27 14:30:30,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-08-27,2026-08-27 14:40:48,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-08-27,2026-08-27 14:42:15,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
@@ -9922,7 +9921,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-09-02,2026-09-02 19:43:24,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,60.0,67.82,1,1
 2026-09-02,2026-09-02 19:45:24,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
 2026-09-02,2026-09-02 19:45:24,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
-2026-09-02,2026-09-02 19:45:51,vendredi,vip,['vendredi'],Pass Acces Scene,Shotgun,120.0,135.63,1,1
 2026-09-02,2026-09-02 19:46:50,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
 2026-09-02,2026-09-02 19:46:50,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
 2026-09-02,2026-09-02 19:47:25,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,60.0,67.82,1,1
@@ -15463,3 +15461,14 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-09-27,2026-09-27 22:35:06,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,60.0,67.82,1,1
 2026-09-27,2026-09-27 22:50:41,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
 2026-09-27,2026-09-27 22:52:40,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-09-27,2026-09-27 22:54:34,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-09-27,2026-09-27 23:39:51,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
+2026-09-27,2026-09-27 23:39:51,2-jours,regular,,Pass 2 Jours,Shotgun,105.45,119.19,1,1
+2026-09-27,2026-09-27 23:58:07,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,60.0,67.82,1,1
+2026-09-28,2026-09-28 00:23:06,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-09-28,2026-09-28 00:26:26,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-09-28,2026-09-28 00:26:26,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-09-28,2026-09-28 01:24:15,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-09-28,2026-09-28 02:04:12,samedi,regular,['samedi'],Pass Samedi,Shotgun,60.0,67.82,1,1
+2026-09-28,2026-09-28 02:59:15,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,55.5,1,1
+2026-09-28,2026-09-28 03:09:51,vendredi,vip,['vendredi'],Pass Acces Scene,Shotgun,120.0,135.63,1,1
