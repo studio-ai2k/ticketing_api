@@ -2875,7 +2875,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-06-20,2026-06-20 22:39:00,samedi,early_entry,['samedi'],Samedi | Entrée Avant 21H,DICE,45.674834999999995,48.41,1,1
 2026-06-20,2026-06-20 22:39:00,samedi,early_entry,['samedi'],Samedi | Entrée Avant 21H,DICE,45.674834999999995,48.41,1,1
 2026-06-20,2026-06-20 22:39:00,samedi,early_entry,['samedi'],Samedi | Entrée Avant 21H,DICE,45.674834999999995,48.41,1,1
-2026-06-20,2026-06-20 23:14:46,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,53.64,60.62,1,1
 2026-06-20,2026-06-20 23:31:00,vendredi,regular,['vendredi'],Vendredi | Billet Standard,DICE,55.392885,58.71,1,1
 2026-06-20,2026-06-20 23:31:00,vendredi,regular,['vendredi'],Vendredi | Billet Standard,DICE,55.392885,58.71,1,1
 2026-06-20,2026-06-20 23:37:00,samedi,early_entry,['samedi'],Samedi | Entrée Avant 21H,DICE,45.674834999999995,48.41,1,1
@@ -5932,7 +5931,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-09-15,2026-09-15 12:50:51,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
 2026-09-15,2026-09-15 12:50:51,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
 2026-09-15,2026-09-15 12:58:49,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
-2026-09-15,2026-09-15 12:58:49,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
 2026-09-15,2026-09-15 13:11:13,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
 2026-09-15,2026-09-15 13:14:16,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
 2026-09-15,2026-09-15 13:23:20,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
@@ -7870,3 +7868,24 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-10-03,2026-10-03 18:30:07,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
 2026-10-03,2026-10-03 18:39:33,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
 2026-10-03,2026-10-03 18:59:09,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-10-03,2026-10-03 19:08:44,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
+2026-10-03,2026-10-03 19:39:38,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-10-03,2026-10-03 19:45:35,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
+2026-10-03,2026-10-03 20:05:50,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-10-03,2026-10-03 20:06:13,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
+2026-10-03,2026-10-03 20:07:15,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
+2026-10-03,2026-10-03 20:49:03,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-10-03,2026-10-03 20:49:03,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-10-03,2026-10-03 20:55:38,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-10-03,2026-10-03 21:01:59,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
+2026-10-03,2026-10-03 21:25:57,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-10-03,2026-10-03 21:26:49,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-10-03,2026-10-03 21:26:49,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-10-03,2026-10-03 21:26:49,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-10-03,2026-10-03 21:29:56,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-10-03,2026-10-03 21:35:20,samedi,regular,['samedi'],Pass Samedi,Shotgun,55.0,62.16,1,1
+2026-10-03,2026-10-03 21:49:27,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-10-03,2026-10-03 21:49:27,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-10-03,2026-10-03 21:49:27,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-10-03,2026-10-03 22:05:13,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
+2026-10-03,2026-10-03 22:09:10,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,55.0,62.16,1,1
