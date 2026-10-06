@@ -1,0 +1,36 @@
+ticketing_api_slug,shotgun_event_id,dice_event_id_numeric,dice_event_id_base64,shotgun_account_name,account_source,account_probe_verified,config_status,last_event_day,fetched_today
+bordeaux_2026,505434,540197,RXZlbnQ6NTQwMTk3,episode,explicit list,probe_shotgun_account.py,active,2026-06-13,no (aged out 115d past last day)
+bordeaux_oct_2026,565846,,,sonora,explicit list,"returned 7,985 tickets",active,2026-10-17,yes
+epk_2026,535882,573271,RXZlbnQ6NTczMjcx,episode,explicit list,probe_shotgun_account.py,active,2026-09-06,yes
+geneve_2026,546274,,,episode,explicit list,,active,2026-10-17,yes
+paris_xxl_2026,494642,526535,RXZlbnQ6NTI2NTM1,episode,explicit list,,active,2026-03-14,no (aged out 206d past last day)
+rennes_2026,557151,600413,RXZlbnQ6NjAwNDEz,episode,explicit list,,active,2026-11-07,yes
+sonora_impact_2026,544355,,,sonora,explicit list,run 32146511963,active,2026-09-26,yes
+anl_paris_2025,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2025-10-18,no (archive — reference data only)
+bordeaux_2024,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2024-06-15,no (archive — reference data only)
+bordeaux_2025,408231,345933,RXZlbnQ6MzQ1OTMz,sonora,explicit list,,archive,2025-06-14,no (archive — reference data only)
+bordeaux_jun_2023,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2023-06-17,no (archive — reference data only)
+bordeaux_oct_2023,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2023-10-21,no (archive — reference data only)
+epk_2023,313304,,,episode,explicit list,,archive,2023-09-02,no (archive — reference data only)
+frejus_2025,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2025-07-25,no (archive — reference data only)
+geneve_2025,455482,,,episode,explicit list,,archive,2025-10-18,no (archive — reference data only)
+halloween_2025,433590,,,sonora,explicit list,,archive,2025-11-01,no (archive — reference data only)
+lille_2024,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2024-11-02,no (archive — reference data only)
+lille_2025,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2025-05-09,no (archive — reference data only)
+marseille_2024,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2024-11-29,no (archive — reference data only)
+marseille_2025,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2025-04-12,no (archive — reference data only)
+montpellier_2023,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2023-06-03,no (archive — reference data only)
+paris_ame_2024,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2024-04-13,no (archive — reference data only)
+paris_benny_2024,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2024-07-27,no (archive — reference data only)
+paris_edbanger_2025,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2025-04-26,no (archive — reference data only)
+paris_fatboy_2024,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2024-10-05,no (archive — reference data only)
+paris_kerri_2025,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2025-05-24,no (archive — reference data only)
+paris_mallgrab_2024,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2024-07-06,no (archive — reference data only)
+paris_mandragora_2024,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2024-04-27,no (archive — reference data only)
+paris_xxl_2025,399931,395695,RXZlbnQ6Mzk1Njk1,episode,explicit list,,archive,2025-03-15,no (archive — reference data only)
+paris_xxl_2025_presale,406642,,,episode,explicit list,,archive,2025-03-14,no (archive — reference data only)
+rennes_2024_apr,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2024-04-20,no (archive — reference data only)
+rennes_2024_nov,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2024-11-09,no (archive — reference data only)
+rennes_2025,444613,462095,RXZlbnQ6NDYyMDk1,episode,explicit list,,archive,2025-11-08,no (archive — reference data only)
+toulouse_2025,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2025-08-09,no (archive — reference data only)
+voulez_vous_2025,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2025-09-27,no (archive — reference data only)
