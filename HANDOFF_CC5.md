@@ -493,6 +493,26 @@ a live sync clock.
 **Check the PR's draft state before starting a merge.** Main uses **merge
 commits**, not squash.
 
+**PAUSING `Daily dashboards` MEANS TWO CONDITIONS, NOT ONE: `disabled_manually`
+AND NOTHING `in_progress`.** Disabling a workflow does not stop a run that has
+already started, and a run that started one minute before the pause still
+fetches, still builds and still commits to `main` — long after the workflow shows
+as disabled. Measured on 2026-09-25, and it cost a re-resolve:
+
+    16:02:15 UTC   run 280 starts (event: schedule)
+    16:03:34 UTC   workflow set `disabled_manually`
+    16:15:35 UTC   run 280 commits 4a6db5b to main - TWELVE MINUTES after the pause
+
+"Confirmed disabled" and "nothing more can land" were true at different moments,
+and the gap between them was one in-flight run. **So after pausing, confirm no
+run is `in_progress` before treating `main` as frozen** — one call to
+`actions_list / list_workflow_runs` with `status: in_progress`, or the Actions
+tab. Then a `merge_pages.py` resolve sticks.
+
+The same shape in a different place: a state that reads as settled while
+something already committed to the old state is still moving. Compare the footer
+`--frozen` stamp, which a quiet run overwrites within four hours (§2.0).
+
 **Do not modify** `run.py` or `dashboard_template.html`. Changes that would land
 there go through `postprocess_html.py` on the way past — the established
 precedent, and now also how the nav trigger gets its name.
