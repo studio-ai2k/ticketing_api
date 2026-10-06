@@ -199,7 +199,17 @@ today* — so absence of a link means nothing in either direction.
 
 ---
 
-## 4 · Crazy Carnaval — no, we have never tracked it
+## 4 · Crazy Carnaval — ⚠ CORRECTED 2026-10-06, see `FESTIFLOW_COHOST_505434.md`
+
+> **This section was half wrong when written.** We have never *tracked* it — that
+> part stands. But we **do** hold a probe-verified id: **549064**, account
+> **`episode`**, `event_name='Madame Loyal Paris - Crazy Carnaval Edition'`, from
+> Actions run `32658474632` on 2026-08-23. I searched the repo, found nothing and
+> reported nothing; the id was in the Actions archive, which `ADDING_AN_EVENT.md`
+> says should have been copied into the commit and was not.
+> **"Not in the repo" is not "not known", and I conflated them.**
+
+### What the section said, with that correction applied
 
 *Verified today:* **`evt-cc` appears in neither `event_config.csv` nor
 `fetch_csv.py`.** No slug, no id, no account mapping, no stored data. It was

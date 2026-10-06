@@ -34,3 +34,5 @@ rennes_2024_nov,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,20
 rennes_2025,444613,462095,RXZlbnQ6NDYyMDk1,episode,explicit list,,archive,2025-11-08,no (archive — reference data only)
 toulouse_2025,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2025-08-09,no (archive — reference data only)
 voulez_vous_2025,,,,episode,DEFAULT fallback (episode) — NOT listed,,archive,2025-09-27,no (archive — reference data only)
+(not in our config) Crazy Carnaval,549064,,,episode,probe only — no config row,"run 32658474632, 2026-08-23, both cohosted settings",absent,,no — never ingested
+(not in our config) Croisiere ML x EPK,553118,,,,id supplied by Festiflow; never probed here,,absent,,no — ruled no-dashboard here
