@@ -302,8 +302,9 @@ you want phase analytics, read that section before modelling it.
 | **resales** | **excluded, deliberately.** Shotgun marks the original `resold` and issues a fresh `valid` row to the buyer; counting both double-counts one physical ticket. Bordeaux Jun 2026 carried **4,217** such rows | not modelled | **ours** |
 | **imports from other platforms** | **excluded when the event also has DICE**, via `deal_channel` — keeping only `online, onsite, invitation` and dropping `distributor, offline, reseller, duplicata`. Counting both inflated Bordeaux Jun 2026 to **36,313** against a real ~26,738 | n/a | **ours** |
 | **guest lists / comps / invitations** | **included as rows**, flagged `is_paid = 0` via `deal_channel == 'invitation'` | **included**, flagged `is_paid = 0` when the classified access level is `invitation` or `jeu_concours` | ours |
-| **pending / failed payments** | **unknown** — we filter on `ticket_status == 'valid'` and never enumerated the other statuses | **unknown** | — |
-| **test orders** | **unknown** — never looked for | **unknown** | — |
+| **pending payments** | ⚠ **CORRECTED 2026-10-06 — not unknown.** `payment_plan_pending`, **20** on `bordeaux_2026`. Excluded by our `valid`-only filter. An instalment plan in progress: neither a sale nor a non-sale | **unknown** | platform shapes it; our exclusion is ours |
+| **refunded / cancelled, on Shotgun** | ⚠ **CORRECTED — also named.** `refunded` (9) and `canceled` (204, all on the `invitation` channel) on `bordeaux_2026`. Both excluded | row leaves `viewer.orders` | ours |
+| **test orders** | **unknown** — no observed status looks like one | **unknown** | — |
 | **holds** | **unknown** | **unknown** | — |
 
 The three "ours" rows are the ones to copy with care: they are **de-duplication
@@ -553,7 +554,14 @@ Stated rather than filled, with what would settle each:
 | Whether webhooks exist on either platform | their docs or their support |
 | What `GET /events` returns on Shotgun | one authenticated call |
 | Whether `viewer.orders` excludes returned tickets on DICE | compare `orders` against `returns` on one event |
-| Pending / failed / test orders on both | enumerate the status values on a busy event |
+| ~~Pending / failed orders on Shotgun~~ | **CLOSED 2026-10-06** — enumerated in Actions run `31055925893` all along; see `docs/SHOTGUN_TICKET_STATUS_AND_CHANNELS.md` |
+| Test orders, and all statuses on DICE | still open |
 | The zone of Shotgun's `ordered_at` | compare one order against the back office |
 | Non-EUR events | we have none |
 | **Whether what the platforms return matches what we store** | your rebuild is the first real cross-check |
+
+> ⚠ **Added 2026-10-06, and it applies to this whole document.** Our **Actions
+> logs contain findings our files do not** — an audit found three, including the
+> status enumeration above, which this document had called unknown. If a question
+> matters, ask rather than assuming our repo is complete. See
+> `docs/ARCHIVE_AUDIT.md`.

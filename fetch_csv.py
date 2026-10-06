@@ -92,10 +92,39 @@ SHOTGUN_ACCOUNTS = {
         'token_env': 'SHOTGUN_TOKEN_EPISODE',
         'organizer_id': '171835',
         'organizer_id_env': None,
-        # bordeaux_2026 (505434) lives on Episode despite the ML x Sonora
-        # branding - confirmed by probe_shotgun_account.py, which got
-        # event_name='MADAME LOYAL x SONORA : BORDEAUX' under organizer 171835
-        # and nothing under Sonora. Do not "correct" it back by brand.
+        # bordeaux_2026 (505434) is CO-HOSTED, and BOTH accounts can fetch it.
+        #
+        # This comment used to say "and nothing under Sonora", which was true of
+        # the probe it cited and false about the platform. That probe - run
+        # 31053170251, 2026-08-05 - PREDATES `include_cohosted_events`, which was
+        # added the next day. Its Sonora attempt never sent the flag, and the
+        # flag is the entire difference. Re-probed with it, run 37467368356,
+        # 2026-10-06, verbatim:
+        #
+        #   === event 505434 ===
+        #     episode  (org 171835) cohosted=0: 100 tickets on page 1 (more pages: True)
+        #                                       - event_name='MADAME LOYAL x SONORA : BORDEAUX'
+        #     episode  (org 171835) cohosted=1: 100 tickets on page 1 (more pages: True)
+        #                                       - event_name='MADAME LOYAL x SONORA : BORDEAUX'
+        #     sonora   (org 207784) cohosted=0: 0 tickets
+        #     sonora   (org 207784) cohosted=1: 100 tickets on page 1 (more pages: True)
+        #                                       - event_name='MADAME LOYAL x SONORA : BORDEAUX'
+        #
+        # So `organizer_id` is NOT an owner-only filter: with the flag set, a
+        # co-host fetches the event too. Leo's own logins agree - Sonora's
+        # smartboard shows these sales, and shows nothing for 549064, which it
+        # does not co-host. The UI and the API track the same relationship; the
+        # API just needs to be asked properly.
+        #
+        # THIS IS THE FIRST EVENT KNOWN TO ANSWER ON BOTH ACCOUNTS, and it is a
+        # DOUBLE-COUNT HAZARD for anyone ingesting per account rather than per
+        # event: both credentials return tickets for the same event. We are safe
+        # only because `resolve_shotgun_account` picks exactly one.
+        #
+        # Episode is kept as the account of record: it answers with or without
+        # the flag, so it needs no parameter to be right. Do not "correct" the
+        # mapping to Sonora by brand - but the old reason, that Sonora could not
+        # see it, is withdrawn.
         'events': ['epk_2026', 'rennes_2026', 'geneve_2026', 'bordeaux_2026',
                    'paris_xxl_2026',
                    'epk_2023', 'geneve_2025', 'rennes_2025',

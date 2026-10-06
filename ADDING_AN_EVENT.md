@@ -75,6 +75,43 @@ A cross-promoter event id could in principle be claimed by the wrong account's
 list. Routing is by event id, not by brand, and that is the rule — it is stated
 here as a consequence to be aware of, not as something to prevent.
 
+### ALWAYS SEND `include_cohosted_events=1`. A co-host IS served.
+
+`bordeaux_2026` (505434) answers on **both** accounts — run `37467368356`,
+2026-10-06:
+
+```
+  episode  (org 171835) cohosted=0: 100 tickets — event_name='MADAME LOYAL x SONORA : BORDEAUX'
+  episode  (org 171835) cohosted=1: 100 tickets — event_name='MADAME LOYAL x SONORA : BORDEAUX'
+  sonora   (org 207784) cohosted=0: 0 tickets
+  sonora   (org 207784) cohosted=1: 100 tickets — event_name='MADAME LOYAL x SONORA : BORDEAUX'
+```
+
+Sonora goes **0 → 100 on the flag alone**. The earlier conclusion that Sonora
+"could not see it" came from a probe that predated the flag and is withdrawn.
+The flag is never optional: without it a co-hosted event reads as no sales from
+whichever account is not the owner.
+
+### THE OUTPUT GOES IN THE COMMIT. This step has been skipped once.
+
+`Madame Loyal Paris - Crazy Carnaval Edition` (**549064**) was probed on
+2026-08-23, run `32658474632`:
+
+```
+  episode  (org 171835) cohosted=0: 100 tickets on page 1 (more pages: True)
+                                    — event_name='Madame Loyal Paris - Crazy Carnaval Edition'
+  episode  (org 171835) cohosted=1: 100 tickets on page 1 (more pages: True)
+                                    — event_name='Madame Loyal Paris - Crazy Carnaval Edition'
+  sonora   (org 207784) cohosted=0: 0 tickets
+  sonora   (org 207784) cohosted=1: 0 tickets
+```
+
+**That output never reached a commit**, so for six weeks a probe-verified id
+existed only in an Actions log. It has no config row and is not ingested — the
+id is recorded here so the next reader finds it in the repo rather than in a
+run log nobody thinks to search. A finding that lives only in Actions is a
+finding the next seat does not have.
+
 ## 4. Fields that are deliberately empty, and the one that cannot be
 
 Leave unknown fields **empty rather than guessed**, and say so. `venue` and
