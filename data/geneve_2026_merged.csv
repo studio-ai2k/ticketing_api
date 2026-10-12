@@ -9090,3 +9090,4 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-10-11,2026-10-11 22:35:45,samedi,regular,['samedi'],Pass Samedi (Derniers Tickets),Shotgun,60.16,68.0,1,1
 2026-10-11,2026-10-11 22:50:50,vendredi,regular,['vendredi'],Pass Vendredi (Derniers Tickets),Shotgun,60.16,68.0,1,1
 2026-10-11,2026-10-11 23:16:08,vendredi,regular,['vendredi'],Pass Vendredi (Derniers Tickets),Shotgun,60.16,68.0,1,1
+2026-10-12,2026-10-12 00:36:16,2-jours,regular,,Pass 2 Jours (Derniers Tickets),Shotgun,104.4,118.0,1,1
