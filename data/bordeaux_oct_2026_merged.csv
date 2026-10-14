@@ -4314,7 +4314,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-07-06,2026-07-06 20:50:43,vendredi,regular,['vendredi'],Pass Vendredi (Last Tickets),Shotgun,54.09,61.14,1,1
 2026-07-06,2026-07-06 20:50:43,vendredi,regular,['vendredi'],Pass Vendredi (Last Tickets),Shotgun,54.09,61.14,1,1
 2026-07-06,2026-07-06 21:35:05,vendredi,regular,['vendredi'],Pass Vendredi (Last Tickets),Shotgun,54.09,61.14,1,1
-2026-07-06,2026-07-06 21:39:09,2-jours,regular,,Pass 2 Jours (Last Tickets),Shotgun,95.0,107.37,1,1
 2026-07-06,2026-07-06 22:03:55,2-jours,regular,,Pass 2 Jours (Last Tickets),Shotgun,95.0,107.37,1,1
 2026-07-07,2026-07-07 01:59:13,vendredi,regular,['vendredi'],Pass Vendredi (Last Tickets),Shotgun,54.09,61.14,1,1
 2026-07-07,2026-07-07 02:21:55,samedi,regular,['samedi'],Pass Samedi (Last Tickets),Shotgun,54.09,61.14,1,1
@@ -21740,3 +21739,41 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-10-13,2026-10-13 22:51:42,2-jours,regular,,Pass 2 Jours (Last Tickets),Shotgun,105.45,119.19,1,1
 2026-10-13,2026-10-13 22:55:04,vendredi,regular,['vendredi'],Pass Vendredi (Last Tickets),Shotgun,60.0,67.82,1,1
 2026-10-13,2026-10-13 22:55:51,samedi,regular,['samedi'],Pass Samedi (Last Tickets),Shotgun,60.0,67.82,1,1
+2026-10-14,2026-10-14 00:21:12,2-jours,regular,,Pass 2 Jours (Last Tickets),Shotgun,105.45,119.19,1,1
+2026-10-14,2026-10-14 00:51:14,vendredi,regular,['vendredi'],Pass Vendredi (Last Tickets),Shotgun,60.0,67.82,1,1
+2026-10-14,2026-10-14 00:51:14,vendredi,regular,['vendredi'],Pass Vendredi (Last Tickets),Shotgun,60.0,67.82,1,1
+2026-10-14,2026-10-14 02:07:40,2-jours,invitation,"['vendredi', 'samedi']",Pass Acces Scene,Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:07:40,2-jours,invitation,"['vendredi', 'samedi']",Pass Acces Scene,Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:01,2-jours,invitation,"['vendredi', 'samedi']",Pass Acces Scene,Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:01,2-jours,invitation,"['vendredi', 'samedi']",Pass Acces Scene,Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:02,2-jours,invitation,"['vendredi', 'samedi']",Pass Acces Scene,Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:02,2-jours,invitation,"['vendredi', 'samedi']",Pass Acces Scene,Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:03,2-jours,invitation,"['vendredi', 'samedi']",Pass Acces Scene,Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:03,2-jours,invitation,"['vendredi', 'samedi']",Pass Acces Scene,Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:03,2-jours,invitation,"['vendredi', 'samedi']",Pass Acces Scene,Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:03,2-jours,invitation,"['vendredi', 'samedi']",Pass Acces Scene,Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:49,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:49,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:50,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:50,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:50,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:50,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:51,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:51,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:51,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:51,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:51,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:51,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:52,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:52,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:52,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:52,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:53,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:53,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:53,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:53,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:54,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:54,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:54,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:24:54,2-jours,invitation,,Pass 2 Jours (Last Tickets),Shotgun,0.0,0.0,1,0
+2026-10-14,2026-10-14 02:34:05,vendredi,regular,['vendredi'],Pass Vendredi (Last Tickets),Shotgun,60.0,67.82,1,1
