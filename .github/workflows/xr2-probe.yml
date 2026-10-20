@@ -1,0 +1,112 @@
+name: XR2 probe (read-only, never merged)
+
+# Festiflow guide round XR2 · 2026-10-20. Lives on `probe/xr2` only.
+# Read-only on both platforms: GET on Shotgun, GraphQL *queries* on DICE.
+# Prints and commits field names and counts only (see guide/xr2/probe_xr2.py).
+#
+# Why `push` as well as `workflow_dispatch`: GitHub dispatches a workflow only
+# when its file exists on the default branch, and this one must never reach
+# main. A push to probe/xr2 that touches guide/xr2/RUN runs it instead.
+# The commit job pushes with GITHUB_TOKEN, which does not trigger a new run.
+on:
+  workflow_dispatch:
+  push:
+    branches: [probe/xr2]
+    paths: [guide/xr2/RUN]
+
+concurrency:
+  group: xr2-probe
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  shotgun:
+    runs-on: ubuntu-latest
+    timeout-minutes: 200
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Shotgun (M1 M3 M4 M5 M6 M7)
+        env:
+          SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
+          SHOTGUN_TOKEN_SONORA: ${{ secrets.SHOTGUN_TOKEN_SONORA }}
+          SHOTGUN_ORGANIZER_ID_SONORA: ${{ secrets.SHOTGUN_ORGANIZER_ID_SONORA }}
+          DICE_TOKEN: ${{ secrets.DICE_TOKEN }}
+        run: python -I guide/xr2/probe_xr2.py shotgun
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xr2-shotgun
+          path: guide/xr2/out/
+          retention-days: 7
+
+  dice:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: DICE (M2 M3 M4 M5 M6)
+        env:
+          DICE_TOKEN: ${{ secrets.DICE_TOKEN }}
+          SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
+          SHOTGUN_TOKEN_SONORA: ${{ secrets.SHOTGUN_TOKEN_SONORA }}
+          SHOTGUN_ORGANIZER_ID_SONORA: ${{ secrets.SHOTGUN_ORGANIZER_ID_SONORA }}
+        run: python -I guide/xr2/probe_xr2.py dice
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xr2-dice
+          path: guide/xr2/out/
+          retention-days: 7
+
+  commit:
+    needs: [shotgun, dice]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: probe/xr2
+      - uses: actions/download-artifact@v4
+        with:
+          path: _art
+      - name: Gather
+        run: |
+          mkdir -p guide/xr2/out
+          find _art -type f -name 'xr2_*' -exec cp {} guide/xr2/out/ \;
+          ls -la guide/xr2/out
+      - name: Leak check (refuse to commit on any hit)
+        env:
+          S1: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
+          S2: ${{ secrets.SHOTGUN_TOKEN_SONORA }}
+          S3: ${{ secrets.DICE_TOKEN }}
+        run: |
+          set -u
+          umask 077
+          f=$(mktemp)
+          for v in "$S1" "$S2" "$S3"; do [ -n "$v" ] && printf '%s\n' "$v" >> "$f"; done
+          hits=0
+          if [ -s "$f" ] && grep -rqF -f "$f" guide/xr2/out; then echo "LEAK: a secret value"; hits=1; fi
+          rm -f "$f"
+          for rx in 'token=[^*]' '[Bb]earer [^*]' 'eyJ[A-Za-z0-9_-]{5,}\.' '[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}' 'https?://' 'contact_email"[: ]+"' ; do
+            if grep -rqE -- "$rx" guide/xr2/out; then echo "LEAK pattern: $rx"; hits=1; fi
+          done
+          [ "$hits" = 0 ] && echo "leak check: 0 hits"
+          exit $hits
+      - name: Commit outputs to probe/xr2
+        run: |
+          git config user.name 'xr2-probe'
+          git config user.email 'xr2-probe@users.noreply.github.com'
+          git add guide/xr2/out
+          git commit -m "XR2 probe outputs · run ${{ github.run_id }}" || echo 'nothing to commit'
+          git push origin HEAD:probe/xr2
