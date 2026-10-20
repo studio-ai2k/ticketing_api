@@ -1,0 +1,26 @@
+# XR2 probe · followup · 2026-10-20T22:23Z · pace 0.8s
+secrets set: {"SHOTGUN_TOKEN_EPISODE": true, "SHOTGUN_TOKEN_SONORA": true, "SHOTGUN_ORGANIZER_ID_SONORA": true, "DICE_TOKEN": true}
+
+## Run 2 · Shotgun /events: where does it want its "API key"?
+{"account": "episode", "variant": "query param key", "status": 401, "error_body": "{\"error\":{\"code\":\"unauthorized\",\"message\":\"Invalid credentials\"}}", "bytes": 0}
+{"account": "episode", "variant": "query param api_key", "status": 400, "error_body": "{\"error\":{\"code\":\"bad_request\",\"message\":\"Missing API key\"}}", "bytes": 0}
+{"account": "episode", "variant": "header Authorization (Bearer *** "status": 400, "error_body": "{\"error\":{\"code\":\"bad_request\",\"message\":\"Missing API key\"}}", "bytes": 0}
+{"account": "episode", "variant": "header x-api-key", "status": 400, "error_body": "{\"error\":{\"code\":\"bad_request\",\"message\":\"Missing API key\"}}", "bytes": 0}
+{"account": "episode", "variant": "query token plus header (Bearer *** "status": 400, "error_body": "{\"error\":{\"code\":\"bad_request\",\"message\":\"Missing API key\"}}", "bytes": 0}
+{"account": "sonora", "variant": "query param key", "status": 401, "error_body": "{\"error\":{\"code\":\"unauthorized\",\"message\":\"Invalid credentials\"}}", "bytes": 0}
+{"account": "sonora", "variant": "query param api_key", "status": 400, "error_body": "{\"error\":{\"code\":\"bad_request\",\"message\":\"Missing API key\"}}", "bytes": 0}
+{"account": "sonora", "variant": "header Authorization (Bearer *** "status": 400, "error_body": "{\"error\":{\"code\":\"bad_request\",\"message\":\"Missing API key\"}}", "bytes": 0}
+{"account": "sonora", "variant": "header x-api-key", "status": 400, "error_body": "{\"error\":{\"code\":\"bad_request\",\"message\":\"Missing API key\"}}", "bytes": 0}
+{"account": "sonora", "variant": "query token plus header (Bearer *** "status": 400, "error_body": "{\"error\":{\"code\":\"bad_request\",\"message\":\"Missing API key\"}}", "bytes": 0}
+
+## Run 2 · the /tickets envelope: `auth` and `params` (names and types only)
+{"status": 200, "error": null, "auth": {"organizer_id": "int", "member_id": "int"}, "params": {"organizer_id": "int", "event_id": "int", "include_cohosted_events": "bool"}, "pagination": {"next": "str"}, "auth_mentions_episode_org": true, "auth_scalar_values_safe": {}}
+
+## Run 2 · DICE: mutations (names), events changed lately, Viewer.tickets, the returned ticket still in orders
+mutation fields: ["claimTickets"]
+events updated in the last 30 days: 1
+viewer.tickets totalCount: {"600413": 2832, "540197": 9329}
+540197 returned-but-listed: [{"fullPrice_cents": 5528, "diceCommission_cents": 372, "total_cents": 5900, "returnedAt_date": "2026-05-28", "reason": "partner_issue", "order_purchasedAt_date": "2026-01-14", "order_ticket_count": 1, "order_quantity": 1}] · reasons {"accident": 39, "wrong_tickets": 47, "other": 28, "event_rescheduled": 2, "partner_issue": 42, "resold": 21} · quantity vs tickets {"orders_quantity_sum": 9508, "tickets_listed": 9329, "orders_where_quantity_gt_tickets": 147}
+http: {"shotgun:401": 2, "shotgun:400": 8, "shotgun:200": 1, "dice:200": 78} · rate-limit headers: {}
+header names: {"shotgun": ["access-control-allow-headers", "access-control-allow-methods", "access-control-allow-origin", "age", "cache-control", "connection", "content-type", "date", "server", "shotgun-domain-error", "strict-transport-security", "transfer-encoding", "x-matched-path", "x-vercel-cache", "x-vercel-id"], "dice": ["access-control-allow-credentials", "access-control-allow-origin", "access-control-expose-headers", "cache-control", "connection", "content-length", "content-type", "date", "strict-transport-security", "x-request-id"]}
+wall: 105s
