@@ -1,0 +1,624 @@
+{
+ "probe": "XR2",
+ "part": "dice",
+ "started_utc": "2026-10-20T21:30Z",
+ "pace_s": 0.8,
+ "M2": {
+  "query_root_fields": {
+   "node": [
+    "id"
+   ],
+   "viewer": []
+  },
+  "mutation_type_present": true,
+  "schema_error": null,
+  "viewer_fields": {
+   "events": {
+    "returns": "EventConnection",
+    "args": {
+     "after": "String",
+     "before": "String",
+     "first": "Int",
+     "last": "Int",
+     "where": "EventWhereInput"
+    }
+   },
+   "extras": {
+    "returns": "ExtraConnection",
+    "args": {
+     "after": "String",
+     "before": "String",
+     "first": "Int",
+     "last": "Int",
+     "where": "ExtraWhereInput"
+    }
+   },
+   "genreTypes": {
+    "returns": "GenreTypesConnection",
+    "args": {
+     "after": "String",
+     "before": "String",
+     "first": "Int",
+     "last": "Int",
+     "where": "GenreTypeWhereInput"
+    }
+   },
+   "id": {
+    "returns": "ID",
+    "args": {}
+   },
+   "name": {
+    "returns": "String",
+    "args": {}
+   },
+   "orders": {
+    "returns": "OrderConnection",
+    "args": {
+     "after": "String",
+     "before": "String",
+     "first": "Int",
+     "last": "Int",
+     "where": "OrderWhereInput"
+    }
+   },
+   "returns": {
+    "returns": "ReturnConnection",
+    "args": {
+     "after": "String",
+     "before": "String",
+     "first": "Int",
+     "last": "Int",
+     "where": "ReturnWhereInput"
+    }
+   },
+   "ticketTransfers": {
+    "returns": "TicketTransferConnection",
+    "args": {
+     "after": "String",
+     "before": "String",
+     "first": "Int",
+     "last": "Int",
+     "where": "TicketTransferWhereInput"
+    }
+   },
+   "tickets": {
+    "returns": "TicketConnection",
+    "args": {
+     "after": "String",
+     "before": "String",
+     "first": "Int",
+     "last": "Int",
+     "where": "TicketWhereInput"
+    }
+   }
+  },
+  "input_types": {
+   "EventWhereInput": {
+    "endDatetime": "OperatorsDateInput",
+    "genre": "OperatorsIdInput",
+    "id": "OperatorsIdInput",
+    "offSaleDatetime": "OperatorsDateInput",
+    "onSaleDatetime": "OperatorsDateInput",
+    "startDatetime": "OperatorsDateInput",
+    "state": "OperatorsEventStateInput",
+    "updatedAt": "OperatorsDateInput"
+   },
+   "ExtraWhereInput": {
+    "eventId": "OperatorsIdInput",
+    "hasSeparateAccessBarcode": "EqBooleanInput",
+    "id": "OperatorsIdInput",
+    "productId": "OperatorsIdInput"
+   },
+   "GenreTypeWhereInput": {
+    "name": "OperatorsStringInput"
+   },
+   "OrderWhereInput": {
+    "eventId": "OperatorsIdInput",
+    "id": "OperatorsIdInput",
+    "purchasedAt": "OperatorsDateInput"
+   },
+   "ReturnWhereInput": {
+    "eventId": "OperatorsIdInput",
+    "id": "OperatorsIdInput",
+    "returnedAt": "OperatorsDateInput"
+   },
+   "TicketTransferWhereInput": {
+    "eventId": "OperatorsIdInput",
+    "id": "OperatorsIdInput",
+    "transferredAt": "OperatorsDateInput"
+   },
+   "TicketWhereInput": {
+    "claimAllowed": "EqBooleanInput",
+    "eventId": "OperatorsIdInput",
+    "fanPhoneNumber": "EqStringInput",
+    "fanSecureToken": "EqStringInput",
+    "id": "OperatorsIdInput",
+    "ticketTypeId": "OperatorsIdInput"
+   },
+   "OperatorsDateInput": {
+    "between": "Datetime",
+    "gt": "Datetime",
+    "gte": "Datetime",
+    "lt": "Datetime",
+    "lte": "Datetime",
+    "notBetween": "Datetime",
+    "null": "Boolean"
+   },
+   "OperatorsIdInput": {
+    "eq": "ID",
+    "in": "ID",
+    "ne": "ID",
+    "notIn": "ID"
+   },
+   "OperatorsEventStateInput": {
+    "eq": "EventState",
+    "in": "EventState",
+    "ne": "EventState",
+    "notIn": "EventState"
+   },
+   "EqBooleanInput": {
+    "eq": "Boolean"
+   },
+   "OperatorsStringInput": {
+    "eq": "String",
+    "in": "String",
+    "ne": "String",
+    "notIn": "String"
+   },
+   "EqStringInput": {
+    "eq": "String"
+   }
+  },
+  "viewer_identity": {
+   "id_present": true,
+   "name_present": true,
+   "name_length": 8,
+   "name_mentions": {
+    "episode": true,
+    "sagrega": false,
+    "madame": false,
+    "loyal": false,
+    "sonora": false,
+    "ggs": false
+   },
+   "error": null
+  },
+  "event_fields": [
+   "announceDatetime",
+   "artists",
+   "currency",
+   "description",
+   "endDatetime",
+   "eventIdLive",
+   "extras",
+   "genreTypes",
+   "genres",
+   "hidden",
+   "id",
+   "images",
+   "name",
+   "offSaleDatetime",
+   "onSaleDatetime",
+   "products",
+   "promoters",
+   "socialLinks",
+   "startDatetime",
+   "state",
+   "ticketPools",
+   "ticketTypes",
+   "tickets",
+   "totalTicketAllocationQty",
+   "updatedAt",
+   "url",
+   "venueSpace",
+   "venues"
+  ],
+  "event_state_values": [
+   "APPROVED",
+   "ARCHIVED",
+   "CANCELLED",
+   "DECLINED",
+   "DRAFT",
+   "REVIEW",
+   "SUBMITTED"
+  ],
+  "events": {
+   "pages": 1,
+   "returned": 85,
+   "totalCount": 85,
+   "error": null,
+   "seconds": 0.6,
+   "by_state": {
+    "APPROVED": 76,
+    "CANCELLED": 7,
+    "DRAFT": 2
+   },
+   "by_currency": {
+    "EUR": 85
+   },
+   "by_start_year": {
+    "2021": 8,
+    "2022": 20,
+    "2023": 12,
+    "2024": 26,
+    "2025": 12,
+    "2026": 7
+   },
+   "known_ids_present": [
+    345933,
+    395695,
+    462095,
+    526535,
+    540197,
+    573271,
+    591517,
+    600413
+   ],
+   "known_ids_absent": [
+    588085
+   ],
+   "events_2026": [
+    {
+     "id": 525263,
+     "start": "2026-03-13",
+     "state": "CANCELLED",
+     "currency": "EUR",
+     "name": "Madame Loyal Paris XXL : 13 & 14 Mars 2026"
+    },
+    {
+     "id": 526535,
+     "start": "2026-03-13",
+     "state": "APPROVED",
+     "currency": "EUR",
+     "name": "Madame Loyal Paris XXL : 13 & 14 Mars 2026"
+    },
+    {
+     "id": 540197,
+     "start": "2026-06-11",
+     "state": "APPROVED",
+     "currency": "EUR",
+     "name": "Madame Loyal x Sonora Bordeaux : 11-12-13 Juin 2026"
+    },
+    {
+     "id": 525264,
+     "start": "2026-06-13",
+     "state": "DRAFT",
+     "currency": "EUR",
+     "name": "Madame Loyal x Sonora Bordeaux : 13 & 14 Juin 2026"
+    },
+    {
+     "id": 591517,
+     "start": "2026-07-04",
+     "state": "APPROVED",
+     "currency": "EUR",
+     "name": "Madame Loyal Paris : Crazy Carnaval Edition"
+    },
+    {
+     "id": 573271,
+     "start": "2026-09-05",
+     "state": "APPROVED",
+     "currency": "EUR",
+     "name": "MADAME LOYAL x ELEKTRIC PARK : XXL EDITION "
+    },
+    {
+     "id": 600413,
+     "start": "2026-11-06",
+     "state": "APPROVED",
+     "currency": "EUR",
+     "name": "Madame Loyal Rennes : 6 & 7 Novembre"
+    }
+   ]
+  },
+  "events_where_arg": "EventWhereInput",
+  "node_588085": {
+   "null": true,
+   "error": null
+  }
+ },
+ "M3": [
+  {
+   "festiflow": "evt-px",
+   "dice_id": 526535,
+   "pages": 100,
+   "seconds": 140.9,
+   "error": null,
+   "orders": 9967,
+   "orders_totalCount": 9967,
+   "orders_empty": 427,
+   "tickets": 12679,
+   "orders_with_returns": 437,
+   "orders_with_adjustments": 0,
+   "salesChannel": {
+    "INTERNET": 9967
+   },
+   "fee_categories": {
+    "BOOKING": 12670,
+    "PROCESSING": 12670,
+    "PAID_WAITING_LIST": 176,
+    "TIER_DIFF": 163
+   },
+   "fees_promoter_nonzero": 0,
+   "ticket_commission_nonzero": 0,
+   "fee_identity_ok_tickets": 12679,
+   "money_cents": {
+    "fullPrice": 88471348,
+    "diceCommission": 5553228,
+    "total": 94024576
+   },
+   "zero_price_tickets": 9,
+   "purchasedAt_shape": {
+    "9999-99-99a99:99:99a": 9967
+   },
+   "response_bytes_total": 5786713,
+   "order_node_bytes_avg": 570,
+   "ticket_node_bytes_avg": 278,
+   "returns_totalCount": 563,
+   "ticketTransfers_totalCount": 2444,
+   "purchasedAt_max_date": "2026-03-15",
+   "orders_purchased_last_7d_via_filter": 0,
+   "orders_purchased_last_7d_by_scan": 0,
+   "returns_last_7d_via_filter": 0,
+   "returned_ticket_ids": 563,
+   "returned_ids_still_in_orders": 0,
+   "ticketId_shape": {
+    "aaaaa9a9aaaa": 50
+   },
+   "ticket_id_shape": {
+    "aaaaa9a9aaaa": 50
+   }
+  },
+  {
+   "festiflow": "evt-sb",
+   "dice_id": 540197,
+   "pages": 72,
+   "seconds": 107.0,
+   "error": null,
+   "orders": 7158,
+   "orders_totalCount": 7158,
+   "orders_empty": 138,
+   "tickets": 9329,
+   "orders_with_returns": 147,
+   "orders_with_adjustments": 0,
+   "salesChannel": {
+    "INTERNET": 7156,
+    "FREE": 2
+   },
+   "fee_categories": {
+    "BOOKING": 9327,
+    "PROCESSING": 9327,
+    "PAID_WAITING_LIST": 59,
+    "TIER_DIFF": 12
+   },
+   "fees_promoter_nonzero": 0,
+   "ticket_commission_nonzero": 0,
+   "fee_identity_ok_tickets": 9329,
+   "money_cents": {
+    "fullPrice": 62499167,
+    "diceCommission": 3821824,
+    "total": 66320991
+   },
+   "zero_price_tickets": 2,
+   "purchasedAt_shape": {
+    "9999-99-99a99:99:99a": 7158
+   },
+   "response_bytes_total": 4507464,
+   "order_node_bytes_avg": 620,
+   "ticket_node_bytes_avg": 310,
+   "returns_totalCount": 179,
+   "ticketTransfers_totalCount": 1751,
+   "purchasedAt_max_date": "2026-06-13",
+   "orders_purchased_last_7d_via_filter": 0,
+   "orders_purchased_last_7d_by_scan": 0,
+   "returns_last_7d_via_filter": 0,
+   "returned_ticket_ids": 179,
+   "returned_ids_still_in_orders": 1,
+   "ticketId_shape": {
+    "aaaaa9a9aaaa": 50
+   },
+   "ticket_id_shape": {
+    "aaaaa9a9aaaa": 50
+   }
+  },
+  {
+   "festiflow": "evt-ep",
+   "dice_id": 573271,
+   "pages": 19,
+   "seconds": 24.5,
+   "error": null,
+   "orders": 1845,
+   "orders_totalCount": 1845,
+   "orders_empty": 28,
+   "tickets": 2555,
+   "orders_with_returns": 31,
+   "orders_with_adjustments": 0,
+   "salesChannel": {
+    "INTERNET": 1842,
+    "FREE": 3
+   },
+   "fee_categories": {
+    "BOOKING": 2552,
+    "PROCESSING": 2552
+   },
+   "fees_promoter_nonzero": 0,
+   "ticket_commission_nonzero": 0,
+   "fee_identity_ok_tickets": 2555,
+   "money_cents": {
+    "fullPrice": 13612622,
+    "diceCommission": 934788,
+    "total": 14547410
+   },
+   "zero_price_tickets": 3,
+   "purchasedAt_shape": {
+    "9999-99-99a99:99:99a": 1845
+   },
+   "response_bytes_total": 1118682,
+   "order_node_bytes_avg": 595,
+   "ticket_node_bytes_avg": 274,
+   "returns_totalCount": 46,
+   "ticketTransfers_totalCount": 371,
+   "purchasedAt_max_date": "2026-09-01",
+   "orders_purchased_last_7d_via_filter": 0,
+   "orders_purchased_last_7d_by_scan": 0,
+   "returns_last_7d_via_filter": 0,
+   "returned_ticket_ids": 46,
+   "returned_ids_still_in_orders": 0,
+   "ticketId_shape": {
+    "aaaaa9a9aaaa": 46
+   },
+   "ticket_id_shape": {
+    "aaaaa9a9aaaa": 50
+   }
+  },
+  {
+   "festiflow": "evt-rn",
+   "dice_id": 600413,
+   "pages": 22,
+   "seconds": 26.3,
+   "error": null,
+   "orders": 2109,
+   "orders_totalCount": 2109,
+   "orders_empty": 39,
+   "tickets": 2832,
+   "orders_with_returns": 41,
+   "orders_with_adjustments": 0,
+   "salesChannel": {
+    "INTERNET": 2109
+   },
+   "fee_categories": {
+    "BOOKING": 2832,
+    "PROCESSING": 2832
+   },
+   "fees_promoter_nonzero": 0,
+   "ticket_commission_nonzero": 0,
+   "fee_identity_ok_tickets": 2832,
+   "money_cents": {
+    "fullPrice": 18751145,
+    "diceCommission": 1148105,
+    "total": 19899250
+   },
+   "zero_price_tickets": 0,
+   "purchasedAt_shape": {
+    "9999-99-99a99:99:99a": 2109
+   },
+   "response_bytes_total": 1256498,
+   "order_node_bytes_avg": 584,
+   "ticket_node_bytes_avg": 274,
+   "returns_totalCount": 52,
+   "ticketTransfers_totalCount": 175,
+   "purchasedAt_max_date": "2026-10-20",
+   "orders_purchased_last_7d_via_filter": 46,
+   "orders_purchased_last_7d_by_scan": 46,
+   "returns_last_7d_via_filter": 8,
+   "returned_ticket_ids": 52,
+   "returned_ids_still_in_orders": 0,
+   "ticketId_shape": {
+    "aaaaa9a9aaaa": 46,
+    "aaaaa9a9aaa9": 4
+   },
+   "ticket_id_shape": {
+    "aaaaa9a9aaaa": 49,
+    "aaaaa9a9aaa9": 1
+   }
+  },
+  {
+   "festiflow": "evt-cc",
+   "dice_id": 591517,
+   "pages": 12,
+   "seconds": 16.1,
+   "error": null,
+   "orders": 1139,
+   "orders_totalCount": 1139,
+   "orders_empty": 21,
+   "tickets": 1546,
+   "orders_with_returns": 21,
+   "orders_with_adjustments": 0,
+   "salesChannel": {
+    "INTERNET": 1139
+   },
+   "fee_categories": {
+    "BOOKING": 1546,
+    "PROCESSING": 1546,
+    "PAID_WAITING_LIST": 1
+   },
+   "fees_promoter_nonzero": 0,
+   "ticket_commission_nonzero": 0,
+   "fee_identity_ok_tickets": 1546,
+   "money_cents": {
+    "fullPrice": 5448236,
+    "diceCommission": 482770,
+    "total": 5931006
+   },
+   "zero_price_tickets": 0,
+   "purchasedAt_shape": {
+    "9999-99-99a99:99:99a": 1139
+   },
+   "response_bytes_total": 694758,
+   "order_node_bytes_avg": 600,
+   "ticket_node_bytes_avg": 284,
+   "returns_totalCount": 27,
+   "ticketTransfers_totalCount": 137,
+   "purchasedAt_max_date": "2026-08-07",
+   "orders_purchased_last_7d_via_filter": 0,
+   "orders_purchased_last_7d_by_scan": 0,
+   "returns_last_7d_via_filter": 0,
+   "returned_ticket_ids": 27,
+   "returned_ids_still_in_orders": 0,
+   "ticketId_shape": {
+    "aaaaa9a9aaaa": 27
+   },
+   "ticket_id_shape": {
+    "aaaaa9a9aaaa": 50
+   }
+  },
+  {
+   "festiflow": "evt-gv",
+   "dice_id": 588085,
+   "pages": 1,
+   "seconds": 1.4,
+   "error": null,
+   "orders": 0,
+   "orders_totalCount": 0,
+   "orders_empty": 0,
+   "tickets": 0,
+   "orders_with_returns": 0,
+   "orders_with_adjustments": 0,
+   "salesChannel": {},
+   "fee_categories": {},
+   "fees_promoter_nonzero": 0,
+   "ticket_commission_nonzero": 0,
+   "fee_identity_ok_tickets": 0,
+   "money_cents": {
+    "fullPrice": 0,
+    "diceCommission": 0,
+    "total": 0
+   },
+   "zero_price_tickets": 0,
+   "purchasedAt_shape": {},
+   "response_bytes_total": 108,
+   "order_node_bytes_avg": 0,
+   "ticket_node_bytes_avg": 0,
+   "returns_totalCount": 0,
+   "ticketTransfers_totalCount": 0,
+   "purchasedAt_max_date": null
+  }
+ ],
+ "http_status_counts": {
+  "dice:200": 279
+ },
+ "response_header_names": {
+  "dice": [
+   "access-control-allow-credentials",
+   "access-control-allow-origin",
+   "access-control-expose-headers",
+   "cache-control",
+   "connection",
+   "content-length",
+   "content-type",
+   "date",
+   "strict-transport-security",
+   "x-request-id"
+  ]
+ },
+ "rate_limit_headers_numeric": {},
+ "wall_seconds": 361
+}

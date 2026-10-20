@@ -1,0 +1,2839 @@
+{
+ "probe": "XR2",
+ "part": "shotgun",
+ "started_utc": "2026-10-20T21:30Z",
+ "pace_s": 0.8,
+ "M7": {
+  "tokens": [
+   {
+    "name": "SHOTGUN_TOKEN_EPISODE",
+    "set": true,
+    "length": 185,
+    "segments_on_dot": 3,
+    "has_colon": false,
+    "has_whitespace": false,
+    "charset": "-.9Aa",
+    "jwt_header": {
+     "alg": "HS256",
+     "typ": "JWT"
+    },
+    "jwt_claims": {
+     "memberId": "<int>",
+     "organizerId": "<int>",
+     "forestUserEmail": "<NoneType>",
+     "iat": "2026-02-25"
+    },
+    "a_claim_equals_episode_org": true,
+    "a_claim_equals_sonora_org": false
+   },
+   {
+    "name": "SHOTGUN_TOKEN_SONORA",
+    "set": true,
+    "length": 215,
+    "segments_on_dot": 3,
+    "has_colon": false,
+    "has_whitespace": false,
+    "charset": ".9Aa",
+    "jwt_header": {
+     "alg": "HS256",
+     "typ": "JWT"
+    },
+    "jwt_claims": {
+     "memberId": "<int>",
+     "organizerId": "<int>",
+     "forestUserEmail": "<str>",
+     "iat": "2026-06-12"
+    },
+    "a_claim_equals_episode_org": false,
+    "a_claim_equals_sonora_org": true
+   },
+   {
+    "name": "DICE_TOKEN",
+    "set": true,
+    "length": 48,
+    "segments_on_dot": 1,
+    "has_colon": false,
+    "has_whitespace": false,
+    "charset": "-9Aa"
+   }
+  ],
+  "organizer": {
+   "SHOTGUN_ORGANIZER_ID_SONORA_set": true,
+   "equals_code_default_***": true,
+   "numeric": true,
+   "fits_festiflow_LOGIN_RX": true,
+   "episode_token_differs_from_sonora": true
+  }
+ },
+ "docs": [
+  {
+   "page": "developers.shotgun.live/",
+   "status": 404,
+   "bytes": 0,
+   "title": "",
+   "paths": [],
+   "headings": [],
+   "mentions": {
+    "webhook": false,
+    "rate limit": false,
+    "updated_after": false,
+    "updated_since": false,
+    "since": false,
+    "include_cohosted_events": false,
+    "organizer_id": false,
+    "/events": false,
+    "/tickets": false
+   }
+  },
+  {
+   "page": "developers.shotgun.live/docs",
+   "status": 404,
+   "bytes": 0,
+   "title": "",
+   "paths": [],
+   "headings": [],
+   "mentions": {
+    "webhook": false,
+    "rate limit": false,
+    "updated_after": false,
+    "updated_since": false,
+    "since": false,
+    "include_cohosted_events": false,
+    "organizer_id": false,
+    "/events": false,
+    "/tickets": false
+   }
+  },
+  {
+   "page": "developers.shotgun.live/reference",
+   "status": 404,
+   "bytes": 0,
+   "title": "",
+   "paths": [],
+   "headings": [],
+   "mentions": {
+    "webhook": false,
+    "rate limit": false,
+    "updated_after": false,
+    "updated_since": false,
+    "since": false,
+    "include_cohosted_events": false,
+    "organizer_id": false,
+    "/events": false,
+    "/tickets": false
+   }
+  },
+  {
+   "page": "api.shotgun.live/",
+   "status": 429,
+   "bytes": 0,
+   "title": "",
+   "paths": [],
+   "headings": [],
+   "mentions": {
+    "webhook": false,
+    "rate limit": false,
+    "updated_after": false,
+    "updated_since": false,
+    "since": false,
+    "include_cohosted_events": false,
+    "organizer_id": false,
+    "/events": false,
+    "/tickets": false
+   }
+  }
+ ],
+ "M1": [
+  {
+   "account": "episode",
+   "path": "/events",
+   "variant": "org+cohost",
+   "status": 400,
+   "seconds": 0.2,
+   "bytes": 0,
+   "error_body": "{\"error\":{\"code\":\"bad_request\",\"message\":\"Missing API key\"}}"
+  },
+  {
+   "account": "episode",
+   "path": "/events",
+   "variant": "org",
+   "status": 400,
+   "seconds": 0.17,
+   "bytes": 0,
+   "error_body": "{\"error\":{\"code\":\"bad_request\",\"message\":\"Missing API key\"}}"
+  },
+  {
+   "account": "episode",
+   "path": "/events",
+   "variant": "cohost,no-org",
+   "status": 400,
+   "seconds": 0.18,
+   "bytes": 0,
+   "error_body": "{\"error\":{\"code\":\"bad_request\",\"message\":\"Missing API key\"}}"
+  },
+  {
+   "account": "episode",
+   "path": "/orders",
+   "status": 404,
+   "bytes": 0,
+   "top_keys": null,
+   "error_body": "<!DOCTYPE html><html><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" as=\"script\" fetchPriority=\"low\" href=\"/_next/static/immutable/chunks/1qglgz9w5b-mg.js\"/><script src=\"/_next/static/immutable/chunks/2bne3eixy766a.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/19k4j2fs2g9zk.js\" async=\"\"></script><script src=\""
+  },
+  {
+   "account": "episode",
+   "path": "/deals",
+   "status": 404,
+   "bytes": 0,
+   "top_keys": null,
+   "error_body": "<!DOCTYPE html><html><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" as=\"script\" fetchPriority=\"low\" href=\"/_next/static/immutable/chunks/1qglgz9w5b-mg.js\"/><script src=\"/_next/static/immutable/chunks/2bne3eixy766a.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/19k4j2fs2g9zk.js\" async=\"\"></script><script src=\""
+  },
+  {
+   "account": "episode",
+   "path": "/events/505434",
+   "status": 404,
+   "bytes": 0,
+   "top_keys": null,
+   "error_body": "<!DOCTYPE html><html><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" as=\"script\" fetchPriority=\"low\" href=\"/_next/static/immutable/chunks/1qglgz9w5b-mg.js\"/><script src=\"/_next/static/immutable/chunks/2bne3eixy766a.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/19k4j2fs2g9zk.js\" async=\"\"></script><script src=\""
+  },
+  {
+   "account": "episode",
+   "path": "/organizers",
+   "status": 404,
+   "bytes": 0,
+   "top_keys": null,
+   "error_body": "<!DOCTYPE html><html><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" as=\"script\" fetchPriority=\"low\" href=\"/_next/static/immutable/chunks/1qglgz9w5b-mg.js\"/><script src=\"/_next/static/immutable/chunks/2bne3eixy766a.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/19k4j2fs2g9zk.js\" async=\"\"></script><script src=\""
+  },
+  {
+   "account": "episode",
+   "path": "/",
+   "status": 429,
+   "bytes": 0,
+   "top_keys": null,
+   "error_body": "{\"error\":{\"code\":\"challenge\",\"message\":\"This request requires a challenge to be completed.\",\"id\":\"cle1::<opaque>\"}}\n"
+  },
+  {
+   "account": "sonora",
+   "path": "/events",
+   "variant": "org+cohost",
+   "status": 400,
+   "seconds": 0.25,
+   "bytes": 0,
+   "error_body": "{\"error\":{\"code\":\"bad_request\",\"message\":\"Missing API key\"}}"
+  },
+  {
+   "account": "sonora",
+   "path": "/events",
+   "variant": "org",
+   "status": 400,
+   "seconds": 0.31,
+   "bytes": 0,
+   "error_body": "{\"error\":{\"code\":\"bad_request\",\"message\":\"Missing API key\"}}"
+  },
+  {
+   "account": "sonora",
+   "path": "/events",
+   "variant": "cohost,no-org",
+   "status": 400,
+   "seconds": 0.35,
+   "bytes": 0,
+   "error_body": "{\"error\":{\"code\":\"bad_request\",\"message\":\"Missing API key\"}}"
+  },
+  {
+   "account": "sonora",
+   "path": "/orders",
+   "status": 404,
+   "bytes": 0,
+   "top_keys": null,
+   "error_body": "<!DOCTYPE html><html><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" as=\"script\" fetchPriority=\"low\" href=\"/_next/static/immutable/chunks/1qglgz9w5b-mg.js\"/><script src=\"/_next/static/immutable/chunks/2bne3eixy766a.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/19k4j2fs2g9zk.js\" async=\"\"></script><script src=\""
+  },
+  {
+   "account": "sonora",
+   "path": "/deals",
+   "status": 404,
+   "bytes": 0,
+   "top_keys": null,
+   "error_body": "<!DOCTYPE html><html><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" as=\"script\" fetchPriority=\"low\" href=\"/_next/static/immutable/chunks/1qglgz9w5b-mg.js\"/><script src=\"/_next/static/immutable/chunks/2bne3eixy766a.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/19k4j2fs2g9zk.js\" async=\"\"></script><script src=\""
+  },
+  {
+   "account": "sonora",
+   "path": "/events/505434",
+   "status": 404,
+   "bytes": 0,
+   "top_keys": null,
+   "error_body": "<!DOCTYPE html><html><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" as=\"script\" fetchPriority=\"low\" href=\"/_next/static/immutable/chunks/1qglgz9w5b-mg.js\"/><script src=\"/_next/static/immutable/chunks/2bne3eixy766a.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/19k4j2fs2g9zk.js\" async=\"\"></script><script src=\""
+  },
+  {
+   "account": "sonora",
+   "path": "/organizers",
+   "status": 404,
+   "bytes": 0,
+   "top_keys": null,
+   "error_body": "<!DOCTYPE html><html><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" as=\"script\" fetchPriority=\"low\" href=\"/_next/static/immutable/chunks/1qglgz9w5b-mg.js\"/><script src=\"/_next/static/immutable/chunks/2bne3eixy766a.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/19k4j2fs2g9zk.js\" async=\"\"></script><script src=\""
+  },
+  {
+   "account": "sonora",
+   "path": "/",
+   "status": 429,
+   "bytes": 0,
+   "top_keys": null,
+   "error_body": "{\"error\":{\"code\":\"challenge\",\"message\":\"This request requires a challenge to be completed.\",\"id\":\"cle1::<opaque>\"}}\n"
+  }
+ ],
+ "M4": [
+  {
+   "shotgun_id": 557151,
+   "account": "episode",
+   "window_days": 7,
+   "pages": 12,
+   "seconds": 13.5,
+   "error": null,
+   "rows": 1103,
+   "rows_ordered_before_window(modifications)": 87,
+   "modifications_by_status": {
+    "resold": 80,
+    "valid": 5,
+    "canceled": 2
+   },
+   "rows_ordered_in_window(new sales)": 1016,
+   "new_by_status": {
+    "valid": 992,
+    "resold": 22,
+    "canceled": 2
+   },
+   "rows_with_updated_at_before_cursor(should be 0)": 0
+  },
+  {
+   "shotgun_id": 557151,
+   "account": "episode",
+   "window_days": 1,
+   "pages": 2,
+   "seconds": 1.6,
+   "error": null,
+   "rows": 164,
+   "rows_ordered_before_window(modifications)": 17,
+   "modifications_by_status": {
+    "resold": 14,
+    "canceled": 2,
+    "valid": 1
+   },
+   "rows_ordered_in_window(new sales)": 147,
+   "new_by_status": {
+    "valid": 144,
+    "resold": 3
+   },
+   "rows_with_updated_at_before_cursor(should be 0)": 0
+  },
+  {
+   "shotgun_id": 565846,
+   "account": "sonora",
+   "window_days": 7,
+   "pages": 38,
+   "seconds": 41.9,
+   "error": null,
+   "rows": 3776,
+   "rows_ordered_before_window(modifications)": 705,
+   "modifications_by_status": {
+    "resold": 546,
+    "valid": 145,
+    "canceled": 13,
+    "payment_plan_pending": 1
+   },
+   "rows_ordered_in_window(new sales)": 3071,
+   "new_by_status": {
+    "valid": 2923,
+    "resold": 100,
+    "canceled": 48
+   },
+   "rows_with_updated_at_before_cursor(should be 0)": 0
+  },
+  {
+   "shotgun_id": 565846,
+   "account": "sonora",
+   "window_days": 1,
+   "pages": 1,
+   "seconds": 0.3,
+   "error": null,
+   "rows": 1,
+   "rows_ordered_before_window(modifications)": 1,
+   "modifications_by_status": {
+    "valid": 1
+   },
+   "rows_ordered_in_window(new sales)": 0,
+   "new_by_status": {},
+   "rows_with_updated_at_before_cursor(should be 0)": 0
+  },
+  {
+   "shotgun_id": 544355,
+   "account": "sonora",
+   "window_days": 7,
+   "pages": 10,
+   "seconds": 9.8,
+   "error": null,
+   "rows": 956,
+   "rows_ordered_before_window(modifications)": 956,
+   "modifications_by_status": {
+    "refunded": 888,
+    "canceled": 59,
+    "resold": 9
+   },
+   "rows_ordered_in_window(new sales)": 0,
+   "new_by_status": {},
+   "rows_with_updated_at_before_cursor(should be 0)": 0
+  },
+  {
+   "shotgun_id": 544355,
+   "account": "sonora",
+   "window_days": 1,
+   "pages": 1,
+   "seconds": 0.2,
+   "error": null,
+   "rows": 0,
+   "rows_ordered_before_window(modifications)": 0,
+   "modifications_by_status": {},
+   "rows_ordered_in_window(new sales)": 0,
+   "new_by_status": {},
+   "rows_with_updated_at_before_cursor(should be 0)": 0
+  },
+  {
+   "shotgun_id": 535882,
+   "account": "episode",
+   "window_days": 7,
+   "pages": 1,
+   "seconds": 0.8,
+   "error": null,
+   "rows": 2,
+   "rows_ordered_before_window(modifications)": 2,
+   "modifications_by_status": {
+    "resold": 1,
+    "valid": 1
+   },
+   "rows_ordered_in_window(new sales)": 0,
+   "new_by_status": {},
+   "rows_with_updated_at_before_cursor(should be 0)": 0
+  },
+  {
+   "shotgun_id": 535882,
+   "account": "episode",
+   "window_days": 1,
+   "pages": 1,
+   "seconds": 0.2,
+   "error": null,
+   "rows": 0,
+   "rows_ordered_before_window(modifications)": 0,
+   "modifications_by_status": {},
+   "rows_ordered_in_window(new sales)": 0,
+   "new_by_status": {},
+   "rows_with_updated_at_before_cursor(should be 0)": 0
+  },
+  {
+   "shotgun_id": 546274,
+   "account": "episode",
+   "window_days": 7,
+   "pages": 24,
+   "seconds": 26.1,
+   "error": null,
+   "rows": 2359,
+   "rows_ordered_before_window(modifications)": 835,
+   "modifications_by_status": {
+    "resold": 361,
+    "valid": 472,
+    "canceled": 2
+   },
+   "rows_ordered_in_window(new sales)": 1524,
+   "new_by_status": {
+    "valid": 1457,
+    "resold": 67
+   },
+   "rows_with_updated_at_before_cursor(should be 0)": 0
+  },
+  {
+   "shotgun_id": 546274,
+   "account": "episode",
+   "window_days": 1,
+   "pages": 1,
+   "seconds": 0.3,
+   "error": null,
+   "rows": 0,
+   "rows_ordered_before_window(modifications)": 0,
+   "modifications_by_status": {},
+   "rows_ordered_in_window(new sales)": 0,
+   "new_by_status": {},
+   "rows_with_updated_at_before_cursor(should be 0)": 0
+  },
+  {
+   "shotgun_id": 557151,
+   "account": "episode",
+   "cursor": "now",
+   "rows": 0,
+   "pages": 1,
+   "seconds": 0.2,
+   "error": null
+  }
+ ],
+ "M3": [
+  {
+   "festiflow": "evt-px",
+   "shotgun_id": 494642,
+   "account": "episode",
+   "pages": 279,
+   "seconds": 313.1,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 27844,
+   "status_x_channel": {
+    "valid|online": 21405,
+    "resold|online": 4760,
+    "valid|invitation": 864,
+    "valid|duplicata": 544,
+    "resold|duplicata": 248,
+    "payment_plan_pending|online": 14,
+    "canceled|invitation": 6,
+    "refunded|online": 3
+   },
+   "status": {
+    "valid": 22813,
+    "resold": 5008,
+    "payment_plan_pending": 14,
+    "canceled": 6,
+    "refunded": 3
+   },
+   "valid": 22813,
+   "event_id_mismatch": 0,
+   "currency": {
+    "eur": 27844
+   },
+   "deal_vat_rate": {
+    "0.055": 27844
+   },
+   "payment_method": {
+    "card": 24903,
+    "None": 2670,
+    "revolut_pay": 260,
+    "bancontact": 11
+   },
+   "key_count": 44,
+   "keys_union": [
+    "contact_birthday",
+    "contact_company_name",
+    "contact_country",
+    "contact_email",
+    "contact_first_name",
+    "contact_gender",
+    "contact_id",
+    "contact_last_name",
+    "contact_locality",
+    "contact_newsletter_optin",
+    "contact_phone",
+    "contact_postal_code",
+    "currency",
+    "deal_channel",
+    "deal_id",
+    "deal_price",
+    "deal_producer_cost",
+    "deal_service_fee",
+    "deal_sub_category",
+    "deal_title",
+    "deal_user_service_fee",
+    "deal_vat_rate",
+    "deal_visibilities",
+    "event_canceled_at",
+    "event_created_at",
+    "event_end_time",
+    "event_id",
+    "event_launched_at",
+    "event_name",
+    "event_published_at",
+    "event_start_time",
+    "order_id",
+    "ordered_at",
+    "payment_method",
+    "ticket_canceled_at",
+    "ticket_id",
+    "ticket_scan_code",
+    "ticket_scanned_at",
+    "ticket_seating",
+    "ticket_status",
+    "ticket_updated_at",
+    "user_id",
+    "utm_medium",
+    "utm_source"
+   ],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [
+    "event_canceled_at",
+    "ticket_scanned_at",
+    "ticket_seating"
+   ],
+   "raw_row_bytes_avg": 1343,
+   "raw_row_bytes_max": 1445,
+   "row_bytes_without_pii_avg": 913,
+   "money_cents_by_status": {
+    "valid": {
+     "deal_price": 141658582,
+     "deal_service_fee": 14164815,
+     "deal_user_service_fee": 4288241,
+     "deal_producer_cost": 0,
+     "n": 22813
+    },
+    "resold": {
+     "deal_price": 29898439,
+     "deal_service_fee": 2989611,
+     "deal_user_service_fee": 905028,
+     "deal_producer_cost": 0,
+     "n": 5008
+    },
+    "payment_plan_pending": {
+     "deal_price": 93275,
+     "deal_service_fee": 9325,
+     "deal_user_service_fee": 2821,
+     "deal_producer_cost": 0,
+     "n": 14
+    },
+    "refunded": {
+     "deal_price": 26545,
+     "deal_service_fee": 2655,
+     "deal_user_service_fee": 803,
+     "deal_producer_cost": 0,
+     "n": 3
+    },
+    "canceled": {
+     "deal_price": 0,
+     "deal_service_fee": 0,
+     "deal_user_service_fee": 0,
+     "deal_producer_cost": 0,
+     "n": 6
+    }
+   },
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {
+     "9999-99-99 99:99:99.999999": 22111,
+     "9999-99-99 99:99:99.999": 3013,
+     "9999-99-99 99:99:99.99999": 2156
+    },
+    "ticket_updated_at": {
+     "9999-99-99a99:99:99.999a": 27844
+    },
+    "ticket_canceled_at": {
+     "null": 27835,
+     "9999-99-99a99:99:99.999a": 9
+    },
+    "event_start_time": {
+     "9999-99-99a99:99:99.999a": 27844
+    }
+   },
+   "updated_minus_ordered_hours": {
+    "+0h": 20514,
+    "+1h": 180,
+    "+10h": 25,
+    "+2h": 21,
+    "+4h": 17,
+    "+2448h": 17
+   },
+   "canceled_at_set_by_status": {
+    "refunded": 3,
+    "canceled": 6
+   },
+   "deal_visibilities_orders": 3,
+   "utm_source_distinct": 32,
+   "ticket_updated_at_max_date": "2026-10-16",
+   "ordered_at_max_date": "2026-03-30",
+   "event_start_date": "2026-03-13",
+   "event_name": "MADAME LOYAL PARIS : XXL EDITION 2026"
+  },
+  {
+   "festiflow": "evt-px",
+   "shotgun_id": 494642,
+   "account": "sonora",
+   "pages": 279,
+   "seconds": 318.6,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 27844,
+   "status_x_channel": {
+    "valid|online": 21405,
+    "resold|online": 4760,
+    "valid|invitation": 864,
+    "valid|duplicata": 544,
+    "resold|duplicata": 248,
+    "payment_plan_pending|online": 14,
+    "canceled|invitation": 6,
+    "refunded|online": 3
+   },
+   "status": {
+    "valid": 22813,
+    "resold": 5008,
+    "payment_plan_pending": 14,
+    "canceled": 6,
+    "refunded": 3
+   },
+   "valid": 22813,
+   "event_id_mismatch": 0,
+   "currency": {
+    "eur": 27844
+   },
+   "deal_vat_rate": {
+    "0.055": 27844
+   },
+   "payment_method": {
+    "card": 24903,
+    "None": 2670,
+    "revolut_pay": 260,
+    "bancontact": 11
+   },
+   "key_count": 44,
+   "keys_union": [
+    "contact_birthday",
+    "contact_company_name",
+    "contact_country",
+    "contact_email",
+    "contact_first_name",
+    "contact_gender",
+    "contact_id",
+    "contact_last_name",
+    "contact_locality",
+    "contact_newsletter_optin",
+    "contact_phone",
+    "contact_postal_code",
+    "currency",
+    "deal_channel",
+    "deal_id",
+    "deal_price",
+    "deal_producer_cost",
+    "deal_service_fee",
+    "deal_sub_category",
+    "deal_title",
+    "deal_user_service_fee",
+    "deal_vat_rate",
+    "deal_visibilities",
+    "event_canceled_at",
+    "event_created_at",
+    "event_end_time",
+    "event_id",
+    "event_launched_at",
+    "event_name",
+    "event_published_at",
+    "event_start_time",
+    "order_id",
+    "ordered_at",
+    "payment_method",
+    "ticket_canceled_at",
+    "ticket_id",
+    "ticket_scan_code",
+    "ticket_scanned_at",
+    "ticket_seating",
+    "ticket_status",
+    "ticket_updated_at",
+    "user_id",
+    "utm_medium",
+    "utm_source"
+   ],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [
+    "event_canceled_at",
+    "ticket_scanned_at",
+    "ticket_seating"
+   ],
+   "raw_row_bytes_avg": 1343,
+   "raw_row_bytes_max": 1445,
+   "row_bytes_without_pii_avg": 913,
+   "money_cents_by_status": {
+    "valid": {
+     "deal_price": 141658582,
+     "deal_service_fee": 14164815,
+     "deal_user_service_fee": 4288241,
+     "deal_producer_cost": 0,
+     "n": 22813
+    },
+    "resold": {
+     "deal_price": 29898439,
+     "deal_service_fee": 2989611,
+     "deal_user_service_fee": 905028,
+     "deal_producer_cost": 0,
+     "n": 5008
+    },
+    "payment_plan_pending": {
+     "deal_price": 93275,
+     "deal_service_fee": 9325,
+     "deal_user_service_fee": 2821,
+     "deal_producer_cost": 0,
+     "n": 14
+    },
+    "refunded": {
+     "deal_price": 26545,
+     "deal_service_fee": 2655,
+     "deal_user_service_fee": 803,
+     "deal_producer_cost": 0,
+     "n": 3
+    },
+    "canceled": {
+     "deal_price": 0,
+     "deal_service_fee": 0,
+     "deal_user_service_fee": 0,
+     "deal_producer_cost": 0,
+     "n": 6
+    }
+   },
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {
+     "9999-99-99 99:99:99.999999": 22111,
+     "9999-99-99 99:99:99.999": 3013,
+     "9999-99-99 99:99:99.99999": 2156
+    },
+    "ticket_updated_at": {
+     "9999-99-99a99:99:99.999a": 27844
+    },
+    "ticket_canceled_at": {
+     "null": 27835,
+     "9999-99-99a99:99:99.999a": 9
+    },
+    "event_start_time": {
+     "9999-99-99a99:99:99.999a": 27844
+    }
+   },
+   "updated_minus_ordered_hours": {
+    "+0h": 20514,
+    "+1h": 180,
+    "+10h": 25,
+    "+2h": 21,
+    "+4h": 17,
+    "+2448h": 17
+   },
+   "canceled_at_set_by_status": {
+    "refunded": 3,
+    "canceled": 6
+   },
+   "deal_visibilities_orders": 3,
+   "utm_source_distinct": 32,
+   "ticket_updated_at_max_date": "2026-10-16",
+   "ordered_at_max_date": "2026-03-30",
+   "event_start_date": "2026-03-13",
+   "event_name": "MADAME LOYAL PARIS : XXL EDITION 2026"
+  },
+  {
+   "festiflow": "evt-sb",
+   "shotgun_id": 505434,
+   "account": "episode",
+   "pages": 273,
+   "seconds": 312.2,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 27217,
+   "status_x_channel": {
+    "valid|online": 17409,
+    "valid|invitation": 5358,
+    "resold|online": 4217,
+    "canceled|invitation": 204,
+    "payment_plan_pending|online": 20,
+    "refunded|online": 9
+   },
+   "status": {
+    "valid": 22767,
+    "resold": 4217,
+    "canceled": 204,
+    "payment_plan_pending": 20,
+    "refunded": 9
+   },
+   "valid": 22767,
+   "event_id_mismatch": 0,
+   "currency": {
+    "eur": 27217
+   },
+   "deal_vat_rate": {
+    "0.055": 27217
+   },
+   "payment_method": {
+    "card": 20981,
+    "None": 6043,
+    "revolut_pay": 188,
+    "bancontact": 5
+   },
+   "key_count": 44,
+   "keys_union": [
+    "contact_birthday",
+    "contact_company_name",
+    "contact_country",
+    "contact_email",
+    "contact_first_name",
+    "contact_gender",
+    "contact_id",
+    "contact_last_name",
+    "contact_locality",
+    "contact_newsletter_optin",
+    "contact_phone",
+    "contact_postal_code",
+    "currency",
+    "deal_channel",
+    "deal_id",
+    "deal_price",
+    "deal_producer_cost",
+    "deal_service_fee",
+    "deal_sub_category",
+    "deal_title",
+    "deal_user_service_fee",
+    "deal_vat_rate",
+    "deal_visibilities",
+    "event_canceled_at",
+    "event_created_at",
+    "event_end_time",
+    "event_id",
+    "event_launched_at",
+    "event_name",
+    "event_published_at",
+    "event_start_time",
+    "order_id",
+    "ordered_at",
+    "payment_method",
+    "ticket_canceled_at",
+    "ticket_id",
+    "ticket_scan_code",
+    "ticket_scanned_at",
+    "ticket_seating",
+    "ticket_status",
+    "ticket_updated_at",
+    "user_id",
+    "utm_medium",
+    "utm_source"
+   ],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [
+    "contact_company_name",
+    "event_canceled_at",
+    "ticket_scanned_at",
+    "ticket_seating"
+   ],
+   "raw_row_bytes_avg": 1342,
+   "raw_row_bytes_max": 1402,
+   "row_bytes_without_pii_avg": 916,
+   "money_cents_by_status": {
+    "valid": {
+     "deal_price": 117187394,
+     "deal_service_fee": 11716156,
+     "deal_user_service_fee": 3544335,
+     "deal_producer_cost": 0,
+     "n": 22767
+    },
+    "resold": {
+     "deal_price": 28319622,
+     "deal_service_fee": 2831478,
+     "deal_user_service_fee": 856574,
+     "deal_producer_cost": 0,
+     "n": 4217
+    },
+    "refunded": {
+     "deal_price": 78728,
+     "deal_service_fee": 7872,
+     "deal_user_service_fee": 2381,
+     "deal_producer_cost": 0,
+     "n": 9
+    },
+    "payment_plan_pending": {
+     "deal_price": 141819,
+     "deal_service_fee": 14181,
+     "deal_user_service_fee": 4289,
+     "deal_producer_cost": 0,
+     "n": 20
+    },
+    "canceled": {
+     "deal_price": 0,
+     "deal_service_fee": 0,
+     "deal_user_service_fee": 0,
+     "deal_producer_cost": 0,
+     "n": 204
+    }
+   },
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {
+     "9999-99-99 99:99:99.999999": 17625,
+     "9999-99-99 99:99:99.999": 6972,
+     "9999-99-99 99:99:99.99999": 1722
+    },
+    "ticket_updated_at": {
+     "9999-99-99a99:99:99.999a": 27217
+    },
+    "ticket_canceled_at": {
+     "null": 27004,
+     "9999-99-99a99:99:99.999a": 213
+    },
+    "event_start_time": {
+     "9999-99-99a99:99:99.999a": 27217
+    }
+   },
+   "updated_minus_ordered_hours": {
+    "+0h": 20381,
+    "+269h": 143,
+    "+1h": 67,
+    "+271h": 57,
+    "+270h": 46,
+    "+2h": 25
+   },
+   "canceled_at_set_by_status": {
+    "refunded": 9,
+    "canceled": 204
+   },
+   "deal_visibilities_orders": 4,
+   "utm_source_distinct": 29,
+   "ticket_updated_at_max_date": "2026-10-20",
+   "ordered_at_max_date": "2026-06-13",
+   "event_start_date": "2026-06-11",
+   "event_name": "MADAME LOYAL x SONORA : BORDEAUX"
+  },
+  {
+   "festiflow": "evt-sb",
+   "shotgun_id": 505434,
+   "account": "sonora",
+   "pages": 273,
+   "seconds": 307.1,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 27217,
+   "status_x_channel": {
+    "valid|online": 17409,
+    "valid|invitation": 5358,
+    "resold|online": 4217,
+    "canceled|invitation": 204,
+    "payment_plan_pending|online": 20,
+    "refunded|online": 9
+   },
+   "status": {
+    "valid": 22767,
+    "resold": 4217,
+    "canceled": 204,
+    "payment_plan_pending": 20,
+    "refunded": 9
+   },
+   "valid": 22767,
+   "event_id_mismatch": 0,
+   "currency": {
+    "eur": 27217
+   },
+   "deal_vat_rate": {
+    "0.055": 27217
+   },
+   "payment_method": {
+    "card": 20981,
+    "None": 6043,
+    "revolut_pay": 188,
+    "bancontact": 5
+   },
+   "key_count": 44,
+   "keys_union": [
+    "contact_birthday",
+    "contact_company_name",
+    "contact_country",
+    "contact_email",
+    "contact_first_name",
+    "contact_gender",
+    "contact_id",
+    "contact_last_name",
+    "contact_locality",
+    "contact_newsletter_optin",
+    "contact_phone",
+    "contact_postal_code",
+    "currency",
+    "deal_channel",
+    "deal_id",
+    "deal_price",
+    "deal_producer_cost",
+    "deal_service_fee",
+    "deal_sub_category",
+    "deal_title",
+    "deal_user_service_fee",
+    "deal_vat_rate",
+    "deal_visibilities",
+    "event_canceled_at",
+    "event_created_at",
+    "event_end_time",
+    "event_id",
+    "event_launched_at",
+    "event_name",
+    "event_published_at",
+    "event_start_time",
+    "order_id",
+    "ordered_at",
+    "payment_method",
+    "ticket_canceled_at",
+    "ticket_id",
+    "ticket_scan_code",
+    "ticket_scanned_at",
+    "ticket_seating",
+    "ticket_status",
+    "ticket_updated_at",
+    "user_id",
+    "utm_medium",
+    "utm_source"
+   ],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [
+    "contact_company_name",
+    "event_canceled_at",
+    "ticket_scanned_at",
+    "ticket_seating"
+   ],
+   "raw_row_bytes_avg": 1342,
+   "raw_row_bytes_max": 1402,
+   "row_bytes_without_pii_avg": 916,
+   "money_cents_by_status": {
+    "valid": {
+     "deal_price": 117187394,
+     "deal_service_fee": 11716156,
+     "deal_user_service_fee": 3544335,
+     "deal_producer_cost": 0,
+     "n": 22767
+    },
+    "resold": {
+     "deal_price": 28319622,
+     "deal_service_fee": 2831478,
+     "deal_user_service_fee": 856574,
+     "deal_producer_cost": 0,
+     "n": 4217
+    },
+    "refunded": {
+     "deal_price": 78728,
+     "deal_service_fee": 7872,
+     "deal_user_service_fee": 2381,
+     "deal_producer_cost": 0,
+     "n": 9
+    },
+    "payment_plan_pending": {
+     "deal_price": 141819,
+     "deal_service_fee": 14181,
+     "deal_user_service_fee": 4289,
+     "deal_producer_cost": 0,
+     "n": 20
+    },
+    "canceled": {
+     "deal_price": 0,
+     "deal_service_fee": 0,
+     "deal_user_service_fee": 0,
+     "deal_producer_cost": 0,
+     "n": 204
+    }
+   },
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {
+     "9999-99-99 99:99:99.999999": 17625,
+     "9999-99-99 99:99:99.999": 6972,
+     "9999-99-99 99:99:99.99999": 1722
+    },
+    "ticket_updated_at": {
+     "9999-99-99a99:99:99.999a": 27217
+    },
+    "ticket_canceled_at": {
+     "null": 27004,
+     "9999-99-99a99:99:99.999a": 213
+    },
+    "event_start_time": {
+     "9999-99-99a99:99:99.999a": 27217
+    }
+   },
+   "updated_minus_ordered_hours": {
+    "+0h": 20381,
+    "+269h": 143,
+    "+1h": 67,
+    "+271h": 57,
+    "+270h": 46,
+    "+2h": 25
+   },
+   "canceled_at_set_by_status": {
+    "refunded": 9,
+    "canceled": 204
+   },
+   "deal_visibilities_orders": 4,
+   "utm_source_distinct": 29,
+   "ticket_updated_at_max_date": "2026-10-20",
+   "ordered_at_max_date": "2026-06-13",
+   "event_start_date": "2026-06-11",
+   "event_name": "MADAME LOYAL x SONORA : BORDEAUX"
+  },
+  {
+   "festiflow": "evt-cc",
+   "shotgun_id": 549064,
+   "account": "episode",
+   "pages": 46,
+   "seconds": 50.1,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 4555,
+   "status_x_channel": {
+    "valid|online": 2233,
+    "valid|distributor": 1473,
+    "resold|online": 396,
+    "valid|duplicata": 264,
+    "valid|invitation": 124,
+    "resold|duplicata": 54,
+    "canceled|invitation": 11
+   },
+   "status": {
+    "valid": 4094,
+    "resold": 450,
+    "canceled": 11
+   },
+   "valid": 4094,
+   "event_id_mismatch": 0,
+   "currency": {
+    "eur": 4555
+   },
+   "deal_vat_rate": {
+    "0.055": 4555
+   },
+   "payment_method": {
+    "card": 2915,
+    "None": 1608,
+    "revolut_pay": 30,
+    "ideal": 2
+   },
+   "key_count": 44,
+   "keys_union": [
+    "contact_birthday",
+    "contact_company_name",
+    "contact_country",
+    "contact_email",
+    "contact_first_name",
+    "contact_gender",
+    "contact_id",
+    "contact_last_name",
+    "contact_locality",
+    "contact_newsletter_optin",
+    "contact_phone",
+    "contact_postal_code",
+    "currency",
+    "deal_channel",
+    "deal_id",
+    "deal_price",
+    "deal_producer_cost",
+    "deal_service_fee",
+    "deal_sub_category",
+    "deal_title",
+    "deal_user_service_fee",
+    "deal_vat_rate",
+    "deal_visibilities",
+    "event_canceled_at",
+    "event_created_at",
+    "event_end_time",
+    "event_id",
+    "event_launched_at",
+    "event_name",
+    "event_published_at",
+    "event_start_time",
+    "order_id",
+    "ordered_at",
+    "payment_method",
+    "ticket_canceled_at",
+    "ticket_id",
+    "ticket_scan_code",
+    "ticket_scanned_at",
+    "ticket_seating",
+    "ticket_status",
+    "ticket_updated_at",
+    "user_id",
+    "utm_medium",
+    "utm_source"
+   ],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [
+    "event_canceled_at",
+    "ticket_seating"
+   ],
+   "raw_row_bytes_avg": 1324,
+   "raw_row_bytes_max": 1402,
+   "row_bytes_without_pii_avg": 911,
+   "money_cents_by_status": {
+    "resold": {
+     "deal_price": 1376319,
+     "deal_service_fee": 137581,
+     "deal_user_service_fee": 41667,
+     "deal_producer_cost": 0,
+     "n": 450
+    },
+    "valid": {
+     "deal_price": 8674719,
+     "deal_service_fee": 867215,
+     "deal_user_service_fee": 262639,
+     "deal_producer_cost": 0,
+     "n": 4094
+    },
+    "canceled": {
+     "deal_price": 0,
+     "deal_service_fee": 0,
+     "deal_user_service_fee": 0,
+     "deal_producer_cost": 0,
+     "n": 11
+    }
+   },
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {
+     "9999-99-99 99:99:99.999999": 2504,
+     "9999-99-99 99:99:99.9": 862,
+     "9999-99-99 99:99:99.999": 470
+    },
+    "ticket_updated_at": {
+     "9999-99-99a99:99:99.999a": 4555
+    },
+    "ticket_canceled_at": {
+     "null": 4544,
+     "9999-99-99a99:99:99.999a": 11
+    },
+    "event_start_time": {
+     "9999-99-99a99:99:99.999a": 4555
+    }
+   },
+   "updated_minus_ordered_hours": {
+    "+0h": 742,
+    "+3h": 305,
+    "+5h": 280,
+    "+6h": 231,
+    "+4h": 213,
+    "+2h": 200
+   },
+   "canceled_at_set_by_status": {
+    "canceled": 11
+   },
+   "deal_visibilities_orders": 3,
+   "utm_source_distinct": 13,
+   "ticket_updated_at_max_date": "2026-09-13",
+   "ordered_at_max_date": "2026-07-04",
+   "event_start_date": "2026-07-04",
+   "event_name": "Madame Loyal Paris - Crazy Carnaval Edition"
+  },
+  {
+   "festiflow": "evt-cc",
+   "shotgun_id": 549064,
+   "account": "sonora",
+   "pages": 1,
+   "seconds": 0.2,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 0,
+   "status_x_channel": {},
+   "status": {},
+   "valid": 0,
+   "event_id_mismatch": 0,
+   "currency": {},
+   "deal_vat_rate": {},
+   "payment_method": {},
+   "key_count": 0,
+   "keys_union": [],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [],
+   "raw_row_bytes_avg": 0,
+   "raw_row_bytes_max": 0,
+   "row_bytes_without_pii_avg": 0,
+   "money_cents_by_status": {},
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {},
+    "ticket_updated_at": {},
+    "ticket_canceled_at": {},
+    "event_start_time": {}
+   },
+   "updated_minus_ordered_hours": {},
+   "canceled_at_set_by_status": {},
+   "deal_visibilities_orders": 0,
+   "utm_source_distinct": 0,
+   "ticket_updated_at_max_date": null,
+   "ordered_at_max_date": null,
+   "event_start_date": null,
+   "event_name": null
+  },
+  {
+   "festiflow": "evt-ep",
+   "shotgun_id": 535882,
+   "account": "episode",
+   "pages": 222,
+   "seconds": 241.7,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 22141,
+   "status_x_channel": {
+    "valid|online": 17115,
+    "valid|invitation": 2610,
+    "resold|online": 2250,
+    "canceled|invitation": 165,
+    "canceled|online": 1
+   },
+   "status": {
+    "valid": 19725,
+    "resold": 2250,
+    "canceled": 166
+   },
+   "valid": 19725,
+   "event_id_mismatch": 0,
+   "currency": {
+    "eur": 22141
+   },
+   "deal_vat_rate": {
+    "0.055": 22141
+   },
+   "payment_method": {
+    "card": 18887,
+    "None": 2913,
+    "revolut_pay": 333,
+    "bancontact": 7,
+    "mb_way": 1
+   },
+   "key_count": 44,
+   "keys_union": [
+    "contact_birthday",
+    "contact_company_name",
+    "contact_country",
+    "contact_email",
+    "contact_first_name",
+    "contact_gender",
+    "contact_id",
+    "contact_last_name",
+    "contact_locality",
+    "contact_newsletter_optin",
+    "contact_phone",
+    "contact_postal_code",
+    "currency",
+    "deal_channel",
+    "deal_id",
+    "deal_price",
+    "deal_producer_cost",
+    "deal_service_fee",
+    "deal_sub_category",
+    "deal_title",
+    "deal_user_service_fee",
+    "deal_vat_rate",
+    "deal_visibilities",
+    "event_canceled_at",
+    "event_created_at",
+    "event_end_time",
+    "event_id",
+    "event_launched_at",
+    "event_name",
+    "event_published_at",
+    "event_start_time",
+    "order_id",
+    "ordered_at",
+    "payment_method",
+    "ticket_canceled_at",
+    "ticket_id",
+    "ticket_scan_code",
+    "ticket_scanned_at",
+    "ticket_seating",
+    "ticket_status",
+    "ticket_updated_at",
+    "user_id",
+    "utm_medium",
+    "utm_source"
+   ],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [
+    "event_canceled_at",
+    "ticket_seating"
+   ],
+   "raw_row_bytes_avg": 1322,
+   "raw_row_bytes_max": 1419,
+   "row_bytes_without_pii_avg": 893,
+   "money_cents_by_status": {
+    "valid": {
+     "deal_price": 93794967,
+     "deal_service_fee": 9381326,
+     "deal_user_service_fee": 2836378,
+     "deal_producer_cost": 0,
+     "n": 19725
+    },
+    "resold": {
+     "deal_price": 12506109,
+     "deal_service_fee": 1250713,
+     "deal_user_service_fee": 378336,
+     "deal_producer_cost": 0,
+     "n": 2250
+    },
+    "canceled": {
+     "deal_price": 9000,
+     "deal_service_fee": 900,
+     "deal_user_service_fee": 272,
+     "deal_producer_cost": 0,
+     "n": 166
+    }
+   },
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {
+     "9999-99-99 99:99:99.999999": 16819,
+     "9999-99-99 99:99:99.999": 3017,
+     "9999-99-99 99:99:99.99999": 1672
+    },
+    "ticket_updated_at": {
+     "9999-99-99a99:99:99.999a": 22141
+    },
+    "ticket_canceled_at": {
+     "null": 21975,
+     "9999-99-99a99:99:99.999a": 166
+    },
+    "event_start_time": {
+     "9999-99-99a99:99:99.999a": 22141
+    }
+   },
+   "updated_minus_ordered_hours": {
+    "+0h": 15701,
+    "+1869h": 682,
+    "+1868h": 160,
+    "+1867h": 59,
+    "+1h": 58,
+    "+1865h": 48
+   },
+   "canceled_at_set_by_status": {
+    "canceled": 166
+   },
+   "deal_visibilities_orders": 3,
+   "utm_source_distinct": 39,
+   "ticket_updated_at_max_date": "2026-10-16",
+   "ordered_at_max_date": "2026-09-06",
+   "event_start_date": "2026-09-05",
+   "event_name": "MADAME LOYAL X ELEKTRIC PARK"
+  },
+  {
+   "festiflow": "evt-ep",
+   "shotgun_id": 535882,
+   "account": "sonora",
+   "pages": 1,
+   "seconds": 0.5,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 0,
+   "status_x_channel": {},
+   "status": {},
+   "valid": 0,
+   "event_id_mismatch": 0,
+   "currency": {},
+   "deal_vat_rate": {},
+   "payment_method": {},
+   "key_count": 0,
+   "keys_union": [],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [],
+   "raw_row_bytes_avg": 0,
+   "raw_row_bytes_max": 0,
+   "row_bytes_without_pii_avg": 0,
+   "money_cents_by_status": {},
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {},
+    "ticket_updated_at": {},
+    "ticket_canceled_at": {},
+    "event_start_time": {}
+   },
+   "updated_minus_ordered_hours": {},
+   "canceled_at_set_by_status": {},
+   "deal_visibilities_orders": 0,
+   "utm_source_distinct": 0,
+   "ticket_updated_at_max_date": null,
+   "ordered_at_max_date": null,
+   "event_start_date": null,
+   "event_name": null
+  },
+  {
+   "festiflow": "evt-si",
+   "shotgun_id": 544355,
+   "account": "episode",
+   "pages": 1,
+   "seconds": 0.2,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 0,
+   "status_x_channel": {},
+   "status": {},
+   "valid": 0,
+   "event_id_mismatch": 0,
+   "currency": {},
+   "deal_vat_rate": {},
+   "payment_method": {},
+   "key_count": 0,
+   "keys_union": [],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [],
+   "raw_row_bytes_avg": 0,
+   "raw_row_bytes_max": 0,
+   "row_bytes_without_pii_avg": 0,
+   "money_cents_by_status": {},
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {},
+    "ticket_updated_at": {},
+    "ticket_canceled_at": {},
+    "event_start_time": {}
+   },
+   "updated_minus_ordered_hours": {},
+   "canceled_at_set_by_status": {},
+   "deal_visibilities_orders": 0,
+   "utm_source_distinct": 0,
+   "ticket_updated_at_max_date": null,
+   "ordered_at_max_date": null,
+   "event_start_date": null,
+   "event_name": null
+  },
+  {
+   "festiflow": "evt-si",
+   "shotgun_id": 544355,
+   "account": "sonora",
+   "pages": 52,
+   "seconds": 56.5,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 5132,
+   "status_x_channel": {
+    "refunded|online": 3840,
+    "resold|online": 583,
+    "canceled|duplicata": 289,
+    "valid|online": 234,
+    "valid|duplicata": 75,
+    "resold|duplicata": 58,
+    "canceled|pass_culture": 26,
+    "payment_plan_pending|online": 14,
+    "valid|invitation": 13
+   },
+   "status": {
+    "refunded": 3840,
+    "resold": 641,
+    "valid": 322,
+    "canceled": 315,
+    "payment_plan_pending": 14
+   },
+   "valid": 322,
+   "event_id_mismatch": 0,
+   "currency": {
+    "eur": 5132
+   },
+   "deal_vat_rate": {
+    "0.055": 5132
+   },
+   "payment_method": {
+    "card": 5006,
+    "revolut_pay": 71,
+    "None": 29,
+    "pass_culture": 26
+   },
+   "key_count": 44,
+   "keys_union": [
+    "contact_birthday",
+    "contact_company_name",
+    "contact_country",
+    "contact_email",
+    "contact_first_name",
+    "contact_gender",
+    "contact_id",
+    "contact_last_name",
+    "contact_locality",
+    "contact_newsletter_optin",
+    "contact_phone",
+    "contact_postal_code",
+    "currency",
+    "deal_channel",
+    "deal_id",
+    "deal_price",
+    "deal_producer_cost",
+    "deal_service_fee",
+    "deal_sub_category",
+    "deal_title",
+    "deal_user_service_fee",
+    "deal_vat_rate",
+    "deal_visibilities",
+    "event_canceled_at",
+    "event_created_at",
+    "event_end_time",
+    "event_id",
+    "event_launched_at",
+    "event_name",
+    "event_published_at",
+    "event_start_time",
+    "order_id",
+    "ordered_at",
+    "payment_method",
+    "ticket_canceled_at",
+    "ticket_id",
+    "ticket_scan_code",
+    "ticket_scanned_at",
+    "ticket_seating",
+    "ticket_status",
+    "ticket_updated_at",
+    "user_id",
+    "utm_medium",
+    "utm_source"
+   ],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [
+    "contact_company_name",
+    "ticket_scanned_at",
+    "ticket_seating"
+   ],
+   "raw_row_bytes_avg": 1346,
+   "raw_row_bytes_max": 1412,
+   "row_bytes_without_pii_avg": 914,
+   "money_cents_by_status": {
+    "valid": {
+     "deal_price": 1499176,
+     "deal_service_fee": 149874,
+     "deal_user_service_fee": 45342,
+     "deal_producer_cost": 0,
+     "n": 322
+    },
+    "resold": {
+     "deal_price": 3376112,
+     "deal_service_fee": 337488,
+     "deal_user_service_fee": 102112,
+     "deal_producer_cost": 0,
+     "n": 641
+    },
+    "canceled": {
+     "deal_price": 148800,
+     "deal_service_fee": 1300,
+     "deal_user_service_fee": 0,
+     "deal_producer_cost": 0,
+     "n": 315
+    },
+    "payment_plan_pending": {
+     "deal_price": 72004,
+     "deal_service_fee": 7196,
+     "deal_user_service_fee": 2178,
+     "deal_producer_cost": 0,
+     "n": 14
+    },
+    "refunded": {
+     "deal_price": 21648944,
+     "deal_service_fee": 2163956,
+     "deal_user_service_fee": 654804,
+     "deal_producer_cost": 0,
+     "n": 3840
+    }
+   },
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {
+     "9999-99-99 99:99:99.999999": 4409,
+     "9999-99-99 99:99:99.99999": 427,
+     "9999-99-99 99:99:99.999": 219
+    },
+    "ticket_updated_at": {
+     "9999-99-99a99:99:99.999a": 5132
+    },
+    "ticket_canceled_at": {
+     "9999-99-99a99:99:99.999a": 4210,
+     "null": 922
+    },
+    "event_start_time": {
+     "9999-99-99a99:99:99.999a": 5132
+    }
+   },
+   "updated_minus_ordered_hours": {
+    "+0h": 274,
+    "+2h": 6,
+    "+1033h": 3,
+    "+1h": 3,
+    "+4h": 3,
+    "+339h": 3
+   },
+   "canceled_at_set_by_status": {
+    "canceled": 315,
+    "refunded": 3840,
+    "resold": 55
+   },
+   "deal_visibilities_orders": 4,
+   "utm_source_distinct": 26,
+   "ticket_updated_at_max_date": "2026-10-14",
+   "ordered_at_max_date": "2026-09-15",
+   "event_start_date": "2026-09-25",
+   "event_name": "SONORA x IMPACT"
+  },
+  {
+   "festiflow": "evt-gv",
+   "shotgun_id": 546274,
+   "account": "episode",
+   "pages": 87,
+   "seconds": 96.1,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 8624,
+   "status_x_channel": {
+    "valid|online": 7618,
+    "resold|online": 897,
+    "valid|invitation": 77,
+    "payment_plan_pending|online": 28,
+    "canceled|invitation": 2,
+    "canceled|online": 2
+   },
+   "status": {
+    "valid": 7695,
+    "resold": 897,
+    "payment_plan_pending": 28,
+    "canceled": 4
+   },
+   "valid": 7695,
+   "event_id_mismatch": 0,
+   "currency": {
+    "eur": 8624
+   },
+   "deal_vat_rate": {
+    "0.055": 8624
+   },
+   "payment_method": {
+    "card": 8149,
+    "revolut_pay": 360,
+    "None": 113,
+    "bancontact": 2
+   },
+   "key_count": 44,
+   "keys_union": [
+    "contact_birthday",
+    "contact_company_name",
+    "contact_country",
+    "contact_email",
+    "contact_first_name",
+    "contact_gender",
+    "contact_id",
+    "contact_last_name",
+    "contact_locality",
+    "contact_newsletter_optin",
+    "contact_phone",
+    "contact_postal_code",
+    "currency",
+    "deal_channel",
+    "deal_id",
+    "deal_price",
+    "deal_producer_cost",
+    "deal_service_fee",
+    "deal_sub_category",
+    "deal_title",
+    "deal_user_service_fee",
+    "deal_vat_rate",
+    "deal_visibilities",
+    "event_canceled_at",
+    "event_created_at",
+    "event_end_time",
+    "event_id",
+    "event_launched_at",
+    "event_name",
+    "event_published_at",
+    "event_start_time",
+    "order_id",
+    "ordered_at",
+    "payment_method",
+    "ticket_canceled_at",
+    "ticket_id",
+    "ticket_scan_code",
+    "ticket_scanned_at",
+    "ticket_seating",
+    "ticket_status",
+    "ticket_updated_at",
+    "user_id",
+    "utm_medium",
+    "utm_source"
+   ],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [
+    "contact_company_name",
+    "event_canceled_at",
+    "ticket_seating"
+   ],
+   "raw_row_bytes_avg": 1361,
+   "raw_row_bytes_max": 1441,
+   "row_bytes_without_pii_avg": 928,
+   "money_cents_by_status": {
+    "valid": {
+     "deal_price": 45485926,
+     "deal_service_fee": 4549237,
+     "deal_user_service_fee": 1374705,
+     "deal_producer_cost": 0,
+     "n": 7695
+    },
+    "resold": {
+     "deal_price": 5330668,
+     "deal_service_fee": 533082,
+     "deal_user_service_fee": 161078,
+     "deal_producer_cost": 0,
+     "n": 897
+    },
+    "payment_plan_pending": {
+     "deal_price": 182772,
+     "deal_service_fee": 18278,
+     "deal_user_service_fee": 5524,
+     "deal_producer_cost": 0,
+     "n": 28
+    },
+    "canceled": {
+     "deal_price": 10728,
+     "deal_service_fee": 1072,
+     "deal_user_service_fee": 324,
+     "deal_producer_cost": 0,
+     "n": 4
+    }
+   },
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {
+     "9999-99-99 99:99:99.999999": 7431,
+     "9999-99-99 99:99:99.99999": 771,
+     "9999-99-99 99:99:99.999": 295
+    },
+    "ticket_updated_at": {
+     "9999-99-99a99:99:99.999a": 8624
+    },
+    "ticket_canceled_at": {
+     "null": 8620,
+     "9999-99-99a99:99:99.999a": 4
+    },
+    "event_start_time": {
+     "9999-99-99a99:99:99.999a": 8624
+    }
+   },
+   "updated_minus_ordered_hours": {
+    "+0h": 6465,
+    "+1h": 139,
+    "+2h": 109,
+    "+3h": 76,
+    "+5h": 75,
+    "+4h": 73
+   },
+   "canceled_at_set_by_status": {
+    "canceled": 4
+   },
+   "deal_visibilities_orders": 3,
+   "utm_source_distinct": 26,
+   "ticket_updated_at_max_date": "2026-10-18",
+   "ordered_at_max_date": "2026-10-18",
+   "event_start_date": "2026-10-16",
+   "event_name": "MADAME LOYAL GENÈVE : 16 & 17 OCTOBRE"
+  },
+  {
+   "festiflow": "evt-gv",
+   "shotgun_id": 546274,
+   "account": "sonora",
+   "pages": 1,
+   "seconds": 0.2,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 0,
+   "status_x_channel": {},
+   "status": {},
+   "valid": 0,
+   "event_id_mismatch": 0,
+   "currency": {},
+   "deal_vat_rate": {},
+   "payment_method": {},
+   "key_count": 0,
+   "keys_union": [],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [],
+   "raw_row_bytes_avg": 0,
+   "raw_row_bytes_max": 0,
+   "row_bytes_without_pii_avg": 0,
+   "money_cents_by_status": {},
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {},
+    "ticket_updated_at": {},
+    "ticket_canceled_at": {},
+    "event_start_time": {}
+   },
+   "updated_minus_ordered_hours": {},
+   "canceled_at_set_by_status": {},
+   "deal_visibilities_orders": 0,
+   "utm_source_distinct": 0,
+   "ticket_updated_at_max_date": null,
+   "ordered_at_max_date": null,
+   "event_start_date": null,
+   "event_name": null
+  },
+  {
+   "festiflow": "evt-rn",
+   "shotgun_id": 557151,
+   "account": "episode",
+   "pages": 94,
+   "seconds": 100.5,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 9366,
+   "status_x_channel": {
+    "valid|online": 8682,
+    "resold|online": 495,
+    "valid|invitation": 115,
+    "valid|pass_culture": 26,
+    "payment_plan_pending|online": 23,
+    "canceled|invitation": 20,
+    "canceled|pass_culture": 3,
+    "canceled|online": 2
+   },
+   "status": {
+    "valid": 8823,
+    "resold": 495,
+    "canceled": 25,
+    "payment_plan_pending": 23
+   },
+   "valid": 8823,
+   "event_id_mismatch": 0,
+   "currency": {
+    "eur": 9366
+   },
+   "deal_vat_rate": {
+    "0.055": 9366
+   },
+   "payment_method": {
+    "card": 8941,
+    "None": 308,
+    "revolut_pay": 88,
+    "pass_culture": 29
+   },
+   "key_count": 44,
+   "keys_union": [
+    "contact_birthday",
+    "contact_company_name",
+    "contact_country",
+    "contact_email",
+    "contact_first_name",
+    "contact_gender",
+    "contact_id",
+    "contact_last_name",
+    "contact_locality",
+    "contact_newsletter_optin",
+    "contact_phone",
+    "contact_postal_code",
+    "currency",
+    "deal_channel",
+    "deal_id",
+    "deal_price",
+    "deal_producer_cost",
+    "deal_service_fee",
+    "deal_sub_category",
+    "deal_title",
+    "deal_user_service_fee",
+    "deal_vat_rate",
+    "deal_visibilities",
+    "event_canceled_at",
+    "event_created_at",
+    "event_end_time",
+    "event_id",
+    "event_launched_at",
+    "event_name",
+    "event_published_at",
+    "event_start_time",
+    "order_id",
+    "ordered_at",
+    "payment_method",
+    "ticket_canceled_at",
+    "ticket_id",
+    "ticket_scan_code",
+    "ticket_scanned_at",
+    "ticket_seating",
+    "ticket_status",
+    "ticket_updated_at",
+    "user_id",
+    "utm_medium",
+    "utm_source"
+   ],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [
+    "contact_company_name",
+    "event_canceled_at",
+    "ticket_scanned_at",
+    "ticket_seating"
+   ],
+   "raw_row_bytes_avg": 1337,
+   "raw_row_bytes_max": 1392,
+   "row_bytes_without_pii_avg": 906,
+   "money_cents_by_status": {
+    "valid": {
+     "deal_price": 55329641,
+     "deal_service_fee": 5518425,
+     "deal_user_service_fee": 1670264,
+     "deal_producer_cost": 0,
+     "n": 8823
+    },
+    "resold": {
+     "deal_price": 3354349,
+     "deal_service_fee": 335451,
+     "deal_user_service_fee": 101460,
+     "deal_producer_cost": 0,
+     "n": 495
+    },
+    "payment_plan_pending": {
+     "deal_price": 144863,
+     "deal_service_fee": 14487,
+     "deal_user_service_fee": 4380,
+     "deal_producer_cost": 0,
+     "n": 23
+    },
+    "canceled": {
+     "deal_price": 36227,
+     "deal_service_fee": 2000,
+     "deal_user_service_fee": 606,
+     "deal_producer_cost": 0,
+     "n": 25
+    }
+   },
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {
+     "9999-99-99 99:99:99.999999": 8167,
+     "9999-99-99 99:99:99.99999": 832,
+     "9999-99-99 99:99:99.999": 278
+    },
+    "ticket_updated_at": {
+     "9999-99-99a99:99:99.999a": 9366
+    },
+    "ticket_canceled_at": {
+     "null": 9341,
+     "9999-99-99a99:99:99.999a": 25
+    },
+    "event_start_time": {
+     "9999-99-99a99:99:99.999a": 9366
+    }
+   },
+   "updated_minus_ordered_hours": {
+    "+0h": 8742,
+    "+1h": 10,
+    "+94h": 2,
+    "+2h": 2,
+    "+5h": 2,
+    "+69h": 2
+   },
+   "canceled_at_set_by_status": {
+    "canceled": 25
+   },
+   "deal_visibilities_orders": 3,
+   "utm_source_distinct": 27,
+   "ticket_updated_at_max_date": "2026-10-20",
+   "ordered_at_max_date": "2026-10-20",
+   "event_start_date": "2026-11-06",
+   "event_name": "MADAME LOYAL RENNES : 6 & 7 NOVEMBRE"
+  },
+  {
+   "festiflow": "evt-rn",
+   "shotgun_id": 557151,
+   "account": "sonora",
+   "pages": 1,
+   "seconds": 0.2,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 0,
+   "status_x_channel": {},
+   "status": {},
+   "valid": 0,
+   "event_id_mismatch": 0,
+   "currency": {},
+   "deal_vat_rate": {},
+   "payment_method": {},
+   "key_count": 0,
+   "keys_union": [],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [],
+   "raw_row_bytes_avg": 0,
+   "raw_row_bytes_max": 0,
+   "row_bytes_without_pii_avg": 0,
+   "money_cents_by_status": {},
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {},
+    "ticket_updated_at": {},
+    "ticket_canceled_at": {},
+    "event_start_time": {}
+   },
+   "updated_minus_ordered_hours": {},
+   "canceled_at_set_by_status": {},
+   "deal_visibilities_orders": 0,
+   "utm_source_distinct": 0,
+   "ticket_updated_at_max_date": null,
+   "ordered_at_max_date": null,
+   "event_start_date": null,
+   "event_name": null
+  },
+  {
+   "festiflow": "evt-croisiere",
+   "shotgun_id": 553118,
+   "account": "episode",
+   "pages": 3,
+   "seconds": 2.4,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 242,
+   "status_x_channel": {
+    "valid|online": 158,
+    "resold|online": 62,
+    "valid|invitation": 22
+   },
+   "status": {
+    "valid": 180,
+    "resold": 62
+   },
+   "valid": 180,
+   "event_id_mismatch": 0,
+   "currency": {
+    "eur": 242
+   },
+   "deal_vat_rate": {
+    "0.055": 242
+   },
+   "payment_method": {
+    "card": 213,
+    "None": 23,
+    "revolut_pay": 6
+   },
+   "key_count": 44,
+   "keys_union": [
+    "contact_birthday",
+    "contact_company_name",
+    "contact_country",
+    "contact_email",
+    "contact_first_name",
+    "contact_gender",
+    "contact_id",
+    "contact_last_name",
+    "contact_locality",
+    "contact_newsletter_optin",
+    "contact_phone",
+    "contact_postal_code",
+    "currency",
+    "deal_channel",
+    "deal_id",
+    "deal_price",
+    "deal_producer_cost",
+    "deal_service_fee",
+    "deal_sub_category",
+    "deal_title",
+    "deal_user_service_fee",
+    "deal_vat_rate",
+    "deal_visibilities",
+    "event_canceled_at",
+    "event_created_at",
+    "event_end_time",
+    "event_id",
+    "event_launched_at",
+    "event_name",
+    "event_published_at",
+    "event_start_time",
+    "order_id",
+    "ordered_at",
+    "payment_method",
+    "ticket_canceled_at",
+    "ticket_id",
+    "ticket_scan_code",
+    "ticket_scanned_at",
+    "ticket_seating",
+    "ticket_status",
+    "ticket_updated_at",
+    "user_id",
+    "utm_medium",
+    "utm_source"
+   ],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [
+    "contact_company_name",
+    "event_canceled_at",
+    "ticket_canceled_at",
+    "ticket_seating"
+   ],
+   "raw_row_bytes_avg": 1369,
+   "raw_row_bytes_max": 1403,
+   "row_bytes_without_pii_avg": 938,
+   "money_cents_by_status": {
+    "valid": {
+     "deal_price": 335038,
+     "deal_service_fee": 14062,
+     "deal_user_service_fee": 5226,
+     "deal_producer_cost": 0,
+     "n": 180
+    },
+    "resold": {
+     "deal_price": 125482,
+     "deal_service_fee": 5518,
+     "deal_user_service_fee": 1958,
+     "deal_producer_cost": 0,
+     "n": 62
+    }
+   },
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {
+     "9999-99-99 99:99:99.999999": 178,
+     "9999-99-99 99:99:99.999": 37,
+     "9999-99-99 99:99:99.99999": 21
+    },
+    "ticket_updated_at": {
+     "9999-99-99a99:99:99.999a": 242
+    },
+    "ticket_canceled_at": {
+     "null": 242
+    },
+    "event_start_time": {
+     "9999-99-99a99:99:99.999a": 242
+    }
+   },
+   "updated_minus_ordered_hours": {
+    "+0h": 39,
+    "+2247h": 9,
+    "+88h": 8,
+    "+2244h": 6,
+    "+114h": 5,
+    "+60h": 4
+   },
+   "canceled_at_set_by_status": {},
+   "deal_visibilities_orders": 1,
+   "utm_source_distinct": 10,
+   "ticket_updated_at_max_date": "2026-09-06",
+   "ordered_at_max_date": "2026-09-06",
+   "event_start_date": "2026-09-06",
+   "event_name": "Croisière Madame Loyal x Elektric Park 2026"
+  },
+  {
+   "festiflow": "evt-croisiere",
+   "shotgun_id": 553118,
+   "account": "sonora",
+   "pages": 1,
+   "seconds": 0.2,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 0,
+   "status_x_channel": {},
+   "status": {},
+   "valid": 0,
+   "event_id_mismatch": 0,
+   "currency": {},
+   "deal_vat_rate": {},
+   "payment_method": {},
+   "key_count": 0,
+   "keys_union": [],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [],
+   "raw_row_bytes_avg": 0,
+   "raw_row_bytes_max": 0,
+   "row_bytes_without_pii_avg": 0,
+   "money_cents_by_status": {},
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {},
+    "ticket_updated_at": {},
+    "ticket_canceled_at": {},
+    "event_start_time": {}
+   },
+   "updated_minus_ordered_hours": {},
+   "canceled_at_set_by_status": {},
+   "deal_visibilities_orders": 0,
+   "utm_source_distinct": 0,
+   "ticket_updated_at_max_date": null,
+   "ordered_at_max_date": null,
+   "event_start_date": null,
+   "event_name": null
+  },
+  {
+   "festiflow": "evt-sh?",
+   "shotgun_id": 565846,
+   "account": "episode",
+   "pages": 1,
+   "seconds": 0.2,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 0,
+   "status_x_channel": {},
+   "status": {},
+   "valid": 0,
+   "event_id_mismatch": 0,
+   "currency": {},
+   "deal_vat_rate": {},
+   "payment_method": {},
+   "key_count": 0,
+   "keys_union": [],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [],
+   "raw_row_bytes_avg": 0,
+   "raw_row_bytes_max": 0,
+   "row_bytes_without_pii_avg": 0,
+   "money_cents_by_status": {},
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {},
+    "ticket_updated_at": {},
+    "ticket_canceled_at": {},
+    "event_start_time": {}
+   },
+   "updated_minus_ordered_hours": {},
+   "canceled_at_set_by_status": {},
+   "deal_visibilities_orders": 0,
+   "utm_source_distinct": 0,
+   "ticket_updated_at_max_date": null,
+   "ordered_at_max_date": null,
+   "event_start_date": null,
+   "event_name": null
+  },
+  {
+   "festiflow": "evt-sh?",
+   "shotgun_id": 565846,
+   "account": "sonora",
+   "pages": 279,
+   "seconds": 311.9,
+   "error": null,
+   "envelope": {
+    "envelope_keys": [
+     "auth",
+     "data",
+     "pagination",
+     "params"
+    ],
+    "list_key": "data",
+    "pagination_keys": [
+     "next"
+    ]
+   },
+   "raw": 27888,
+   "status_x_channel": {
+    "valid|online": 21424,
+    "resold|online": 3380,
+    "valid|invitation": 2054,
+    "valid|pass_culture": 525,
+    "valid|duplicata": 240,
+    "canceled|invitation": 81,
+    "payment_plan_pending|online": 78,
+    "resold|duplicata": 53,
+    "canceled|pass_culture": 36,
+    "canceled|online": 17
+   },
+   "status": {
+    "valid": 24243,
+    "resold": 3433,
+    "canceled": 134,
+    "payment_plan_pending": 78
+   },
+   "valid": 24243,
+   "event_id_mismatch": 0,
+   "currency": {
+    "eur": 27888
+   },
+   "deal_vat_rate": {
+    "0.055": 27774,
+    "0.2": 114
+   },
+   "payment_method": {
+    "card": 24793,
+    "None": 2264,
+    "pass_culture": 561,
+    "revolut_pay": 267,
+    "bancontact": 2,
+    "mb_way": 1
+   },
+   "key_count": 44,
+   "keys_union": [
+    "contact_birthday",
+    "contact_company_name",
+    "contact_country",
+    "contact_email",
+    "contact_first_name",
+    "contact_gender",
+    "contact_id",
+    "contact_last_name",
+    "contact_locality",
+    "contact_newsletter_optin",
+    "contact_phone",
+    "contact_postal_code",
+    "currency",
+    "deal_channel",
+    "deal_id",
+    "deal_price",
+    "deal_producer_cost",
+    "deal_service_fee",
+    "deal_sub_category",
+    "deal_title",
+    "deal_user_service_fee",
+    "deal_vat_rate",
+    "deal_visibilities",
+    "event_canceled_at",
+    "event_created_at",
+    "event_end_time",
+    "event_id",
+    "event_launched_at",
+    "event_name",
+    "event_published_at",
+    "event_start_time",
+    "order_id",
+    "ordered_at",
+    "payment_method",
+    "ticket_canceled_at",
+    "ticket_id",
+    "ticket_scan_code",
+    "ticket_scanned_at",
+    "ticket_seating",
+    "ticket_status",
+    "ticket_updated_at",
+    "user_id",
+    "utm_medium",
+    "utm_source"
+   ],
+   "keys_not_on_every_row": [],
+   "keys_always_null": [
+    "contact_company_name",
+    "event_canceled_at",
+    "ticket_scanned_at",
+    "ticket_seating"
+   ],
+   "raw_row_bytes_avg": 1345,
+   "raw_row_bytes_max": 1411,
+   "row_bytes_without_pii_avg": 915,
+   "money_cents_by_status": {
+    "valid": {
+     "deal_price": 157647166,
+     "deal_service_fee": 15469134,
+     "deal_user_service_fee": 4675476,
+     "deal_producer_cost": 0,
+     "n": 24243
+    },
+    "resold": {
+     "deal_price": 24543461,
+     "deal_service_fee": 2454589,
+     "deal_user_service_fee": 742862,
+     "deal_producer_cost": 0,
+     "n": 3433
+    },
+    "canceled": {
+     "deal_price": 366816,
+     "deal_service_fee": 14284,
+     "deal_user_service_fee": 3780,
+     "deal_producer_cost": 0,
+     "n": 134
+    },
+    "payment_plan_pending": {
+     "deal_price": 714675,
+     "deal_service_fee": 71475,
+     "deal_user_service_fee": 21622,
+     "deal_producer_cost": 0,
+     "n": 78
+    }
+   },
+   "producer_cost_nonzero_rows": 0,
+   "formats": {
+    "ordered_at": {
+     "9999-99-99 99:99:99.999999": 21581,
+     "9999-99-99 99:99:99.999": 3324,
+     "9999-99-99 99:99:99.99999": 2274
+    },
+    "ticket_updated_at": {
+     "9999-99-99a99:99:99.999a": 27888
+    },
+    "ticket_canceled_at": {
+     "null": 27754,
+     "9999-99-99a99:99:99.999a": 134
+    },
+    "event_start_time": {
+     "9999-99-99a99:99:99.999a": 27888
+    }
+   },
+   "updated_minus_ordered_hours": {
+    "+0h": 23508,
+    "+1h": 48,
+    "+2h": 30,
+    "+3h": 10,
+    "+4h": 10,
+    "+6h": 7
+   },
+   "canceled_at_set_by_status": {
+    "canceled": 134
+   },
+   "deal_visibilities_orders": 4,
+   "utm_source_distinct": 41,
+   "ticket_updated_at_max_date": "2026-10-20",
+   "ordered_at_max_date": "2026-10-18",
+   "event_start_date": "2026-10-16",
+   "event_name": "SONORA BORDEAUX : 16-17 OCTOBRE"
+  }
+ ],
+ "M3_overlap": [
+  {
+   "festiflow": "evt-px",
+   "shotgun_id": 494642,
+   "episode": 27844,
+   "sonora": 27844,
+   "same_ticket_ids": 27844,
+   "only_episode": 0,
+   "only_sonora": 0
+  },
+  {
+   "festiflow": "evt-sb",
+   "shotgun_id": 505434,
+   "episode": 27217,
+   "sonora": 27217,
+   "same_ticket_ids": 27217,
+   "only_episode": 0,
+   "only_sonora": 0
+  },
+  {
+   "festiflow": "evt-cc",
+   "shotgun_id": 549064,
+   "episode": 4555,
+   "sonora": 0,
+   "same_ticket_ids": 0,
+   "only_episode": 4555,
+   "only_sonora": 0
+  },
+  {
+   "festiflow": "evt-ep",
+   "shotgun_id": 535882,
+   "episode": 22141,
+   "sonora": 0,
+   "same_ticket_ids": 0,
+   "only_episode": 22141,
+   "only_sonora": 0
+  },
+  {
+   "festiflow": "evt-si",
+   "shotgun_id": 544355,
+   "episode": 0,
+   "sonora": 5132,
+   "same_ticket_ids": 0,
+   "only_episode": 0,
+   "only_sonora": 5132
+  },
+  {
+   "festiflow": "evt-gv",
+   "shotgun_id": 546274,
+   "episode": 8624,
+   "sonora": 0,
+   "same_ticket_ids": 0,
+   "only_episode": 8624,
+   "only_sonora": 0
+  },
+  {
+   "festiflow": "evt-rn",
+   "shotgun_id": 557151,
+   "episode": 9366,
+   "sonora": 0,
+   "same_ticket_ids": 0,
+   "only_episode": 9366,
+   "only_sonora": 0
+  },
+  {
+   "festiflow": "evt-croisiere",
+   "shotgun_id": 553118,
+   "episode": 242,
+   "sonora": 0,
+   "same_ticket_ids": 0,
+   "only_episode": 242,
+   "only_sonora": 0
+  },
+  {
+   "festiflow": "evt-sh?",
+   "shotgun_id": 565846,
+   "episode": 0,
+   "sonora": 27888,
+   "same_ticket_ids": 0,
+   "only_episode": 0,
+   "only_sonora": 27888
+  }
+ ],
+ "http_status_counts": {
+  "shotgun:400": 6,
+  "shotgun:404": 8,
+  "shotgun:429": 14,
+  "shotgun:200": 1986
+ },
+ "response_header_names": {
+  "shotgun": [
+   "access-control-allow-headers",
+   "access-control-allow-methods",
+   "access-control-allow-origin",
+   "age",
+   "cache-control",
+   "connection",
+   "content-type",
+   "date",
+   "server",
+   "shotgun-domain-error",
+   "strict-transport-security",
+   "transfer-encoding",
+   "x-matched-path",
+   "x-vercel-cache",
+   "x-vercel-id"
+  ]
+ },
+ "rate_limit_headers_numeric": {},
+ "wall_seconds": 2987
+}
