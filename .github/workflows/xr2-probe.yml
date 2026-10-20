@@ -22,7 +22,42 @@ permissions:
   contents: read
 
 jobs:
+  mode:
+    runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.m.outputs.mode }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: m
+        run: echo "mode=$(awk 'NR==1{print $1}' guide/xr2/RUN)" >> "$GITHUB_OUTPUT"
+
+  followup:
+    needs: mode
+    if: needs.mode.outputs.mode == 'followup'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run 2 follow-ups
+        env:
+          SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
+          SHOTGUN_TOKEN_SONORA: ${{ secrets.SHOTGUN_TOKEN_SONORA }}
+          SHOTGUN_ORGANIZER_ID_SONORA: ${{ secrets.SHOTGUN_ORGANIZER_ID_SONORA }}
+          DICE_TOKEN: ${{ secrets.DICE_TOKEN }}
+        run: python -I guide/xr2/probe_xr2.py followup
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xr2-followup
+          path: guide/xr2/out/xr2_followup.*
+          retention-days: 7
+
   shotgun:
+    needs: mode
+    if: needs.mode.outputs.mode != 'followup'
     runs-on: ubuntu-latest
     timeout-minutes: 200
     steps:
@@ -41,10 +76,12 @@ jobs:
         if: always()
         with:
           name: xr2-shotgun
-          path: guide/xr2/out/
+          path: guide/xr2/out/xr2_shotgun.*
           retention-days: 7
 
   dice:
+    needs: mode
+    if: needs.mode.outputs.mode != 'followup'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -63,11 +100,11 @@ jobs:
         if: always()
         with:
           name: xr2-dice
-          path: guide/xr2/out/
+          path: guide/xr2/out/xr2_dice.*
           retention-days: 7
 
   commit:
-    needs: [shotgun, dice]
+    needs: [shotgun, dice, followup]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 10

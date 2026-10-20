@@ -778,6 +778,109 @@ def m3_dice(where_types):
     return res
 
 
+# =================================================================== run 2 follow-ups
+def followup():
+    res = {}
+    out('\n## Run 2 · Shotgun /events: where does it want its "API key"?')
+    tries = []
+    for acct, tok, org in ACCOUNTS:
+        variants = [
+            ('query param key', sg_url('/events', key=tok, organizer_id=org), {}),
+            ('query param api_key', sg_url('/events', api_key=tok, organizer_id=org), {}),
+            ('header Authorization (bearer scheme)', sg_url('/events', organizer_id=org), {'Authorization': 'Bearer ' + tok}),
+            ('header x-api-key', sg_url('/events', organizer_id=org), {'x-api-key': tok}),
+            ('query token plus header (bearer scheme)', sg_url('/events', token=tok, organizer_id=org), {'Authorization': 'Bearer ' + tok}),
+        ]
+        for label, url, hdr in variants:
+            st, js, err, sec, nb = request(url, headers=hdr)
+            rec = {'account': acct, 'variant': label, 'status': st, 'error_body': err, 'bytes': nb}
+            if st == 200 and js is not None:
+                lk, items = list_in(js)
+                rec['top_keys'] = keys_of(js)
+                rec['list_key'] = lk
+                rec['count_page1'] = len(items or [])
+                rec['item_fields'] = sorted({k for it in (items or []) if isinstance(it, dict) for k in it})
+                pag = js.get('pagination') if isinstance(js, dict) else None
+                rec['pagination_keys'] = keys_of(pag) if pag is not None else None
+            tries.append(rec)
+            out(json.dumps(rec, ensure_ascii=False))
+            time.sleep(PACE)
+    res['events_auth_variants'] = tries
+
+    out('\n## Run 2 · the /tickets envelope: `auth` and `params` (names and types only)')
+    acct, tok, org = ACCOUNTS[0]
+    st, js, err, *_ = request(sg_url('/tickets', token=tok, organizer_id=org, event_id=557151, include_cohosted_events='1'))
+    env = {}
+    if isinstance(js, dict):
+        for k in ('auth', 'params', 'pagination'):
+            v = js.get(k)
+            if isinstance(v, dict):
+                env[k] = {kk: type(vv).__name__ for kk, vv in v.items()}
+            else:
+                env[k] = type(v).__name__
+        a = js.get('auth') if isinstance(js.get('auth'), dict) else {}
+        flat = json.dumps(a)
+        env['auth_mentions_episode_org'] = '171835' in flat
+        env['auth_scalar_values_safe'] = {kk: vv for kk, vv in a.items()
+                                          if isinstance(vv, bool) or (isinstance(vv, str) and re.fullmatch(r'[a-z_:\-]{1,30}', vv))}
+    res['tickets_envelope'] = {'status': st, 'error': err, **env}
+    out(json.dumps(res['tickets_envelope']))
+
+    if ENV['DICE_TOKEN']:
+        out('\n## Run 2 · DICE: mutations (names), events changed lately, Viewer.tickets, the returned ticket still in orders')
+        st, d, err, *_ = dq('{ __schema { mutationType { fields { name } } } }')
+        mt = (((d or {}).get('__schema') or {}).get('mutationType') or {}).get('fields') or []
+        res['dice_mutation_fields'] = sorted(f['name'] for f in mt)
+        out('mutation fields: ' + json.dumps(res['dice_mutation_fields']))
+        since = (datetime.now(timezone.utc) - timedelta(days=30)).strftime('%Y-%m-%dT%H:%M:%SZ')
+        st, d, err, *_ = dq('query($s:Datetime){ viewer { events(first:100, where:{updatedAt:{gte:$s}}){ totalCount } } }', {'s': since})
+        res['dice_events_updated_last_30d'] = ((d or {}).get('viewer') or {}).get('events', {}).get('totalCount') if d else err
+        out('events updated in the last 30 days: ' + json.dumps(res['dice_events_updated_last_30d']))
+        tk = {}
+        for eid in (600413, 540197):
+            rid = base64.b64encode(f'Event:{eid}'.encode()).decode()
+            st, d, err, *_ = dq('query($e:ID!){ viewer { tickets(first:1, where:{eventId:{eq:$e}}){ totalCount } } }', {'e': rid})
+            tk[eid] = ((d or {}).get('viewer') or {}).get('tickets', {}).get('totalCount') if d else err
+            time.sleep(0.2)
+        res['dice_viewer_tickets_totalCount'] = tk
+        out('viewer.tickets totalCount: ' + json.dumps(tk))
+        # 540197: which returned ticket is still listed in orders, and what is it worth (cents only)
+        rid = base64.b64encode(b'Event:540197').decode()
+        orders, pages, sec, total, err, nb, _ = dice_pull(540197)
+        tix = {}
+        for o in orders:
+            for t in o.get('tickets') or []:
+                tix[str(t.get('id'))] = (o, t)
+        rets, after = [], None
+        for _ in range(10):
+            st, d, e, *_ = dq('query R($e:ID!,$a:String){ viewer { returns(first:100, after:$a, where:{eventId:{eq:$e}}){ pageInfo{ endCursor hasNextPage } edges{ node{ ticketId returnedAt reason } } } } }', {'e': rid, 'a': after})
+            if e or not d:
+                break
+            c = d['viewer']['returns']
+            rets += [x['node'] for x in c['edges']]
+            if not c['pageInfo']['hasNextPage']:
+                break
+            after = c['pageInfo']['endCursor']
+        still = []
+        for r in rets:
+            if str(r.get('ticketId')) in tix:
+                o, t = tix[str(r['ticketId'])]
+                still.append({'fullPrice_cents': t.get('fullPrice'), 'diceCommission_cents': t.get('diceCommission'),
+                              'total_cents': t.get('total'), 'returnedAt_date': str(r.get('returnedAt') or '')[:10],
+                              'reason': scrub(str(r.get('reason') or ''))[:30],
+                              'order_purchasedAt_date': str(o.get('purchasedAt') or '')[:10],
+                              'order_ticket_count': len(o.get('tickets') or []), 'order_quantity': o.get('quantity')})
+        res['dice_540197_returned_still_listed'] = still
+        res['dice_540197_returns_reasons'] = dict(collections.Counter(scrub(str(r.get('reason') or ''))[:30] for r in rets))
+        res['dice_540197_orders_quantity_vs_tickets'] = {
+            'orders_quantity_sum': sum(o.get('quantity') or 0 for o in orders),
+            'tickets_listed': sum(len(o.get('tickets') or []) for o in orders),
+            'orders_where_quantity_gt_tickets': sum(1 for o in orders if (o.get('quantity') or 0) > len(o.get('tickets') or []))}
+        out('540197 returned-but-listed: ' + json.dumps(still) + ' · reasons ' + json.dumps(res['dice_540197_returns_reasons'])
+            + ' · quantity vs tickets ' + json.dumps(res['dice_540197_orders_quantity_vs_tickets']))
+    return res
+
+
 # =================================================================== main
 def main(which):
     started = datetime.now(timezone.utc)
@@ -790,6 +893,8 @@ def main(which):
         result['M1'] = m1()
         result['M4'] = m4_shotgun()
         result['M3'], result['M3_overlap'] = m3_shotgun()
+    elif which == 'followup':
+        result['RUN2'] = followup()
     elif which == 'dice':
         if not ENV['DICE_TOKEN']:
             out('DICE_TOKEN not set - SKIPPED')
