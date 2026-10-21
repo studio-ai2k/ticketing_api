@@ -1,0 +1,103 @@
+name: XR3 probe (read-only, never merged)
+
+# Festiflow guide round XR3 · 2026-10-21. Lives on `probe/xr3` only, never merged.
+# Read-only on both platforms: GET on Shotgun, GraphQL *queries* on DICE.
+# ticketing_api is PUBLIC and so are these logs: the probe prints and commits
+# field names, counts and timings only. Money totals are sealed (seal.sh) to a
+# key only the measurement seat holds and leave as an encrypted artifact.
+# A push to probe/xr3 touching guide/xr3/RUN runs it (first word = mode).
+on:
+  workflow_dispatch:
+  push:
+    branches: [probe/xr3]
+    paths: [guide/xr3/RUN]
+
+concurrency:
+  group: xr3-probe
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  mode:
+    runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.m.outputs.mode }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: m
+        run: echo "mode=$(awk 'NR==1{print $1}' guide/xr3/RUN)" >> "$GITHUB_OUTPUT"
+
+  inventory:
+    needs: mode
+    if: needs.mode.outputs.mode == 'inventory'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Inventory (no API call)
+        env:
+          SECRETS_JSON: ${{ toJSON(secrets) }}
+        run: python -I guide/xr3/probe_xr3.py inventory
+      - name: Seal private outputs
+        run: bash guide/xr3/seal.sh inventory
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xr3-out-inventory
+          path: guide/xr3/out/xr3_*
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xr3-sealed-inventory
+          path: guide/xr3/sealed/*
+          retention-days: 3
+          if-no-files-found: ignore
+
+  commit:
+    needs: [mode, inventory]
+    if: always() && needs.mode.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: probe/xr3
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: xr3-out-*
+          path: _art
+      - name: Gather
+        run: |
+          mkdir -p guide/xr3/out
+          find _art -type f -name 'xr3_*' -exec cp {} guide/xr3/out/ \;
+          ls -la guide/xr3/out
+      - name: Leak check (refuse to commit on any hit)
+        env:
+          SECRETS_JSON: ${{ toJSON(secrets) }}
+        run: |
+          set -u
+          umask 077
+          f=$(mktemp)
+          python3 -I -c 'import json,os,re; d=json.loads(os.environ["SECRETS_JSON"]); [print(v) for k,v in d.items() if re.match(r"(SHOTGUN|DICE)_",k) and len(str(v).strip())>=6]' > "$f"
+          unset SECRETS_JSON
+          hits=0
+          if [ -s "$f" ] && grep -rqF -f "$f" guide/xr3/out; then echo "LEAK: a secret value"; hits=1; fi
+          rm -f "$f"
+          for rx in 'token=[^*]' 'key=[^*]' '[Bb]earer [^*]' 'eyJ[A-Za-z0-9_-]{5,}\.' '[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}' 'https?://' 'contact_email"[: ]+"' 'ticket_scan_code"[: ]+"' '"money' '_cents"' 'seal_test' ; do
+            if grep -rqE -- "$rx" guide/xr3/out; then echo "LEAK pattern: $rx"; hits=1; fi
+          done
+          [ "$hits" = 0 ] && echo "leak check: 0 hits"
+          exit $hits
+      - name: Commit counts to probe/xr3
+        run: |
+          git config user.name 'xr3-probe'
+          git config user.email 'xr3-probe@users.noreply.github.com'
+          git add guide/xr3/out
+          git commit -m "XR3 probe outputs (counts only) · run ${{ github.run_id }}" || echo 'nothing to commit'
+          git push origin HEAD:probe/xr3
