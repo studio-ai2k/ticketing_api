@@ -1,0 +1,56 @@
+# XR3 probe · shotgun_sonora · 2026-10-22T19:44Z · pace 0.8s
+secrets set (names): ["SHOTGUN_ORGANIZER_ID_SONORA", "SHOTGUN_TOKEN_SONORA"]
+
+## sonora · token claims (names; organiser id printed by ruling)
+{"jwt": true, "length": 215, "claim_names": ["forestUserEmail", "iat", "memberId", "organizerId"], "organizerId": 207784, "iat_date": "2026-06-12", "has_exp": false, "organizerId_equals_secret": true, "organizer_secret_set": true}
+
+## M7 · sonora · payout-like paths (GET, status only)
+{"path": "/payouts", "status": 404, "error_body": "(an HTML page)"}
+{"path": "/payments", "status": 404, "error_body": "(an HTML page)"}
+{"path": "/settlements", "status": 404, "error_body": "(an HTML page)"}
+{"path": "/transfers", "status": 404, "error_body": "(an HTML page)"}
+{"path": "/balance", "status": 404, "error_body": "(an HTML page)"}
+{"path": "/invoices", "status": 404, "error_body": "(an HTML page)"}
+
+## M4 · sonora · known past Shotgun ids, by event_id, first page
+{"pages": 1, "rows": 0, "distinct_ids": 0, "status": {}, "first_page_rows": 0, "event_id_mismatch": 0, "error": null, "seconds": 1.7, "shotgun_id": 313304}
+{"pages": 1, "rows": 100, "distinct_ids": 100, "status": {"valid": 100}, "first_page_rows": 100, "event_id_mismatch": 0, "error": "stopped at 1 page(s) by design", "seconds": 0.4, "shotgun_id": 399931}
+{"pages": 1, "rows": 0, "distinct_ids": 0, "status": {}, "first_page_rows": 0, "event_id_mismatch": 0, "error": null, "seconds": 0.4, "shotgun_id": 406642}
+{"pages": 1, "rows": 100, "distinct_ids": 100, "status": {"valid": 97, "resold": 3}, "first_page_rows": 100, "event_id_mismatch": 0, "error": "stopped at 1 page(s) by design", "seconds": 0.2, "shotgun_id": 408231}
+{"pages": 1, "rows": 100, "distinct_ids": 100, "status": {"valid": 18, "resold": 82}, "first_page_rows": 100, "event_id_mismatch": 0, "error": "stopped at 1 page(s) by design", "seconds": 0.3, "shotgun_id": 433590}
+{"pages": 1, "rows": 0, "distinct_ids": 0, "status": {}, "first_page_rows": 0, "event_id_mismatch": 0, "error": null, "seconds": 0.3, "shotgun_id": 444613}
+{"pages": 1, "rows": 0, "distinct_ids": 0, "status": {}, "first_page_rows": 0, "event_id_mismatch": 0, "error": null, "seconds": 1.7, "shotgun_id": 455482}
+{"pages": 1, "rows": 100, "distinct_ids": 100, "status": {"valid": 100}, "first_page_rows": 100, "event_id_mismatch": 0, "error": "stopped at 1 page(s) by design", "seconds": 0.3, "shotgun_id": 505434}
+
+## M1 · sonora · organiser-wide incremental: after = 7 days ago, no event_id
+{"pages": 24, "rows": 2392, "seconds": 25.9, "finished": true, "error": null, "distinct_events": 5, "first_ticket_updated_at": "2026-10-15T19:46:26", "last_ticket_updated_at": "2026-10-22T17:57:46", "a_row_older_than_cursor": false, "ticket_updated_at_inversions": 0, "after_cursor_shape": "9999-99-99a99:99:99.999a_999999999"}
+   events: {"565846": [2349, "SONORA BORDEAUX : 16-17 OCTOBRE"], "505434": [35, "MADAME LOYAL x SONORA : BORDEAUX"], "433590": [4, "SONORA BORDEAUX : HALLOWEEN XXL"], "494642": [2, "MADAME LOYAL PARIS : XXL EDITION 2026"], "408231": [2, "MADAME LOYAL x SONORA : BORDEAUX 13 & 14 JUIN"]}
+{"pages": 24, "rows": 2355, "seconds": 24.8, "finished": true, "error": null, "distinct_events": 3, "first_ticket_updated_at": "2026-10-15T19:46:26", "last_ticket_updated_at": "2026-10-22T17:57:46", "a_row_older_than_cursor": false, "ticket_updated_at_inversions": null, "after_cursor_shape": null}
+   events: {"565846": [2349, "SONORA BORDEAUX : 16-17 OCTOBRE"], "433590": [4, "SONORA BORDEAUX : HALLOWEEN XXL"], "408231": [2, "MADAME LOYAL x SONORA : BORDEAUX 13 & 14 JUIN"]}
+
+## M1/M4 · sonora · 433590 by event_id, full
+{"pages": 291, "rows": 29099, "distinct_ids": 29099, "status": {"valid": 25219, "resold": 3771, "refunded": 26, "canceled": 24, "payment_plan_pending": 59}, "first_page_rows": 100, "event_id_mismatch": 0, "error": null, "seconds": 323.9, "digest": "63fb9871bedf70c0"}
+
+## M1 · sonora · the organiser-wide walk: /tickets, no event_id, include_cohosted_events=1
+   [sonora walk: 533 pages, 53300 rows, 5 events, 600s]
+   [sonora walk: 1004 pages, 100400 rows, 6 events, 1200s]
+   [sonora walk: 1559 pages, 155900 rows, 9 events, 1800s]
+{"pages": 1841, "rows": 184005, "seconds": 2104.3, "finished": true, "error": null, "envelope": {"envelope_keys": ["auth", "data", "pagination", "params"], "list_key": "data", "pagination_keys": ["next"]}, "after_cursor_shape": "9999-99-99a99:99:99.999a_99999999", "distinct_events": 9, "ticket_updated_at_inversions": 0, "first_ticket_updated_at": "2024-06-04T17:03:52", "last_ticket_updated_at": "2026-10-22T20:00:50", "oldest_event_start": "2024-10-25T16:30", "newest_event_start": "2026-10-16T15:00", "oldest_ordered_at": "2024-06-04", "by_start_year": {"2024": 1, "2025": 4, "2026": 4}, "key_count": 44, "keys_not_on_every_row": [], "festiflow_ids_absent": [535882, 546274, 549064, 553118, 557151], "pull_433590_vs_walk": {"walk_rows": 29099, "pull_rows": 29099, "same_ticket_id_set": true}}
+watch: {"433590": {"event_id": 433590, "festiflow": null, "name": "SONORA BORDEAUX : HALLOWEEN XXL", "start": "2025-10-31T16:00", "end": "2025-11-02T03:00", "rows": 29099, "valid": 25219, "status": {"valid": 25219, "resold": 3771, "payment_plan_pending": 59, "refunded": 26, "canceled": 24}, "currency": {"eur": 29099}, "ordered_first": "2025-04-10", "ordered_last": "2025-11-01", "updated_first": "2025-04-10", "updated_last": "2026-10-21", "distinct_ticket_ids": 29099, "ticket_id_set_digest": "63fb9871bedf70c0", "first_seen_on_page": 422, "organiser_like_fields": {}}, "505434": {"event_id": 505434, "festiflow": "evt-sb", "name": "MADAME LOYAL x SONORA : BORDEAUX", "start": "2026-06-11T15:00", "end": "2026-06-14T02:00", "rows": 27217, "valid": 22767, "status": {"valid": 22767, "resold": 4217, "canceled": 204, "payment_plan_pending": 20, "refunded": 9}, "currency": {"eur": 27217}, "ordered_first": "2026-01-06", "ordered_last": "2026-06-13", "updated_first": "2026-01-06", "updated_last": "2026-10-22", "distinct_ticket_ids": 27217, "ticket_id_set_digest": "a106cf2b6f61e14d", "first_seen_on_page": 1016, "organiser_like_fields": {}}}
+   {"event_id": 372991, "festiflow": null, "name": "SONORA : AMELIE LENS, TRYM, NTO, ECZODIA, BILLX, VINI VICI", "start": "2024-10-25T16:30", "end": "2024-10-27T03:00", "rows": 21316, "valid": 19282, "ordered_first": "2024-06-04", "ordered_last": "2024-10-26", "updated_last": "2026-10-14", "currency": {"eur": 21316}}
+   {"event_id": 399931, "festiflow": null, "name": "MADAME LOYAL PARIS : XXL EDITION", "start": "2025-03-14T19:00", "end": "2025-03-16T05:00", "rows": 18132, "valid": 15562, "ordered_first": "2024-12-03", "ordered_last": "2025-03-16", "updated_last": "2026-09-15", "currency": {"eur": 18132}}
+   {"event_id": 408231, "festiflow": null, "name": "MADAME LOYAL x SONORA : BORDEAUX 13 & 14 JUIN", "start": "2025-06-13T16:00", "end": "2025-06-15T02:00", "rows": 12942, "valid": 10524, "ordered_first": "2024-12-18", "ordered_last": "2025-06-13", "updated_last": "2026-10-22", "currency": {"eur": 12942}}
+   {"event_id": 447561, "festiflow": null, "name": "SONORA x ALL NIGHT LONG - PARIS", "start": "2025-10-18T15:00", "end": "2025-10-19T04:00", "rows": 14435, "valid": 12105, "ordered_first": "2025-06-09", "ordered_last": "2025-10-19", "updated_last": "2026-09-24", "currency": {"eur": 14435}}
+   {"event_id": 433590, "festiflow": null, "name": "SONORA BORDEAUX : HALLOWEEN XXL", "start": "2025-10-31T16:00", "end": "2025-11-02T03:00", "rows": 29099, "valid": 25219, "ordered_first": "2025-04-10", "ordered_last": "2025-11-01", "updated_last": "2026-10-21", "currency": {"eur": 29099}}
+   {"event_id": 494642, "festiflow": "evt-px", "name": "MADAME LOYAL PARIS : XXL EDITION 2026", "start": "2026-03-13T19:00", "end": "2026-03-15T05:00", "rows": 27844, "valid": 22813, "ordered_first": "2025-12-02", "ordered_last": "2026-03-30", "updated_last": "2026-10-16", "currency": {"eur": 27844}}
+   {"event_id": 505434, "festiflow": "evt-sb", "name": "MADAME LOYAL x SONORA : BORDEAUX", "start": "2026-06-11T15:00", "end": "2026-06-14T02:00", "rows": 27217, "valid": 22767, "ordered_first": "2026-01-06", "ordered_last": "2026-06-13", "updated_last": "2026-10-22", "currency": {"eur": 27217}}
+   {"event_id": 544355, "festiflow": "evt-si", "name": "SONORA x IMPACT", "start": "2026-09-25T19:00", "end": "2026-09-27T04:00", "rows": 5132, "valid": 322, "ordered_first": "2026-05-04", "ordered_last": "2026-09-15", "updated_last": "2026-10-14", "currency": {"eur": 5132}}
+   {"event_id": 565846, "festiflow": null, "name": "SONORA BORDEAUX : 16-17 OCTOBRE", "start": "2026-10-16T15:00", "end": "2026-10-18T02:00", "rows": 27888, "valid": 24243, "ordered_first": "2026-07-02", "ordered_last": "2026-10-18", "updated_last": "2026-10-22", "currency": {"eur": 27888}}
+
+## M6 · fill over every walked row: {"rows": 184005, "filled": {"contact_birthday": 137321, "contact_company_name": 18, "contact_country": 173807, "contact_email": 181381, "contact_first_name": 182949, "contact_gender": 170359, "contact_id": 183888, "contact_last_name": 182672, "contact_locality": 173807, "contact_newsletter_optin": 74920, "contact_phone": 142729, "contact_postal_code": 173405, "currency": 184005, "deal_channel": 184005, "deal_id": 184005, "deal_price": 184005, "deal_producer_cost": 184005, "deal_service_fee": 184005, "deal_sub_category": 183833, "deal_title": 184005, "deal_user_service_fee": 184005, "deal_vat_rate": 184005, "deal_visibilities": 184005, "event_canceled_at": 5132, "event_created_at": 184005, "event_end_time": 184005, "event_id": 184005, "event_launched_at": 184005, "event_name": 184005, "event_published_at": 184005, "event_start_time": 184005, "order_id": 184005, "ordered_at": 184005, "payment_method": 160454, "ticket_canceled_at": 5078, "ticket_id": 184005, "ticket_scan_code": 183758, "ticket_scanned_at": 59287, "ticket_seating": 0, "ticket_status": 184005, "ticket_updated_at": 184005, "user_id": 174895, "utm_medium": 167490, "utm_source": 167490}}
+
+## M4 · sonora · every event the walk found that started before 2026-01-01, by event_id (first page)
+{"checked": 5, "answered_rows": 5, "empty": [], "errors": []}
+http: {"shotgun:404": 6, "shotgun:200": 2193, "shotgun:neterr": 7} · rate-limit headers: {}
+wall: 2503s
+private: 4 key(s) written for sealing (values not printed)
