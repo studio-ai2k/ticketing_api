@@ -1,10 +1,11 @@
 name: XR3 probe (read-only, never merged)
 
-# Festiflow guide round XR3 · 2026-10-21. Lives on `probe/xr3` only, never merged.
+# Festiflow guide round XR3 · 2026-10-22. Lives on `probe/xr3` only, never merged.
 # Read-only on both platforms: GET on Shotgun, GraphQL *queries* on DICE.
 # ticketing_api is PUBLIC and so are these logs: the probe prints and commits
-# field names, counts and timings only. Money totals are sealed (seal.sh) to a
-# key only the measurement seat holds and leave as an encrypted artifact.
+# field names, counts and timings only. Money totals and ticket-id sets are
+# sealed (seal.sh) to a key only the measurement seat holds and leave as an
+# encrypted 3-day artifact. Each secret is named only in the step that uses it.
 # A push to probe/xr3 touching guide/xr3/RUN runs it (first word = mode).
 on:
   workflow_dispatch:
@@ -29,37 +30,104 @@ jobs:
       - id: m
         run: echo "mode=$(awk 'NR==1{print $1}' guide/xr3/RUN)" >> "$GITHUB_OUTPUT"
 
-  inventory:
+  shotgun_episode:
     needs: mode
-    if: needs.mode.outputs.mode == 'inventory'
+    if: needs.mode.outputs.mode == 'measure'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 345
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Inventory (no API call)
+      - name: Shotgun EPISODE (M1 walk, M4, M6, M7)
         env:
-          SECRETS_JSON: ${{ toJSON(secrets) }}
-        run: python -I guide/xr3/probe_xr3.py inventory
+          SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
+          SHOTGUN_ORGANIZER_ID_EPISODE: ${{ secrets.SHOTGUN_ORGANIZER_ID_EPISODE }}
+        run: python -I guide/xr3/probe_xr3.py shotgun episode
       - name: Seal private outputs
-        run: bash guide/xr3/seal.sh inventory
+        if: always()
+        run: bash guide/xr3/seal.sh shotgun_episode
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: xr3-out-inventory
+          name: xr3-out-shotgun_episode
           path: guide/xr3/out/xr3_*
           retention-days: 3
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: xr3-sealed-inventory
+          name: xr3-sealed-shotgun_episode
+          path: guide/xr3/sealed/*
+          retention-days: 3
+          if-no-files-found: ignore
+
+  shotgun_sonora:
+    needs: mode
+    if: needs.mode.outputs.mode == 'measure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 345
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Shotgun SONORA (M1 walk, M4, M6, M7)
+        env:
+          SHOTGUN_TOKEN_SONORA: ${{ secrets.SHOTGUN_TOKEN_SONORA }}
+          SHOTGUN_ORGANIZER_ID_SONORA: ${{ secrets.SHOTGUN_ORGANIZER_ID_SONORA }}
+        run: python -I guide/xr3/probe_xr3.py shotgun sonora
+      - name: Seal private outputs
+        if: always()
+        run: bash guide/xr3/seal.sh shotgun_sonora
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xr3-out-shotgun_sonora
+          path: guide/xr3/out/xr3_*
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xr3-sealed-shotgun_sonora
+          path: guide/xr3/sealed/*
+          retention-days: 3
+          if-no-files-found: ignore
+
+  dice:
+    needs: mode
+    if: needs.mode.outputs.mode == 'measure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: DICE (M4 history, M6 fields and fills, M7 schema)
+        env:
+          DICE_TOKEN: ${{ secrets.DICE_TOKEN }}
+        run: python -I guide/xr3/probe_xr3.py dice
+      - name: Seal private outputs
+        if: always()
+        run: bash guide/xr3/seal.sh dice
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xr3-out-dice
+          path: guide/xr3/out/xr3_*
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xr3-sealed-dice
           path: guide/xr3/sealed/*
           retention-days: 3
           if-no-files-found: ignore
 
   commit:
-    needs: [mode, inventory]
-    if: always() && needs.mode.result == 'success'
+    needs: [mode, shotgun_episode, shotgun_sonora, dice]
+    if: always() && needs.mode.outputs.mode == 'measure'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -72,24 +140,25 @@ jobs:
         with:
           pattern: xr3-out-*
           path: _art
-      - name: Gather
+      - name: Gather (counts only; sealed artifacts are never downloaded here)
         run: |
           mkdir -p guide/xr3/out
           find _art -type f -name 'xr3_*' -exec cp {} guide/xr3/out/ \;
           ls -la guide/xr3/out
       - name: Leak check (refuse to commit on any hit)
         env:
-          SECRETS_JSON: ${{ toJSON(secrets) }}
+          SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
+          SHOTGUN_TOKEN_SONORA: ${{ secrets.SHOTGUN_TOKEN_SONORA }}
+          DICE_TOKEN: ${{ secrets.DICE_TOKEN }}
         run: |
           set -u
           umask 077
           f=$(mktemp)
-          python3 -I -c 'import json,os,re; d=json.loads(os.environ["SECRETS_JSON"]); [print(v) for k,v in d.items() if re.match(r"(SHOTGUN|DICE)_",k) and len(str(v).strip())>=6]' > "$f"
-          unset SECRETS_JSON
+          for v in "$SHOTGUN_TOKEN_EPISODE" "$SHOTGUN_TOKEN_SONORA" "$DICE_TOKEN"; do [ -n "$v" ] && printf '%s\n' "$v" >> "$f"; done
           hits=0
           if [ -s "$f" ] && grep -rqF -f "$f" guide/xr3/out; then echo "LEAK: a secret value"; hits=1; fi
           rm -f "$f"
-          for rx in 'token=[^*]' 'key=[^*]' '[Bb]earer [^*]' 'eyJ[A-Za-z0-9_-]{5,}\.' '[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}' 'https?://' 'contact_email"[: ]+"' 'ticket_scan_code"[: ]+"' '"money' '_cents"' 'seal_test' ; do
+          for rx in 'token=[^*]' 'key=[^*]' '[Bb]earer [^*]' 'eyJ[A-Za-z0-9_-]{5,}\.' '[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}' 'https?://' 'contact_email"[: ]+"' 'ticket_scan_code"[: ]+"' '"money' 'money_by_event' 'ticket_ids_by_event' 'resume_cursor' ; do
             if grep -rqE -- "$rx" guide/xr3/out; then echo "LEAK pattern: $rx"; hits=1; fi
           done
           [ "$hits" = 0 ] && echo "leak check: 0 hits"
