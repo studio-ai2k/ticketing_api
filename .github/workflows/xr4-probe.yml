@@ -1,0 +1,168 @@
+name: XR4 probe (read-only, never merged)
+
+# Festiflow guide round XR4 (R2) · 2026-10-25. Lives on `probe/xr4` only, never merged.
+# Read-only on both platforms: GET on Shotgun, GraphQL *queries* on DICE.
+# ticketing_api is PUBLIC and so are these logs: the probe prints and commits field names, counts and timings only.
+# Personal values are read in the runner, counted, and dropped; the cross-platform overlap uses HMAC hashes keyed by
+# os.urandom inside ONE process, never written. Each secret is named only in the step that uses it.
+#
+# A push touching guide/xr4/RUN creates the run. The `gate` job (no secret) then waits until guide/xr4/GO on this
+# branch holds THIS run's id: the seat pushes GO only after Leo approves the run in chat, and only right after a
+# `daily-dashboards` run has finished. No GO within the window ⇒ nothing runs.
+on:
+  push:
+    branches: [probe/xr4]
+    paths: [guide/xr4/RUN]
+  workflow_dispatch:
+
+concurrency:
+  group: xr4-probe
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      go: ${{ steps.wait.outputs.go }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: probe/xr4
+      - id: wait
+        env:
+          RUN_ID: ${{ github.run_id }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mode=$(awk 'NR==1{print $1}' guide/xr4/RUN)
+          echo "mode=$mode · this run = $RUN_ID · waiting for guide/xr4/GO == $RUN_ID"
+          [ "$mode" = "measure" ] || { echo "go=no" >> "$GITHUB_OUTPUT"; exit 0; }
+          end=$(( $(date +%s) + 320*60 ))
+          while [ "$(date +%s)" -lt "$end" ]; do
+            git fetch -q origin probe/xr4 || true
+            go=$(git show FETCH_HEAD:guide/xr4/GO 2>/dev/null | awk 'NR==1{print $1}')
+            if [ "$go" = "$RUN_ID" ]; then
+              echo "GO received $(date -u +%H:%M:%SZ)"
+              echo "daily-dashboards, the last five runs at release:"
+              gh run list -R "$GITHUB_REPOSITORY" --workflow daily-dashboards.yml -L 5 \
+                --json databaseId,status,conclusion,createdAt,updatedAt \
+                -q '.[] | "  \(.databaseId) \(.status) \(.conclusion) \(.createdAt) → \(.updatedAt)"' || true
+              echo "go=yes" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+            sleep 30
+          done
+          echo "no GO for this run within the window - nothing measured"
+          echo "go=no" >> "$GITHUB_OUTPUT"
+
+  dice:
+    needs: gate
+    if: needs.gate.outputs.go == 'yes'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: probe/xr4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: DICE (M1 the schema in full · M2 personal fill, counts only)
+        env:
+          DICE_TOKEN: ${{ secrets.DICE_TOKEN }}
+        run: python -I guide/xr4/probe_xr4.py dice
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xr4-out-dice
+          path: guide/xr4/out/xr4_*
+          retention-days: 3
+          if-no-files-found: ignore
+
+  overlap:
+    needs: [gate, dice]
+    if: always() && needs.gate.outputs.go == 'yes'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: probe/xr4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: M3 one person on both platforms (Shotgun EPISODE + DICE, run-keyed hashes, counts only)
+        env:
+          DICE_TOKEN: ${{ secrets.DICE_TOKEN }}
+          SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
+          SHOTGUN_ORGANIZER_ID_EPISODE: ${{ secrets.SHOTGUN_ORGANIZER_ID_EPISODE }}
+        run: python -I guide/xr4/probe_xr4.py overlap
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xr4-out-overlap
+          path: guide/xr4/out/xr4_*
+          retention-days: 3
+          if-no-files-found: ignore
+
+  commit:
+    needs: [gate, dice, overlap]
+    if: always() && needs.gate.outputs.go == 'yes'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: probe/xr4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: xr4-out-*
+          path: _art
+      - name: Gather (counts only)
+        run: |
+          mkdir -p guide/xr4/out
+          find _art -type f -name 'xr4_*' -exec cp {} guide/xr4/out/ \;
+          ls -la guide/xr4/out
+      - name: daily-dashboards runs around this one
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run list -R "$GITHUB_REPOSITORY" --workflow daily-dashboards.yml -L 4 \
+            --json databaseId,status,conclusion,createdAt,updatedAt \
+            -q '.[] | "  \(.databaseId) \(.status) \(.conclusion) \(.createdAt) → \(.updatedAt)"' || true
+      - name: Leak check (refuse to commit on any hit)
+        env:
+          SHOTGUN_TOKEN_EPISODE: ${{ secrets.SHOTGUN_TOKEN_EPISODE }}
+          DICE_TOKEN: ${{ secrets.DICE_TOKEN }}
+        run: |
+          set -u
+          umask 077
+          f=$(mktemp)
+          for v in "$SHOTGUN_TOKEN_EPISODE" "$DICE_TOKEN"; do [ -n "$v" ] && printf '%s\n' "$v" >> "$f"; done
+          hits=0
+          if [ -s "$f" ] && grep -rqF -f "$f" guide/xr4/out; then echo "LEAK: a secret value"; hits=1; fi
+          rm -f "$f"
+          for rx in 'token=[^*]' 'key=[^*]' '[Bb]earer [^*]' 'eyJ[A-Za-z0-9_-]{5,}\.' \
+                    '[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}' 'https?://' 'shotgun\.live/' \
+                    'contact_(email|phone|first_name|last_name)"[: ]+"' '"(email|phoneNumber|firstName|lastName|dob)": *"' \
+                    '(\+|00)33[ .]?[1-9]([ .]?[0-9]{2}){4}' '(^|[^0-9])0[1-9]([ .]?[0-9]{2}){4}([^0-9]|$)' \
+                    '[0-9a-f]{40,}' 'pagination\.next' ; do
+            if grep -rqE -- "$rx" guide/xr4/out; then echo "LEAK pattern: $rx"; hits=1; fi
+          done
+          [ "$hits" = 0 ] && echo "leak check: 0 hits"
+          exit $hits
+      - name: Commit counts to probe/xr4
+        run: |
+          git config user.name 'xr4-probe'
+          git config user.email 'xr4-probe@users.noreply.github.com'
+          git add guide/xr4/out
+          git commit -m "XR4 probe outputs (counts only) · run ${{ github.run_id }}" || echo 'nothing to commit'
+          git push origin HEAD:probe/xr4
