@@ -1,0 +1,16 @@
+viewer reachable: True
+M1: 83 types · 69 reachable from Viewer · 230 object fields · 51 input fields · 5 enums · 28 personal · 11 fields with arguments · mutations: ["claimTickets"]
+M2 selection (names only): address { countryCode county firstName lastName line1 line2 postCode town } adjustments { feesChange { category dice promoter } processedAt reason } commission diceCommission fan { dob email firstName id lastName optInPartners phoneNumber } fees { category dice promoter } fullPrice id ipCity ipCountry promoCode promoDiscount promoName promoType purchasedAt quantity returns { id reason returnedAt ticketId } salesChannel tickets { address { countryCode county firstName lastName line1 line2 postCode town } claimedAt commission diceCommission extras { commission diceCommission fees { category dice promoter } fullPrice hasSeparateAccessBarcode holder { dob email firstName id lastName optInPartners phoneNumber } id total variant { externalSku id name size sku } } fanSurveyAnswers { fanSurveyQuestion { title } value } fees { category dice promoter } fullPrice holder { dob email firstName id lastName optInPartners phoneNumber } id priceTier { allocation doorSalesPrice faceValue id name price time } seat { name } ticketType { archived description doorSalesPrice externalSkus faceValue id name price priceTierType ticketPoolId totalTicketAllocationQty } total } total
+M2 600413 Rennes 2026: 2145 orders (totalCount 2145) · 2871 tickets · 22 pages · 35.1s
+   fan: id 2145/2145 · firstName 2145/2145 · lastName 2145/2145 · email 2145/2145 · phoneNumber 2145/2145 · dob 2145/2145 · optInPartners 2145/2145
+   order address: 
+   holder: {"present": 2871, "null": 0, "same_fan_as_buyer": 2673, "different_fan_from_buyer": 198, "different_email_from_buyer": 198} · survey: {"tickets_with_answers": 0, "answers": 0, "answers_with_a_filled_answer_field": 0, "distinct_questions": 0}
+   transfers: {"totalCount": 181, "transfers_read": 181, "pages": 2, "tickets_transferred": 199, "transfers_per_ticket": {"1": 195, "2": 4}, "transferred_ticket_ids_still_in_order_listing": 199, "share_of_listed_tickets_transferred": 0.0693, "seconds": 1.3}
+   [03:12:05Z dice 526535: 50 pages]
+   [03:13:36Z dice 526535: 100 pages]
+M2 526535 Paris XXL 2026: 9967 orders (totalCount 9967) · 12679 tickets · 100 pages · 219.1s
+   fan: id 9967/9967 · firstName 9945/9967 · lastName 9945/9967 · email 9945/9967 · phoneNumber 9945/9967 · dob 9942/9967 · optInPartners 9967/9967
+   order address: 
+   holder: {"present": 12679, "null": 0, "same_fan_as_buyer": 10293, "different_fan_from_buyer": 2386, "different_email_from_buyer": 2366} · survey: {"tickets_with_answers": 0, "answers": 0, "answers_with_a_filled_answer_field": 0, "distinct_questions": 0}
+   transfers: {"totalCount": 2444, "transfers_read": 2444, "pages": 25, "tickets_transferred": 2414, "transfers_per_ticket": {"1": 2262, "2": 124, "3": 21, "4+": 7}, "transferred_ticket_ids_still_in_order_listing": 2414, "share_of_listed_tickets_transferred": 0.1904, "seconds": 24.9}
+calls {"dice": 152} · http {"dice:200": 152} · 257.3s

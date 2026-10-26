@@ -1,0 +1,423 @@
+{
+ "probe": "xr4",
+ "part": "overlap",
+ "started_utc": "2026-10-26T03:14:12Z",
+ "pace_s": 0.8,
+ "dice_pace_s": 0.25,
+ "M3": {
+  "pairs": [
+   {
+    "label": "Paris XXL 2026",
+    "shotgun": {
+     "event": 494642,
+     "label": "Paris XXL 2026",
+     "pages": 279,
+     "rows": 27844,
+     "status": {
+      "valid": 22813,
+      "resold": 5008,
+      "payment_plan_pending": 14,
+      "refunded": 3,
+      "canceled": 6
+     },
+     "channel": {
+      "online": 26182,
+      "invitation": 870,
+      "duplicata": 792
+     },
+     "fill": {
+      "contact_email": 27668,
+      "contact_phone": 22205
+     },
+     "seconds": 309.0,
+     "error": null
+    },
+    "dice": {
+     "orders": 9967,
+     "orders_with_listed_ticket": 9540,
+     "tickets": 12679,
+     "fan_email": 9945,
+     "fan_phone": 9945,
+     "holder_email": 12641,
+     "holder_phone": 12641,
+     "pages": 100,
+     "errors": {},
+     "totalCount": 9967,
+     "seconds": 85.3
+    },
+    "phone_classes": {
+     "shotgun": {
+      "FR mobile": 21930,
+      "empty": 5639,
+      "foreign": 228,
+      "FR wrong length": 23,
+      "FR other": 22,
+      "unusable length": 2
+     },
+     "dice": {
+      "FR mobile": 21906,
+      "foreign": 680,
+      "empty": 60
+     }
+    },
+    "emails_changed_by_trim_lower": {
+     "shotgun": 0,
+     "dice": 6
+    },
+    "distinct": {
+     "shotgun": {
+      "all": {
+       "emails": 20079,
+       "phones": 16127
+      },
+      "valid": {
+       "emails": 17831,
+       "phones": 14287
+      },
+      "valid_not_invitation": {
+       "emails": 17341,
+       "phones": 14014
+      }
+     },
+     "dice": {
+      "buyers_all": {
+       "emails": 9087,
+       "phones": 9087
+      },
+      "people_all": {
+       "emails": 11268,
+       "phones": 11268
+      },
+      "buyers_listed": {
+       "emails": 8868,
+       "phones": 8868
+      },
+      "holders": {
+       "emails": 10802,
+       "phones": 10802
+      }
+     }
+    },
+    "intersection": {
+     "PRIMARY: Shotgun valid × DICE buyers with a listed ticket": {
+      "shotgun_emails": 17831,
+      "dice_emails": 8868,
+      "emails_in_both": 129,
+      "union_emails": 26570,
+      "shotgun_phones": 14287,
+      "dice_phones": 8868,
+      "phones_in_both": 142,
+      "shotgun_people": 17860,
+      "shotgun_people_matched_by_email_or_phone": 168,
+      "share_of_dice_emails_also_on_shotgun": 0.0145,
+      "share_of_shotgun_emails_also_on_dice": 0.0072
+     },
+     "Shotgun valid minus invitations × DICE buyers listed": {
+      "shotgun_emails": 17341,
+      "dice_emails": 8868,
+      "emails_in_both": 113,
+      "union_emails": 26096,
+      "shotgun_phones": 14014,
+      "dice_phones": 8868,
+      "phones_in_both": 129,
+      "shotgun_people": 17370,
+      "shotgun_people_matched_by_email_or_phone": 150,
+      "share_of_dice_emails_also_on_shotgun": 0.0127,
+      "share_of_shotgun_emails_also_on_dice": 0.0065
+     },
+     "every Shotgun row × every DICE order": {
+      "shotgun_emails": 20079,
+      "dice_emails": 9087,
+      "emails_in_both": 200,
+      "union_emails": 28966,
+      "shotgun_phones": 16127,
+      "dice_phones": 9087,
+      "phones_in_both": 210,
+      "shotgun_people": 20110,
+      "shotgun_people_matched_by_email_or_phone": 247,
+      "share_of_dice_emails_also_on_shotgun": 0.022,
+      "share_of_shotgun_emails_also_on_dice": 0.01
+     },
+     "Shotgun valid × DICE buyers + holders": {
+      "shotgun_emails": 17831,
+      "dice_emails": 11268,
+      "emails_in_both": 189,
+      "union_emails": 28910,
+      "shotgun_phones": 14287,
+      "dice_phones": 11268,
+      "phones_in_both": 206,
+      "shotgun_people": 17860,
+      "shotgun_people_matched_by_email_or_phone": 239,
+      "share_of_dice_emails_also_on_shotgun": 0.0168,
+      "share_of_shotgun_emails_also_on_dice": 0.0106
+     }
+    }
+   },
+   {
+    "label": "Bordeaux 2026",
+    "shotgun": {
+     "event": 505434,
+     "label": "Bordeaux 2026",
+     "pages": 273,
+     "rows": 27217,
+     "status": {
+      "valid": 22767,
+      "resold": 4217,
+      "refunded": 9,
+      "payment_plan_pending": 20,
+      "canceled": 204
+     },
+     "channel": {
+      "online": 21655,
+      "invitation": 5562
+     },
+     "fill": {
+      "contact_email": 27091,
+      "contact_phone": 17936
+     },
+     "seconds": 300.5,
+     "error": null
+    },
+    "dice": {
+     "orders": 7158,
+     "orders_with_listed_ticket": 7020,
+     "tickets": 9329,
+     "fan_email": 7148,
+     "fan_phone": 7148,
+     "holder_email": 9317,
+     "holder_phone": 9317,
+     "pages": 72,
+     "errors": {},
+     "totalCount": 7158,
+     "seconds": 71.6
+    },
+    "phone_classes": {
+     "shotgun": {
+      "empty": 9281,
+      "FR mobile": 17809,
+      "FR wrong length": 11,
+      "foreign": 111,
+      "FR other": 5
+     },
+     "dice": {
+      "FR mobile": 16254,
+      "foreign": 209,
+      "empty": 22,
+      "FR wrong length": 2
+     }
+    },
+    "emails_changed_by_trim_lower": {
+     "shotgun": 0,
+     "dice": 2
+    },
+    "distinct": {
+     "shotgun": {
+      "all": {
+       "emails": 18091,
+       "phones": 12244
+      },
+      "valid": {
+       "emails": 16485,
+       "phones": 11040
+      },
+      "valid_not_invitation": {
+       "emails": 13856,
+       "phones": 10278
+      }
+     },
+     "dice": {
+      "buyers_all": {
+       "emails": 6690,
+       "phones": 6690
+      },
+      "buyers_listed": {
+       "emails": 6612,
+       "phones": 6612
+      },
+      "people_all": {
+       "emails": 8288,
+       "phones": 8288
+      },
+      "holders": {
+       "emails": 8067,
+       "phones": 8067
+      }
+     }
+    },
+    "intersection": {
+     "PRIMARY: Shotgun valid × DICE buyers with a listed ticket": {
+      "shotgun_emails": 16485,
+      "dice_emails": 6612,
+      "emails_in_both": 309,
+      "union_emails": 22788,
+      "shotgun_phones": 11040,
+      "dice_phones": 6612,
+      "phones_in_both": 199,
+      "shotgun_people": 16506,
+      "shotgun_people_matched_by_email_or_phone": 335,
+      "share_of_dice_emails_also_on_shotgun": 0.0467,
+      "share_of_shotgun_emails_also_on_dice": 0.0187
+     },
+     "Shotgun valid minus invitations × DICE buyers listed": {
+      "shotgun_emails": 13856,
+      "dice_emails": 6612,
+      "emails_in_both": 136,
+      "union_emails": 20332,
+      "shotgun_phones": 10278,
+      "dice_phones": 6612,
+      "phones_in_both": 129,
+      "shotgun_people": 13877,
+      "shotgun_people_matched_by_email_or_phone": 158,
+      "share_of_dice_emails_also_on_shotgun": 0.0206,
+      "share_of_shotgun_emails_also_on_dice": 0.0098
+     },
+     "every Shotgun row × every DICE order": {
+      "shotgun_emails": 18091,
+      "dice_emails": 6690,
+      "emails_in_both": 367,
+      "union_emails": 24414,
+      "shotgun_phones": 12244,
+      "dice_phones": 6690,
+      "phones_in_both": 253,
+      "shotgun_people": 18114,
+      "shotgun_people_matched_by_email_or_phone": 398,
+      "share_of_dice_emails_also_on_shotgun": 0.0549,
+      "share_of_shotgun_emails_also_on_dice": 0.0203
+     },
+     "Shotgun valid × DICE buyers + holders": {
+      "shotgun_emails": 16485,
+      "dice_emails": 8288,
+      "emails_in_both": 367,
+      "union_emails": 24406,
+      "shotgun_phones": 11040,
+      "dice_phones": 8288,
+      "phones_in_both": 243,
+      "shotgun_people": 16506,
+      "shotgun_people_matched_by_email_or_phone": 397,
+      "share_of_dice_emails_also_on_shotgun": 0.0443,
+      "share_of_shotgun_emails_also_on_dice": 0.0223
+     }
+    }
+   }
+  ],
+  "fideles": {
+   "2026_event": 494642,
+   "rows": [
+    {
+     "event": 399931,
+     "label": "Paris XXL 2025",
+     "pull": {
+      "event": 399931,
+      "label": "Paris XXL 2025",
+      "pages": 182,
+      "rows": 18132,
+      "status": {
+       "valid": 15562,
+       "resold": 2554,
+       "canceled": 15,
+       "refunded": 1
+      },
+      "channel": {
+       "online": 17545,
+       "invitation": 587
+      },
+      "fill": {
+       "contact_email": 17984,
+       "contact_phone": 15201
+      },
+      "seconds": 204.6,
+      "error": null
+     },
+     "all_emails_2025": 13592,
+     "valid_emails_2025": 12270,
+     "all_emails_2026": 20079,
+     "valid_emails_2026": 17831,
+     "all_in_both": 2391,
+     "valid_in_both": 2015,
+     "valid_share_of_2026_returning": 0.113
+    },
+    {
+     "event": 406642,
+     "label": "Paris XXL 2025 presale (extra)",
+     "pull": {
+      "event": 406642,
+      "label": "Paris XXL 2025 presale (extra)",
+      "pages": 16,
+      "rows": 1543,
+      "status": {
+       "valid": 1231,
+       "resold": 312
+      },
+      "channel": {
+       "online": 1543
+      },
+      "fill": {
+       "contact_email": 1540,
+       "contact_phone": 1469
+      },
+      "seconds": 17.5,
+      "error": null
+     },
+     "all_emails_2025": 1106,
+     "valid_emails_2025": 982,
+     "all_emails_2026": 20079,
+     "valid_emails_2026": 17831,
+     "all_in_both": 212,
+     "valid_in_both": 175,
+     "valid_share_of_2026_returning": 0.0098
+    }
+   ],
+   "2025_main_plus_presale": {
+    "all": {
+     "emails_2025": 14608,
+     "in_both": 2581
+    },
+    "valid": {
+     "emails_2025": 13193,
+     "in_both": 2177
+    }
+   }
+  },
+  "both_events_shotgun_valid_distinct_emails": 33775
+ },
+ "calls": {
+  "shotgun": 750,
+  "dice": 172
+ },
+ "http_status_counts": {
+  "shotgun:200": 750,
+  "dice:200": 172
+ },
+ "response_header_names": {
+  "shotgun": [
+   "access-control-allow-headers",
+   "access-control-allow-methods",
+   "access-control-allow-origin",
+   "age",
+   "cache-control",
+   "connection",
+   "content-type",
+   "date",
+   "server",
+   "strict-transport-security",
+   "transfer-encoding",
+   "x-matched-path",
+   "x-vercel-cache",
+   "x-vercel-id"
+  ],
+  "dice": [
+   "access-control-allow-credentials",
+   "access-control-allow-origin",
+   "access-control-expose-headers",
+   "cache-control",
+   "connection",
+   "content-length",
+   "content-type",
+   "date",
+   "strict-transport-security",
+   "x-request-id"
+  ]
+ },
+ "rate_limit_headers_numeric": {},
+ "wall_seconds": 988.7
+}

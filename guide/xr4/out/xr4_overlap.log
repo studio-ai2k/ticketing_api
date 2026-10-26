@@ -1,0 +1,26 @@
+   [03:16:02Z shotgun 494642: 100 pages]
+   [03:17:52Z shotgun 494642: 200 pages]
+M3 shotgun 494642 Paris XXL 2026: 27844 rows · 279 pages · 309.0s · email 27668 · phone 22205
+   [03:20:02Z dice 526535: 50 pages]
+   [03:20:46Z dice 526535: 100 pages]
+M3 dice 526535 Paris XXL 2026: {"orders": 9967, "orders_with_listed_ticket": 9540, "tickets": 12679, "fan_email": 9945, "fan_phone": 9945, "holder_email": 12641, "holder_phone": 12641, "pages": 100, "errors": {}, "totalCount": 9967, "seconds": 85.3}
+M3 Paris XXL 2026 · PRIMARY: Shotgun valid × DICE buyers with a listed ticket: {"shotgun_emails": 17831, "dice_emails": 8868, "emails_in_both": 129, "union_emails": 26570, "shotgun_phones": 14287, "dice_phones": 8868, "phones_in_both": 142, "shotgun_people": 17860, "shotgun_people_matched_by_email_or_phone": 168, "share_of_dice_emails_also_on_shotgun": 0.0145, "share_of_shotgun_emails_also_on_dice": 0.0072}
+M3 Paris XXL 2026 · Shotgun valid minus invitations × DICE buyers listed: {"shotgun_emails": 17341, "dice_emails": 8868, "emails_in_both": 113, "union_emails": 26096, "shotgun_phones": 14014, "dice_phones": 8868, "phones_in_both": 129, "shotgun_people": 17370, "shotgun_people_matched_by_email_or_phone": 150, "share_of_dice_emails_also_on_shotgun": 0.0127, "share_of_shotgun_emails_also_on_dice": 0.0065}
+M3 Paris XXL 2026 · every Shotgun row × every DICE order: {"shotgun_emails": 20079, "dice_emails": 9087, "emails_in_both": 200, "union_emails": 28966, "shotgun_phones": 16127, "dice_phones": 9087, "phones_in_both": 210, "shotgun_people": 20110, "shotgun_people_matched_by_email_or_phone": 247, "share_of_dice_emails_also_on_shotgun": 0.022, "share_of_shotgun_emails_also_on_dice": 0.01}
+M3 Paris XXL 2026 · Shotgun valid × DICE buyers + holders: {"shotgun_emails": 17831, "dice_emails": 11268, "emails_in_both": 189, "union_emails": 28910, "shotgun_phones": 14287, "dice_phones": 11268, "phones_in_both": 206, "shotgun_people": 17860, "shotgun_people_matched_by_email_or_phone": 239, "share_of_dice_emails_also_on_shotgun": 0.0168, "share_of_shotgun_emails_also_on_dice": 0.0106}
+   [03:22:37Z shotgun 505434: 100 pages]
+   [03:24:26Z shotgun 505434: 200 pages]
+M3 shotgun 505434 Bordeaux 2026: 27217 rows · 273 pages · 300.5s · email 27091 · phone 17936
+   [03:26:37Z dice 540197: 50 pages]
+M3 dice 540197 Bordeaux 2026: {"orders": 7158, "orders_with_listed_ticket": 7020, "tickets": 9329, "fan_email": 7148, "fan_phone": 7148, "holder_email": 9317, "holder_phone": 9317, "pages": 72, "errors": {}, "totalCount": 7158, "seconds": 71.6}
+M3 Bordeaux 2026 · PRIMARY: Shotgun valid × DICE buyers with a listed ticket: {"shotgun_emails": 16485, "dice_emails": 6612, "emails_in_both": 309, "union_emails": 22788, "shotgun_phones": 11040, "dice_phones": 6612, "phones_in_both": 199, "shotgun_people": 16506, "shotgun_people_matched_by_email_or_phone": 335, "share_of_dice_emails_also_on_shotgun": 0.0467, "share_of_shotgun_emails_also_on_dice": 0.0187}
+M3 Bordeaux 2026 · Shotgun valid minus invitations × DICE buyers listed: {"shotgun_emails": 13856, "dice_emails": 6612, "emails_in_both": 136, "union_emails": 20332, "shotgun_phones": 10278, "dice_phones": 6612, "phones_in_both": 129, "shotgun_people": 13877, "shotgun_people_matched_by_email_or_phone": 158, "share_of_dice_emails_also_on_shotgun": 0.0206, "share_of_shotgun_emails_also_on_dice": 0.0098}
+M3 Bordeaux 2026 · every Shotgun row × every DICE order: {"shotgun_emails": 18091, "dice_emails": 6690, "emails_in_both": 367, "union_emails": 24414, "shotgun_phones": 12244, "dice_phones": 6690, "phones_in_both": 253, "shotgun_people": 18114, "shotgun_people_matched_by_email_or_phone": 398, "share_of_dice_emails_also_on_shotgun": 0.0549, "share_of_shotgun_emails_also_on_dice": 0.0203}
+M3 Bordeaux 2026 · Shotgun valid × DICE buyers + holders: {"shotgun_emails": 16485, "dice_emails": 8288, "emails_in_both": 367, "union_emails": 24406, "shotgun_phones": 11040, "dice_phones": 8288, "phones_in_both": 243, "shotgun_people": 16506, "shotgun_people_matched_by_email_or_phone": 397, "share_of_dice_emails_also_on_shotgun": 0.0443, "share_of_shotgun_emails_also_on_dice": 0.0223}
+   [03:28:51Z shotgun 399931: 100 pages]
+M3 shotgun 399931 Paris XXL 2025: 18132 rows · 182 pages · 204.6s · email 17984 · phone 15201
+M3 fidèles Paris XXL 2025 → 2026: {"event": 399931, "label": "Paris XXL 2025", "all_emails_2025": 13592, "valid_emails_2025": 12270, "all_emails_2026": 20079, "valid_emails_2026": 17831, "all_in_both": 2391, "valid_in_both": 2015, "valid_share_of_2026_returning": 0.113}
+M3 shotgun 406642 Paris XXL 2025 presale (extra): 1543 rows · 16 pages · 17.5s · email 1540 · phone 1469
+M3 fidèles Paris XXL 2025 presale (extra) → 2026: {"event": 406642, "label": "Paris XXL 2025 presale (extra)", "all_emails_2025": 1106, "valid_emails_2025": 982, "all_emails_2026": 20079, "valid_emails_2026": 17831, "all_in_both": 212, "valid_in_both": 175, "valid_share_of_2026_returning": 0.0098}
+M3 fidèles 2025 (main + presale) → 2026: {"all": {"emails_2025": 14608, "in_both": 2581}, "valid": {"emails_2025": 13193, "in_both": 2177}}
+calls {"shotgun": 750, "dice": 172} · http {"shotgun:200": 750, "dice:200": 172} · 988.7s

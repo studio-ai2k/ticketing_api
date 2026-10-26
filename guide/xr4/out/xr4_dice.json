@@ -1,0 +1,1064 @@
+{
+ "probe": "xr4",
+ "part": "dice",
+ "started_utc": "2026-10-26T03:09:44Z",
+ "pace_s": 0.8,
+ "dice_pace_s": 0.25,
+ "viewer_ok": true,
+ "M1": {
+  "introspection": {
+   "status": 200,
+   "seconds": 1.62,
+   "bytes": 77606,
+   "with_descriptions": true,
+   "types_total": 83,
+   "types_non_introspection": 75,
+   "query_root": "RootQueryType",
+   "mutation_root": "RootMutationType",
+   "subscription_root": null
+  },
+  "query_root_fields": [
+   {
+    "field": "node",
+    "type": "Node",
+    "args": [
+     "id: ID!"
+    ]
+   },
+   {
+    "field": "viewer",
+    "type": "Viewer",
+    "args": []
+   }
+  ],
+  "mutations_NEVER_CALLED": [
+   {
+    "field": "claimTickets",
+    "type": "ClaimTicketsPayload",
+    "args": [
+     "input: ClaimTicketsInput!"
+    ]
+   }
+  ],
+  "reachable_from_viewer": 69,
+  "not_reachable_from_viewer": [
+   "ClaimTicketsInput",
+   "ClaimTicketsPayload",
+   "RootMutationType",
+   "RootQueryType",
+   "ValidationMessage",
+   "ValidationOption"
+  ],
+  "object_types_reachable": [
+   "Address",
+   "Adjustment",
+   "Artist",
+   "Event",
+   "EventConnection",
+   "EventEdge",
+   "Extra",
+   "ExtraConnection",
+   "ExtraEdge",
+   "Fan",
+   "FanSurveyAnswer",
+   "FanSurveyQuestion",
+   "Genre",
+   "GenreConnection",
+   "GenreEdge",
+   "GenreType",
+   "GenreTypesConnection",
+   "GenreTypesEdge",
+   "Image",
+   "Node",
+   "Order",
+   "OrderConnection",
+   "OrderEdge",
+   "PageInfo",
+   "PriceTier",
+   "Product",
+   "Return",
+   "ReturnConnection",
+   "ReturnEdge",
+   "Seat",
+   "SocialLink",
+   "Ticket",
+   "TicketConnection",
+   "TicketEdge",
+   "TicketFee",
+   "TicketPool",
+   "TicketTransfer",
+   "TicketTransferConnection",
+   "TicketTransferEdge",
+   "TicketType",
+   "Variant",
+   "Venue",
+   "VenueSpace",
+   "Viewer"
+  ],
+  "field_rows": 230,
+  "fields_personal": 28,
+  "fields_credential": [
+   "Extra.code",
+   "Ticket.code"
+  ],
+  "fields_with_arguments": [
+   "Viewer.events(after: String, before: String, first: Int, last: Int, where: EventWhereInput)",
+   "Viewer.extras(after: String, before: String, first: Int, last: Int, where: ExtraWhereInput)",
+   "Viewer.genreTypes(after: String, before: String, first: Int, last: Int, where: GenreTypeWhereInput)",
+   "Viewer.orders(after: String, before: String, first: Int, last: Int, where: OrderWhereInput)",
+   "Viewer.returns(after: String, before: String, first: Int, last: Int, where: ReturnWhereInput)",
+   "Viewer.ticketTransfers(after: String, before: String, first: Int, last: Int, where: TicketTransferWhereInput)",
+   "Viewer.tickets(after: String, before: String, first: Int, last: Int, where: TicketWhereInput)",
+   "Event.extras(after: String, before: String, first: Int, last: Int, where: ExtraWhereInput)",
+   "Event.tickets(after: String, before: String, first: Int, last: Int)",
+   "GenreType.genres(after: String, before: String, first: Int, last: Int)",
+   "Ticket.extras(where: TicketExtraWhereInput)"
+  ],
+  "tk1_stored_or_selected": 43,
+  "enums": {
+   "EventState": [
+    "APPROVED",
+    "ARCHIVED",
+    "CANCELLED",
+    "DECLINED",
+    "DRAFT",
+    "REVIEW",
+    "SUBMITTED"
+   ],
+   "EventCostCurrency": [
+    "AED",
+    "AFN",
+    "ALL",
+    "AMD",
+    "AOA",
+    "ARS",
+    "AUD",
+    "AWG",
+    "AZN",
+    "BAM",
+    "BBD",
+    "BDT",
+    "BGN",
+    "BHD",
+    "BIF",
+    "BMD",
+    "BND",
+    "BOB",
+    "BRL",
+    "BWP",
+    "BYR",
+    "BZD",
+    "CAD",
+    "CDF",
+    "CHF",
+    "CLP",
+    "CNY",
+    "COP",
+    "CRC",
+    "CVE",
+    "CZK",
+    "DJF",
+    "DKK",
+    "DOP",
+    "DZD",
+    "EGP",
+    "ERN",
+    "ETB",
+    "EUR",
+    "GBP",
+    "GEL",
+    "GHS",
+    "GNF",
+    "GTQ",
+    "GYD",
+    "HKD",
+    "HNL",
+    "HRK",
+    "HUF",
+    "IDR",
+    "ILS",
+    "INR",
+    "IQD",
+    "IRR",
+    "ISK",
+    "JMD",
+    "JOD",
+    "JPY",
+    "KES",
+    "KHR",
+    "KMF",
+    "KRW",
+    "KWD",
+    "KZT",
+    "LBP",
+    "LKR",
+    "LRD",
+    "LTL",
+    "LVL",
+    "LYD",
+    "MAD",
+    "MDL",
+    "MGA",
+    "MKD",
+    "MMK",
+    "MOP",
+    "MUR",
+    "MXN",
+    "MYR",
+    "MZN",
+    "NAD",
+    "NGN",
+    "NIO",
+    "NOK",
+    "NPR",
+    "NZD",
+    "OMR",
+    "PAB",
+    "PEN",
+    "PHP",
+    "PKR",
+    "PLN",
+    "PYG",
+    "QAR",
+    "RON",
+    "RSD",
+    "RUB",
+    "RWF",
+    "SAR",
+    "SDG",
+    "SEK",
+    "SGD",
+    "SOS",
+    "STD",
+    "SYP",
+    "THB",
+    "TND",
+    "TOP",
+    "TRY",
+    "TTD",
+    "TWD",
+    "TZS",
+    "UAH",
+    "UGX",
+    "USD",
+    "UYU",
+    "UZS",
+    "VEF",
+    "VND",
+    "XAF",
+    "XOF",
+    "YER",
+    "ZAR",
+    "ZMK"
+   ],
+   "EventImageType": [
+    "BRAND",
+    "LANDSCAPE",
+    "PORTRAIT",
+    "SQUARE"
+   ],
+   "PriceTierTypes": [
+    "allocation",
+    "time"
+   ],
+   "TicketFeeCategory": [
+    "ADDITIONAL_PROMOTER",
+    "BOOKING",
+    "BOX_OFFICE",
+    "CHARITY_DONATION",
+    "DEPOSIT",
+    "EXTRA_CHARGE",
+    "FACILITY",
+    "FOOD_AND_BEVERAGE",
+    "MEET_AND_GREET",
+    "PAID_WAITING_LIST",
+    "FULFILMENT",
+    "PRESALE",
+    "PROCESSING",
+    "SALES_TAX",
+    "TIER_DIFF",
+    "VENDOR",
+    "VENUE",
+    "VENUE_LEVY"
+   ]
+  },
+  "unions": {},
+  "seconds": 1.9
+ },
+ "M2": {
+  "events": {
+   "600413": {
+    "label": "Rennes 2026",
+    "orders_stats": {
+     "pages": 22,
+     "orders": 2145,
+     "errors": {},
+     "page_size_used": 100,
+     "totalCount": 2145,
+     "seconds": 33.9
+    },
+    "tickets_listed": 2871,
+    "orders_without_listed_ticket": 43,
+    "distinct_buyers_by_fan_id": 1970,
+    "distinct_holders_by_fan_id": 2074,
+    "holder": {
+     "present": 2871,
+     "null": 0,
+     "same_fan_as_buyer": 2673,
+     "different_fan_from_buyer": 198,
+     "different_email_from_buyer": 198
+    },
+    "fanSurveyAnswers": {
+     "tickets_with_answers": 0,
+     "answers": 0,
+     "answers_with_a_filled_answer_field": 0,
+     "distinct_questions": 0
+    },
+    "transfers": {
+     "totalCount": 181,
+     "transfers_read": 181,
+     "pages": 2,
+     "tickets_transferred": 199,
+     "transfers_per_ticket": {
+      "1": 195,
+      "2": 4
+     },
+     "transferred_ticket_ids_still_in_order_listing": 199,
+     "share_of_listed_tickets_transferred": 0.0693,
+     "seconds": 1.3,
+     "errors": {}
+    },
+    "fill": {
+     "Order.address": {
+      "n": 2145,
+      "filled": 0
+     },
+     "Order.adjustments": {
+      "n": 2145,
+      "filled": 0
+     },
+     "Order.commission": {
+      "n": 2145,
+      "filled": 2145
+     },
+     "Order.diceCommission": {
+      "n": 2145,
+      "filled": 2145
+     },
+     "Order.fan": {
+      "n": 2145,
+      "filled": 2145
+     },
+     "Order.fan.dob": {
+      "n": 2145,
+      "filled": 2145
+     },
+     "Order.fan.email": {
+      "n": 2145,
+      "filled": 2145
+     },
+     "Order.fan.firstName": {
+      "n": 2145,
+      "filled": 2145
+     },
+     "Order.fan.id": {
+      "n": 2145,
+      "filled": 2145
+     },
+     "Order.fan.lastName": {
+      "n": 2145,
+      "filled": 2145
+     },
+     "Order.fan.optInPartners": {
+      "n": 2145,
+      "filled": 2145
+     },
+     "Order.fan.phoneNumber": {
+      "n": 2145,
+      "filled": 2145
+     },
+     "Order.fees": {
+      "n": 2145,
+      "filled": 2145,
+      "non_empty_lists": 2145,
+      "items": 4290
+     },
+     "Order.fees[].category": {
+      "n": 4290,
+      "filled": 4290
+     },
+     "Order.fees[].dice": {
+      "n": 4290,
+      "filled": 4290
+     },
+     "Order.fees[].promoter": {
+      "n": 4290,
+      "filled": 4290
+     },
+     "Order.fullPrice": {
+      "n": 2145,
+      "filled": 2145
+     },
+     "Order.id": {
+      "n": 2145,
+      "filled": 2145
+     },
+     "Order.ipCity": {
+      "n": 2145,
+      "filled": 1106
+     },
+     "Order.ipCountry": {
+      "n": 2145,
+      "filled": 2145
+     },
+     "Order.promoCode": {
+      "n": 2145,
+      "filled": 0
+     },
+     "Order.promoDiscount": {
+      "n": 2145,
+      "filled": 0
+     },
+     "Order.promoName": {
+      "n": 2145,
+      "filled": 0
+     },
+     "Order.promoType": {
+      "n": 2145,
+      "filled": 0
+     },
+     "Order.purchasedAt": {
+      "n": 2145,
+      "filled": 2145
+     },
+     "Order.quantity": {
+      "n": 2145,
+      "filled": 2145
+     },
+     "Order.returns": {
+      "n": 2145,
+      "filled": 45,
+      "non_empty_lists": 45,
+      "items": 58
+     },
+     "Order.returns[].id": {
+      "n": 58,
+      "filled": 58
+     },
+     "Order.returns[].reason": {
+      "n": 58,
+      "filled": 58
+     },
+     "Order.returns[].returnedAt": {
+      "n": 58,
+      "filled": 58
+     },
+     "Order.returns[].ticketId": {
+      "n": 58,
+      "filled": 58
+     },
+     "Order.salesChannel": {
+      "n": 2145,
+      "filled": 2145
+     },
+     "Order.tickets": {
+      "n": 2145,
+      "filled": 2102,
+      "non_empty_lists": 2102,
+      "items": 2871
+     },
+     "Order.tickets[].address": {
+      "n": 2871,
+      "filled": 0
+     },
+     "Order.tickets[].claimedAt": {
+      "n": 2871,
+      "filled": 0
+     },
+     "Order.tickets[].commission": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].diceCommission": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].extras": {
+      "n": 2871,
+      "filled": 0
+     },
+     "Order.tickets[].fanSurveyAnswers": {
+      "n": 2871,
+      "filled": 0
+     },
+     "Order.tickets[].fees": {
+      "n": 2871,
+      "filled": 2871,
+      "non_empty_lists": 2871,
+      "items": 5742
+     },
+     "Order.tickets[].fees[].category": {
+      "n": 5742,
+      "filled": 5742
+     },
+     "Order.tickets[].fees[].dice": {
+      "n": 5742,
+      "filled": 5742
+     },
+     "Order.tickets[].fees[].promoter": {
+      "n": 5742,
+      "filled": 5742
+     },
+     "Order.tickets[].fullPrice": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].holder": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].holder.dob": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].holder.email": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].holder.firstName": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].holder.id": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].holder.lastName": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].holder.optInPartners": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].holder.phoneNumber": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].id": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].priceTier": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].priceTier.allocation": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].priceTier.doorSalesPrice": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].priceTier.faceValue": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].priceTier.id": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].priceTier.name": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].priceTier.price": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].priceTier.time": {
+      "n": 2871,
+      "filled": 0
+     },
+     "Order.tickets[].seat": {
+      "n": 2871,
+      "filled": 0
+     },
+     "Order.tickets[].ticketType": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].ticketType.archived": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].ticketType.description": {
+      "n": 2871,
+      "filled": 0
+     },
+     "Order.tickets[].ticketType.doorSalesPrice": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].ticketType.externalSkus": {
+      "n": 2871,
+      "filled": 0
+     },
+     "Order.tickets[].ticketType.faceValue": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].ticketType.id": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].ticketType.name": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].ticketType.price": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].ticketType.priceTierType": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].ticketType.ticketPoolId": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].ticketType.totalTicketAllocationQty": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.tickets[].total": {
+      "n": 2871,
+      "filled": 2871
+     },
+     "Order.total": {
+      "n": 2145,
+      "filled": 2145
+     }
+    },
+    "enum_values": {
+     "Order.fees[].category": {
+      "BOOKING": 2145,
+      "PROCESSING": 2145
+     },
+     "Order.tickets[].fees[].category": {
+      "BOOKING": 2871,
+      "PROCESSING": 2871
+     },
+     "Order.tickets[].ticketType.priceTierType": {
+      "allocation": 2871
+     }
+    },
+    "seconds": 35.1
+   },
+   "526535": {
+    "label": "Paris XXL 2026",
+    "orders_stats": {
+     "pages": 100,
+     "orders": 9967,
+     "errors": {},
+     "page_size_used": 100,
+     "totalCount": 9967,
+     "seconds": 194.2
+    },
+    "tickets_listed": 12679,
+    "orders_without_listed_ticket": 427,
+    "distinct_buyers_by_fan_id": 9108,
+    "distinct_holders_by_fan_id": 10836,
+    "holder": {
+     "present": 12679,
+     "null": 0,
+     "same_fan_as_buyer": 10293,
+     "different_fan_from_buyer": 2386,
+     "different_email_from_buyer": 2366
+    },
+    "fanSurveyAnswers": {
+     "tickets_with_answers": 0,
+     "answers": 0,
+     "answers_with_a_filled_answer_field": 0,
+     "distinct_questions": 0
+    },
+    "transfers": {
+     "totalCount": 2444,
+     "transfers_read": 2444,
+     "pages": 25,
+     "tickets_transferred": 2414,
+     "transfers_per_ticket": {
+      "1": 2262,
+      "2": 124,
+      "3": 21,
+      "4+": 7
+     },
+     "transferred_ticket_ids_still_in_order_listing": 2414,
+     "share_of_listed_tickets_transferred": 0.1904,
+     "seconds": 24.9,
+     "errors": {}
+    },
+    "fill": {
+     "Order.address": {
+      "n": 9967,
+      "filled": 0
+     },
+     "Order.adjustments": {
+      "n": 9967,
+      "filled": 0
+     },
+     "Order.commission": {
+      "n": 9967,
+      "filled": 9967
+     },
+     "Order.diceCommission": {
+      "n": 9967,
+      "filled": 9967
+     },
+     "Order.fan": {
+      "n": 9967,
+      "filled": 9967
+     },
+     "Order.fan.dob": {
+      "n": 9967,
+      "filled": 9942
+     },
+     "Order.fan.email": {
+      "n": 9967,
+      "filled": 9945
+     },
+     "Order.fan.firstName": {
+      "n": 9967,
+      "filled": 9945
+     },
+     "Order.fan.id": {
+      "n": 9967,
+      "filled": 9967
+     },
+     "Order.fan.lastName": {
+      "n": 9967,
+      "filled": 9945
+     },
+     "Order.fan.optInPartners": {
+      "n": 9967,
+      "filled": 9967
+     },
+     "Order.fan.phoneNumber": {
+      "n": 9967,
+      "filled": 9945
+     },
+     "Order.fees": {
+      "n": 9967,
+      "filled": 9963,
+      "non_empty_lists": 9963,
+      "items": 20212
+     },
+     "Order.fees[].category": {
+      "n": 20212,
+      "filled": 20212
+     },
+     "Order.fees[].dice": {
+      "n": 20212,
+      "filled": 20212
+     },
+     "Order.fees[].promoter": {
+      "n": 20212,
+      "filled": 20212
+     },
+     "Order.fullPrice": {
+      "n": 9967,
+      "filled": 9967
+     },
+     "Order.id": {
+      "n": 9967,
+      "filled": 9967
+     },
+     "Order.ipCity": {
+      "n": 9967,
+      "filled": 5951
+     },
+     "Order.ipCountry": {
+      "n": 9967,
+      "filled": 9962
+     },
+     "Order.promoCode": {
+      "n": 9967,
+      "filled": 22
+     },
+     "Order.promoDiscount": {
+      "n": 9967,
+      "filled": 22
+     },
+     "Order.promoName": {
+      "n": 9967,
+      "filled": 22
+     },
+     "Order.promoType": {
+      "n": 9967,
+      "filled": 22
+     },
+     "Order.purchasedAt": {
+      "n": 9967,
+      "filled": 9967
+     },
+     "Order.quantity": {
+      "n": 9967,
+      "filled": 9967
+     },
+     "Order.returns": {
+      "n": 9967,
+      "filled": 437,
+      "non_empty_lists": 437,
+      "items": 563
+     },
+     "Order.returns[].id": {
+      "n": 563,
+      "filled": 563
+     },
+     "Order.returns[].reason": {
+      "n": 563,
+      "filled": 563
+     },
+     "Order.returns[].returnedAt": {
+      "n": 563,
+      "filled": 563
+     },
+     "Order.returns[].ticketId": {
+      "n": 563,
+      "filled": 563
+     },
+     "Order.salesChannel": {
+      "n": 9967,
+      "filled": 9967
+     },
+     "Order.tickets": {
+      "n": 9967,
+      "filled": 9540,
+      "non_empty_lists": 9540,
+      "items": 12679
+     },
+     "Order.tickets[].address": {
+      "n": 12679,
+      "filled": 0
+     },
+     "Order.tickets[].claimedAt": {
+      "n": 12679,
+      "filled": 0
+     },
+     "Order.tickets[].commission": {
+      "n": 12679,
+      "filled": 12679
+     },
+     "Order.tickets[].diceCommission": {
+      "n": 12679,
+      "filled": 12679
+     },
+     "Order.tickets[].extras": {
+      "n": 12679,
+      "filled": 0
+     },
+     "Order.tickets[].fanSurveyAnswers": {
+      "n": 12679,
+      "filled": 0
+     },
+     "Order.tickets[].fees": {
+      "n": 12679,
+      "filled": 12670,
+      "non_empty_lists": 12670,
+      "items": 25679
+     },
+     "Order.tickets[].fees[].category": {
+      "n": 25679,
+      "filled": 25679
+     },
+     "Order.tickets[].fees[].dice": {
+      "n": 25679,
+      "filled": 25679
+     },
+     "Order.tickets[].fees[].promoter": {
+      "n": 25679,
+      "filled": 25679
+     },
+     "Order.tickets[].fullPrice": {
+      "n": 12679,
+      "filled": 12679
+     },
+     "Order.tickets[].holder": {
+      "n": 12679,
+      "filled": 12679
+     },
+     "Order.tickets[].holder.dob": {
+      "n": 12679,
+      "filled": 12637
+     },
+     "Order.tickets[].holder.email": {
+      "n": 12679,
+      "filled": 12641
+     },
+     "Order.tickets[].holder.firstName": {
+      "n": 12679,
+      "filled": 12641
+     },
+     "Order.tickets[].holder.id": {
+      "n": 12679,
+      "filled": 12679
+     },
+     "Order.tickets[].holder.lastName": {
+      "n": 12679,
+      "filled": 12641
+     },
+     "Order.tickets[].holder.optInPartners": {
+      "n": 12679,
+      "filled": 12679
+     },
+     "Order.tickets[].holder.phoneNumber": {
+      "n": 12679,
+      "filled": 12641
+     },
+     "Order.tickets[].id": {
+      "n": 12679,
+      "filled": 12679
+     },
+     "Order.tickets[].priceTier": {
+      "n": 12679,
+      "filled": 12226
+     },
+     "Order.tickets[].priceTier.allocation": {
+      "n": 12226,
+      "filled": 11142
+     },
+     "Order.tickets[].priceTier.doorSalesPrice": {
+      "n": 12226,
+      "filled": 12226
+     },
+     "Order.tickets[].priceTier.faceValue": {
+      "n": 12226,
+      "filled": 12226
+     },
+     "Order.tickets[].priceTier.id": {
+      "n": 12226,
+      "filled": 12226
+     },
+     "Order.tickets[].priceTier.name": {
+      "n": 12226,
+      "filled": 12226
+     },
+     "Order.tickets[].priceTier.price": {
+      "n": 12226,
+      "filled": 12226
+     },
+     "Order.tickets[].priceTier.time": {
+      "n": 12226,
+      "filled": 0
+     },
+     "Order.tickets[].seat": {
+      "n": 12679,
+      "filled": 0
+     },
+     "Order.tickets[].ticketType": {
+      "n": 12679,
+      "filled": 12679
+     },
+     "Order.tickets[].ticketType.archived": {
+      "n": 12679,
+      "filled": 12679
+     },
+     "Order.tickets[].ticketType.description": {
+      "n": 12679,
+      "filled": 12226
+     },
+     "Order.tickets[].ticketType.doorSalesPrice": {
+      "n": 12679,
+      "filled": 12679
+     },
+     "Order.tickets[].ticketType.externalSkus": {
+      "n": 12679,
+      "filled": 0
+     },
+     "Order.tickets[].ticketType.faceValue": {
+      "n": 12679,
+      "filled": 12679
+     },
+     "Order.tickets[].ticketType.id": {
+      "n": 12679,
+      "filled": 12679
+     },
+     "Order.tickets[].ticketType.name": {
+      "n": 12679,
+      "filled": 12679
+     },
+     "Order.tickets[].ticketType.price": {
+      "n": 12679,
+      "filled": 12679
+     },
+     "Order.tickets[].ticketType.priceTierType": {
+      "n": 12679,
+      "filled": 12226
+     },
+     "Order.tickets[].ticketType.ticketPoolId": {
+      "n": 12679,
+      "filled": 12679
+     },
+     "Order.tickets[].ticketType.totalTicketAllocationQty": {
+      "n": 12679,
+      "filled": 12679
+     },
+     "Order.tickets[].total": {
+      "n": 12679,
+      "filled": 12679
+     },
+     "Order.total": {
+      "n": 9967,
+      "filled": 9967
+     }
+    },
+    "enum_values": {
+     "Order.fees[].category": {
+      "BOOKING": 9963,
+      "PROCESSING": 9963,
+      "PAID_WAITING_LIST": 147,
+      "TIER_DIFF": 139
+     },
+     "Order.tickets[].fees[].category": {
+      "BOOKING": 12670,
+      "PROCESSING": 12670,
+      "PAID_WAITING_LIST": 176,
+      "TIER_DIFF": 163
+     },
+     "Order.tickets[].ticketType.priceTierType": {
+      "allocation": 12226
+     }
+    },
+    "seconds": 219.1
+   }
+  },
+  "selection_field_count": 126,
+  "selection_names": "address { countryCode county firstName lastName line1 line2 postCode town } adjustments { feesChange { category dice promoter } processedAt reason } commission diceCommission fan { dob email firstName id lastName optInPartners phoneNumber } fees { category dice promoter } fullPrice id ipCity ipCountry promoCode promoDiscount promoName promoType purchasedAt quantity returns { id reason returnedAt ticketId } salesChannel tickets { address { countryCode county firstName lastName line1 line2 postCode town } claimedAt commission diceCommission extras { commission diceCommission fees { category dice promoter } fullPrice hasSeparateAccessBarcode holder { dob email firstName id lastName optInPartners phoneNumber } id total variant { externalSku id name size sku } } fanSurveyAnswers { fanSurveyQuestion { title } value } fees { category dice promoter } fullPrice holder { dob email firstName id lastName optInPartners phoneNumber } id priceTier { allocation doorSalesPrice faceValue id name price time } seat { name } ticketType { archived description doorSalesPrice externalSkus faceValue id name price priceTierType ticketPoolId totalTicketAllocationQty } total } total",
+  "dropped_fields": {},
+  "probe_runtime_errors": {}
+ },
+ "calls": {
+  "dice": 152
+ },
+ "http_status_counts": {
+  "dice:200": 152
+ },
+ "response_header_names": {
+  "dice": [
+   "access-control-allow-credentials",
+   "access-control-allow-origin",
+   "access-control-expose-headers",
+   "cache-control",
+   "connection",
+   "content-length",
+   "content-type",
+   "date",
+   "strict-transport-security",
+   "x-request-id"
+  ]
+ },
+ "rate_limit_headers_numeric": {},
+ "wall_seconds": 257.3
+}
