@@ -2359,7 +2359,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-07-11,2026-07-11 21:19:09,vendredi,regular,['vendredi'],Pass Vendredi,DICE,51.39,55.0,1,1
 2026-07-11,2026-07-11 21:19:09,vendredi,regular,['vendredi'],Pass Vendredi,DICE,51.39,55.0,1,1
 2026-07-11,2026-07-11 21:19:09,vendredi,regular,['vendredi'],Pass Vendredi,DICE,51.39,55.0,1,1
-2026-07-11,2026-07-11 21:45:26,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
 2026-07-11,2026-07-11 22:39:12,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
 2026-07-11,2026-07-11 22:39:22,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
 2026-07-11,2026-07-11 23:21:23,2-jours,regular,,Pass 2 Jours,DICE,99.45,104.5,1,1
@@ -4111,7 +4110,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-14,2026-08-14 22:39:50,samedi,regular,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
 2026-08-14,2026-08-14 22:40:10,samedi,regular,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
 2026-08-14,2026-08-14 22:51:19,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,95.0,107.37,1,1
-2026-08-14,2026-08-14 22:52:19,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,95.0,107.37,1,1
 2026-08-14,2026-08-14 23:43:04,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,95.0,107.37,1,1
 2026-08-14,2026-08-14 23:47:12,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,95.0,107.37,1,1
 2026-08-14,2026-08-14 23:47:21,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,95.0,107.37,1,1
@@ -4135,7 +4133,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-08-15,2026-08-15 09:30:55,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
 2026-08-15,2026-08-15 09:30:55,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
 2026-08-15,2026-08-15 09:33:43,samedi,regular,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
-2026-08-15,2026-08-15 09:36:41,samedi,regular,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
 2026-08-15,2026-08-15 09:51:53,samedi,regular,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
 2026-08-15,2026-08-15 10:26:40,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
 2026-08-15,2026-08-15 10:30:25,samedi,regular,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
@@ -5772,7 +5769,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-09-08,2026-09-08 15:59:32,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-09-08,2026-09-08 16:07:04,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,95.0,107.37,1,1
 2026-09-08,2026-09-08 16:10:39,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,95.0,107.37,1,1
-2026-09-08,2026-09-08 16:19:38,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-09-08,2026-09-08 16:22:55,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-09-08,2026-09-08 16:26:14,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,95.0,107.37,1,1
 2026-09-08,2026-09-08 16:31:17,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
@@ -9369,7 +9365,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-10-09,2026-10-09 10:24:57,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-10-09,2026-10-09 10:34:02,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-10-09,2026-10-09 10:44:07,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
-2026-10-09,2026-10-09 11:00:54,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-10-09,2026-10-09 11:19:31,samedi,regular,['samedi'],Pass Samedi,DICE,55.76,59.5,1,1
 2026-10-09,2026-10-09 11:21:28,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-10-09,2026-10-09 11:21:28,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
@@ -10915,7 +10910,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-10-17,2026-10-17 22:48:18,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-10-17,2026-10-17 22:48:18,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-10-17,2026-10-17 22:48:18,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
-2026-10-17,2026-10-17 22:49:01,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-10-17,2026-10-17 22:50:35,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-10-17,2026-10-17 22:54:35,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-10-17,2026-10-17 22:54:47,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
@@ -11173,7 +11167,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-10-20,2026-10-20 08:00:13,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-10-20,2026-10-20 08:00:21,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,100.0,113.03,1,1
 2026-10-20,2026-10-20 08:00:28,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
-2026-10-20,2026-10-20 08:00:33,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,100.0,113.03,1,1
 2026-10-20,2026-10-20 08:00:33,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,100.0,113.03,1,1
 2026-10-20,2026-10-20 08:00:35,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-10-20,2026-10-20 08:00:35,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
@@ -11918,7 +11911,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-10-23,2026-10-23 22:00:15,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-10-23,2026-10-23 22:01:46,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-10-23,2026-10-23 22:02:07,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
-2026-10-23,2026-10-23 22:15:33,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-10-23,2026-10-23 22:35:26,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-10-23,2026-10-23 22:36:46,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
 2026-10-23,2026-10-23 22:38:21,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
@@ -13617,7 +13609,6 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-10-29,2026-10-29 09:27:56,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-10-29,2026-10-29 09:27:56,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-10-29,2026-10-29 09:30:07,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,100.0,113.03,1,1
-2026-10-29,2026-10-29 09:32:41,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
 2026-10-29,2026-10-29 09:39:17,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
 2026-10-29,2026-10-29 09:41:01,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-10-29,2026-10-29 09:53:37,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,100.0,113.03,1,1
@@ -13977,3 +13968,153 @@ order_date,order_datetime,ticket_type,access_level,attendance_days,product_name,
 2026-10-30,2026-10-30 14:49:30,2-jours,regular,,Pass 2 Jours,DICE,99.45,104.5,1,1
 2026-10-30,2026-10-30 14:49:55,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
 2026-10-30,2026-10-30 14:54:12,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 15:10:50,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 15:10:50,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 15:18:01,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 15:18:46,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 15:18:46,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 15:22:15,vendredi,regular,['vendredi'],Pass Vendredi,DICE,51.39,55.0,1,1
+2026-10-30,2026-10-30 15:22:33,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 15:26:12,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 15:27:12,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 15:34:33,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 15:35:22,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 15:39:33,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 15:40:51,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 15:41:46,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 15:43:28,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 15:44:25,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 15:46:04,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 15:46:55,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 15:49:46,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:00:14,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:01:54,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:02:47,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:07:14,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:07:50,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 16:09:05,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:13:28,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:29:06,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:29:38,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:29:38,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:32:31,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:35:07,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:35:33,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 16:43:14,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 16:48:02,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 16:50:04,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:50:28,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 16:52:04,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:52:04,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:52:09,vendredi,regular,['vendredi'],Pass Vendredi,DICE,55.76,59.5,1,1
+2026-10-30,2026-10-30 16:53:03,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:55:03,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 16:55:29,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:55:30,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 16:57:21,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 16:58:35,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 16:58:39,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 17:08:56,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 17:17:27,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 17:17:27,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 17:21:02,samedi,regular,['samedi'],Pass Samedi,DICE,55.76,59.5,1,1
+2026-10-30,2026-10-30 17:22:18,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 17:23:10,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 17:23:10,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 17:27:05,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 17:27:10,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 17:31:57,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 17:33:50,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 17:35:06,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 17:35:06,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 17:36:35,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 17:38:57,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 17:39:38,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 17:39:56,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 17:41:36,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 17:42:25,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 17:46:04,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 17:49:03,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 17:53:02,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 17:57:07,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 17:57:58,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:02:19,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:02:19,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:07:59,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:11:43,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:12:47,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 18:12:47,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 18:15:24,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:15:56,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:15:56,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:16:33,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 18:16:33,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:16:33,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:24:47,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:26:00,vendredi,regular,['vendredi'],Pass Vendredi,DICE,55.76,59.5,1,1
+2026-10-30,2026-10-30 18:26:00,vendredi,regular,['vendredi'],Pass Vendredi,DICE,55.76,59.5,1,1
+2026-10-30,2026-10-30 18:26:51,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:27:59,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:28:04,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:28:04,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:28:22,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:33:19,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:33:19,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:33:19,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:35:08,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 18:37:17,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 18:40:04,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:40:04,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:40:04,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:41:21,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:41:59,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:43:30,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:48:24,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 18:52:05,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 18:52:33,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:01:27,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 19:01:27,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 19:03:22,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:05:24,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:05:34,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 19:07:52,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:18:23,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:18:23,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:18:51,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 19:20:10,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:20:37,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 19:20:37,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 19:22:17,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:22:43,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:25:46,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:25:46,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:27:24,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 19:27:58,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:31:37,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:38:56,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:39:51,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 19:41:10,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 19:43:02,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:43:06,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:43:43,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:45:56,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 19:46:27,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:48:59,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 19:49:31,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:54:46,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:55:44,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 19:57:21,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 19:57:21,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 19:57:38,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 20:03:50,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 20:08:07,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 20:08:07,2-jours,regular,"['vendredi', 'samedi']",Pass 2 Jours,Shotgun,105.0,118.68,1,1
+2026-10-30,2026-10-30 20:08:50,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 20:09:40,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 20:16:12,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 20:21:26,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 20:23:03,vendredi,regular,['vendredi'],Pass Vendredi,Shotgun,54.09,61.14,1,1
+2026-10-30,2026-10-30 20:24:33,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 20:24:33,vendredi,early_entry,['vendredi'],Pass Vendredi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 20:25:39,samedi,early_entry,['samedi'],Pass Samedi,Shotgun,50.0,56.51,1,1
+2026-10-30,2026-10-30 20:26:06,samedi,regular,['samedi'],Pass Samedi,Shotgun,54.09,61.14,1,1
